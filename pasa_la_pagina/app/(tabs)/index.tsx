@@ -1,9 +1,13 @@
+import PrimaryButton from '@/components/Boton/Primary';
+import SecondaryButton from '@/components/Boton/Secondary';
 import { StyleSheet, Text, View } from 'react-native';
 
 export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.text}>Hola</Text>
+      <PrimaryButton title="Presióname" onPress={() => alert('Botón presionado!')} />
+      <SecondaryButton title="Presióname también" onPress={() => alert('Botón secundario presionado!')} />
     </View>
   );
 }
