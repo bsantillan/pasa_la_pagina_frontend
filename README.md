@@ -166,10 +166,11 @@ INFORMACION:
     ```bash
     git push origin --delete <nombre_rama>
     ```
+
 # Guía de Estilos y Componentes
 Este proyecto incluye una serie de componentes reutilizables que se encuentran en components/ui/ y un set de colores estándar definidos en constants/Colors.ts.
 
-### Paleta de colores
+## Paleta de colores
         text: "#333333",              // Texto
         background: "#F8F1E5",        // Fondo general
         primary: "#3C7F72",           // Color principal (botones primarios y titulos)
@@ -178,43 +179,55 @@ Este proyecto incluye una serie de componentes reutilizables que se encuentran e
         disabled_secondary: "#FFD77F",// Versión deshabilitada del secundario
         white: "#FFFFFF",             // Blanco para cards 
         cta: "#D96C06",               // Call To Action (acciones importantes)
-
+        
 ## Componentes
 
-### Alerta - `components/ui/AlertaCard.tsx`
-Tarjeta de alerta/confirmación con título, descripción y botones.  
-- Puede tener 1 o 2 botones, con labels personalizables.  
+#### Alerta - `components/ui/AlertaCard.tsx`
+    Tarjeta de alerta/confirmación con título, descripción y botones.  
+- Puede tener 1 o 2 botones, con labels personalizables.
+  
 **Ejemplos:**
-  // Dos botones
-        <AlertCard
-          title="Eliminar producto"
-          description="¿Seguro que deseas eliminar este producto?"
-          acceptLabel="Sí, eliminar"
-          cancelLabel="No, volver"
-          onAccept={() => console.log("Eliminar")}
-          onCancel={() => console.log("Cancelar")}
-        />
+  
+         - Dos botones
+            
+                <AlertCard
+                  title="Eliminar producto"
+                  description="¿Seguro que deseas eliminar este producto?"
+                  acceptLabel="Sí, eliminar"
+                  cancelLabel="No, volver"
+                  onAccept={() => console.log("Eliminar")}
+                  onCancel={() => console.log("Cancelar")}
+                />
+            
+        
+         - Un botón
+                <AlertCard
+                  title='Hola'
+                  description='Esta es una alerta'
+                  onAccept={() => alert('Alerta aceptada')}
+                />
 
-// Un botón
-        <AlertCard
-          title='Hola'
-          description='Esta es una alerta'
-          onAccept={() => alert('Alerta aceptada')}
-        />
 
-### Avatar - `components/ui/Avatar.tsx`
-Círculo con la inicial del usuario.
+#### Avatar - `components/ui/Avatar.tsx`
+    Círculo con la inicial del usuario.
+
 **Ejemplos:**
+
         <Avatar name="Pedro" size={80} />
 
-### Barra de tarea - `components/ui/BottomNavbar.tsx`
-Barra de navegación inferior para acceso rápido a secciones principales. 
+#### Barra de tarea - `components/ui/BottomNavbar.tsx`
+    Barra de navegación inferior para acceso rápido a secciones principales. 
+
 **Ejemplos:**
+
         <BottomNavbar />
 
-### Tarjeta de conexión - `components/ui/ConnectCard.tsx`
-Permite conectar con otro usuario y enviar un mensaje predeterminado.
+
+#### Tarjeta de conexión - `components/ui/ConnectCard.tsx`
+    Permite conectar con otro usuario y enviar un mensaje predeterminado.
+
 **Ejemplos:**
+
         <ConnectCard
           username="Ana"
           publicationTitle="Zapatillas Nike"
@@ -222,31 +235,42 @@ Permite conectar con otro usuario y enviar un mensaje predeterminado.
           onCancel={() => console.log("Acción cancelada")}
         />
 
-### Botones - `components/ui/Boton/`
-// Primario - components/ui/Boton/Primary.tsx
-Botón principal de la app
+
+#### Botones - `components/ui/Boton/`
+- Primario - components/ui/Boton/Primary.tsx :
+    Botón principal de la app
+
 **Ejemplos:**
+
           <PrimaryButton title="Enviar" onPress={() => {}} />
 
-//Secundario - components/ui/Boton/Secondary.tsx
-Botón secundario con borde
+- Secundario - components/ui/Boton/Secondary.tsx : Botón secundario con borde
+
 **Ejemplos:**
+
         <SecondaryButton title="Cancelar" onPress={() => {}} />
 
-### Tarjeta Producto - `components/ui/ProductCard.tsx`
-Muestra un producto con imagen, título y descripción
+
+#### Tarjeta Producto - `components/ui/ProductCard.tsx`
+    Muestra un producto con imagen, título y descripción
+
 **Ejemplos:**
+
         <ProductCard imageUrl='' title='Producto 1' description='Descripción del producto 1' />
 
-### Tarjeta Reseña - `components/ui/ReviewCard.tsx`
-Muestra una reseña de usuario
+#### Tarjeta Reseña - `components/ui/ReviewCard.tsx`
+    Muestra una reseña de usuario
+
 **Ejemplos:**
+
         <ReviewCard
           username='usuario123'
           headline='Gran producto'
           description='Me encantó este producto, lo recomiendo mucho.'
           date='2023-10-01'
         />
+
+
 
 
       
