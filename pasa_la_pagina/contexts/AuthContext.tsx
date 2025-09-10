@@ -1,3 +1,5 @@
+// eslint-disable-next-line import/no-unresolved
+import { API_URL } from "@env";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { createContext, useContext, useEffect, useState } from "react";
 
@@ -5,6 +7,7 @@ type AuthContextType = {
     accessToken: string | null;
     refreshToken: string | null;
     login: (email: string, password: string) => Promise<void>;
+    loginWithGoogle: (idToken: string) => Promise<void>;
     register: (nombre: string, apellido: string, email: string, password: string) => Promise<void>;
     logout: () => Promise<void>;
     getValidAccessToken: () => Promise<string | null>;
@@ -30,7 +33,7 @@ export const AuthProvider = ({ children }: {children: React.ReactNode}) => {
 
     const login = async(email: string, password: string)=>{
         
-        const response = await fetch("url/auth/login", {
+        const response = await fetch(`${API_URL}auth/login`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ email, password }),
@@ -46,9 +49,28 @@ export const AuthProvider = ({ children }: {children: React.ReactNode}) => {
         setRefreshToken(data.refreshToken);
     };
 
+    const loginWithGoogle = async (idToken: string) => {
+        const res = await fetch(`${API_URL}auth/google`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ idToken }),
+        });
+        
+        if (!res.ok) throw new Error("Error en el login con Google");
+
+        const data = await res.json();
+
+        await AsyncStorage.setItem("accessToken", data.accessToken);
+        await AsyncStorage.setItem("refreshToken", data.refreshToken);
+
+        setAccessToken(data.accessToken);
+        setRefreshToken(data.refreshToken);
+    };
+
+
     const register = async(nombre: string, apellido: string, email: string, password: string)=>{
 
-        const response = await fetch("url/auth/register", {
+        const response = await fetch(`${API_URL}auth/register`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ nombre, apellido, email, password })
@@ -66,7 +88,7 @@ export const AuthProvider = ({ children }: {children: React.ReactNode}) => {
 
     const logout = async()=>{
 
-        const response = await fetch("url/auth/logout", {
+        const response = await fetch(`${API_URL}auth/logout`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ refreshToken })
@@ -84,7 +106,7 @@ export const AuthProvider = ({ children }: {children: React.ReactNode}) => {
 
         if (!refreshToken) return null;
 
-        const response = await fetch("url/auth/refresh", {
+        const response = await fetch(`${API_URL}auth/refresh`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ refreshToken })
@@ -115,6 +137,7 @@ export const AuthProvider = ({ children }: {children: React.ReactNode}) => {
                 accessToken,
                 refreshToken,
                 login,
+                loginWithGoogle,
                 register,
                 logout,
                 getValidAccessToken
@@ -131,5 +154,3 @@ export const useAuth = ()=>{
     if(!context) throw new Error("useAuth debe usarse dentro de authProvider");
     return context;
 };
-
-
