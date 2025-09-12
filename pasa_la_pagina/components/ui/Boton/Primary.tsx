@@ -5,11 +5,12 @@ import { Colors } from "../../../constants/Colors";
 type Props = {
     title: string;
     onPress: (event: GestureResponderEvent) => void;
+    style?: object;
 }
 
-export default function PrimaryButton({ title, onPress }: Props) {
+export default function PrimaryButton({ title, onPress, style }: Props) {
     return (
-        <TouchableOpacity style={styles.button} onPress={onPress}>
+        <TouchableOpacity style={[styles.button, style]} onPress={onPress}>
             <Text style={styles.buttonText}>{title}</Text>
         </TouchableOpacity>
     );
@@ -22,6 +23,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 30,
         borderRadius: 30,
         alignItems: "center",
+        justifyContent: "center",
         shadowColor: "#000",
         shadowOpacity: 0.15,
         shadowOffset: { width: 0, height: 2 },
