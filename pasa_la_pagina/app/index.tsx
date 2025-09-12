@@ -5,7 +5,7 @@ import { ImageBackground, StyleSheet, View } from "react-native";
 
 export default function PortadaScreen() {
     const router = useRouter();
-
+    
     return (
         <ImageBackground
             source={require("../assets/images/Fondo-Portada.png")}

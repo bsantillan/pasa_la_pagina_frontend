@@ -1,5 +1,6 @@
 import PrimaryButton from "@/components/ui/Boton/Primary";
 import { Colors } from "@/constants/Colors";
+import useGoogleAuth from "@/hooks/useGoogleAuth";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
@@ -14,13 +15,11 @@ import {
   View,
 } from "react-native";
 import { useAuth } from "../contexts/AuthContext";
-import useGoogleAuth from "@/hooks/useGoogleAuth";
 const { height } = Dimensions.get("window");
 
 export default function LoginScreen() {
   const router = useRouter();
   const { login } = useAuth();
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -34,6 +33,7 @@ export default function LoginScreen() {
       setError(err.message || "Error al iniciar sesión");
     }
   };
+
 
   return (
     <ScrollView contentContainerStyle={styles.container}>

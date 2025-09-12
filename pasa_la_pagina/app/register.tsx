@@ -2,21 +2,20 @@ import PrimaryButton from "@/components/ui/Boton/Primary";
 import { Colors } from "@/constants/Colors";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
-// eslint-disable-next-line import/no-unresolved
-import { API_URL } from "@env";
 import {
-    ImageBackground,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    View
+  ImageBackground,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from "react-native";
 import { useAuth } from "../contexts/AuthContext";
 
 export default function RegisterScreen() {
+
   const router = useRouter();
-  const { login } = useAuth();
+  const { register } = useAuth();
 
   const [step, setStep] = useState(1);
 
@@ -32,7 +31,7 @@ export default function RegisterScreen() {
       setError("Completa todos los campos");
       return;
     }
-    if (nombre.length < 2 || apellido.length <2){
+    if (nombre.length < 2 || apellido.length < 2) {
       setError("El nombre o apellido deben tener al menos dos caracteres");
       return;
     }
@@ -49,22 +48,11 @@ export default function RegisterScreen() {
       setError("Las contraseñas no coinciden");
       return;
     }
-
     try {
-      const res = await fetch(`${API_URL}auth/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, nombre, apellido }),
-      });
-
-      if (!res.ok) {
-        throw new Error("Error en el registro");
-      }
-
-      const data = await res.json();
-      await login(email, password);
+      await register(nombre, apellido, email, password); 
+      router.replace("/(tabs)"); 
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || "Error al registrarse");
     }
   };
 
@@ -80,7 +68,7 @@ export default function RegisterScreen() {
             <>
               <Text style={styles.title}>Crear cuenta</Text>
               <Text style={styles.subtitle}>Primero lo primero</Text>
-              
+
               <TextInput
                 style={styles.input}
                 placeholder="Nombre"
@@ -96,7 +84,11 @@ export default function RegisterScreen() {
 
               {error ? <Text style={styles.error}>{error}</Text> : null}
 
-              <PrimaryButton title="Siguiente" onPress={handleNext} style={{height:42, marginTop: 38, width: "100%",}}/>
+              <PrimaryButton
+                title="Siguiente"
+                onPress={handleNext}
+                style={{ height: 42, marginTop: 38, width: "100%" }}
+              />
 
               <Text style={styles.footerText}>
                 ¿Ya tienes cuenta?{" "}
@@ -136,7 +128,11 @@ export default function RegisterScreen() {
                 {error ? <Text style={styles.error}>{error}</Text> : null}
               </View>
 
-              <PrimaryButton title="Crear cuenta" onPress={handleRegister} style={{height:42, marginTop: 38, width: "100%",}}/>
+              <PrimaryButton
+                title="Crear cuenta"
+                onPress={handleRegister}
+                style={{ height: 42, marginTop: 38, width: "100%" }}
+              />
 
               <Text style={styles.footerText}>
                 ¿Ya tienes cuenta?{" "}
@@ -199,19 +195,18 @@ const styles = StyleSheet.create({
   },
   secInput: {
     marginTop: 38,
-    width: "100%"
+    width: "100%",
   },
   footerText: {
     marginTop: 20,
     fontSize: 14,
     fontWeight: 400,
     color: "#838589",
-    
   },
   link: {
     color: Colors.cta,
     fontWeight: "400",
-    textDecorationLine: "underline"
+    textDecorationLine: "underline",
   },
   error: {
     color: "red",
