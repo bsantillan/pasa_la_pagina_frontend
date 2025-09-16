@@ -1,5 +1,6 @@
 import { Colors } from '@/constants/Colors';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
@@ -33,6 +34,23 @@ export default function BottomNavbar() {
 
     const handlePress = (tabName: string) => {
         setActive(tabName);
+        switch (tabName) {
+            case 'home':
+                router.push("/(tabs)");
+                break;
+            case 'search':
+                router.push('/explore');
+                break;
+            case 'messages':
+                //router.push('/messages'); // Ajusta según tu ruta real
+                break;
+            case 'profile':
+                //router.push('/profile'); // Ajusta según tu ruta real
+                break;
+            case 'add':
+                router.push('/(tabs)/(publicacion)');
+                break;
+        }
     };
 
     return (

@@ -5,13 +5,14 @@ import { Colors } from "../../../constants/Colors";
 type Props = {
     title: string;
     onPress: (event: GestureResponderEvent) => void;
-    style?: object;
+    styleBtn?: object;
+    styleTxt?: object;
 }
 
-export default function PrimaryButton({ title, onPress, style }: Props) {
+export default function PrimaryButton({ title, onPress, styleBtn, styleTxt }: Props) {
     return (
-        <TouchableOpacity style={[styles.button, style]} onPress={onPress}>
-            <Text style={styles.buttonText}>{title}</Text>
+        <TouchableOpacity style={[styles.button, styleBtn]} onPress={onPress}>
+            <Text style={[styles.buttonText, styleTxt]}>{title}</Text>
         </TouchableOpacity>
     );
 }

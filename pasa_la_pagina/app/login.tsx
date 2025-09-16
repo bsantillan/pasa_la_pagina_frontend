@@ -78,7 +78,7 @@ export default function LoginScreen() {
         <PrimaryButton
           title="Iniciar sesión"
           onPress={handleLogin}
-          style={{ width: "100%", height: 45, marginTop: 38 }}
+          styleBtn={{ width: "100%", height: 45, marginTop: 38 }}
         />
         <Text style={styles.footerText}>
           ¿No tienes cuenta?{" "}

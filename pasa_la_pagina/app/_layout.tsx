@@ -20,7 +20,7 @@ function AuthGate(){
     if (accessToken) {
       router.replace("/(tabs)");
     }
-  }, [accessToken]);
+  }, [accessToken, router]);
 
   return <Slot />;
 
