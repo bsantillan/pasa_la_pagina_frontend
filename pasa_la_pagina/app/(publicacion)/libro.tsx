@@ -1,25 +1,71 @@
 import PrimaryButton from "@/components/ui/Boton/Primary";
 import ISBNScanner from "@/components/ui/ISBNScanner";
 import { Colors } from "@/constants/Colors";
+import { useAuth } from "@/contexts/AuthContext";
 import { usePublicacion } from "@/contexts/PublicacionContext";
+import Ionicons from "@expo/vector-icons/build/Ionicons";
 import { Picker } from "@react-native-picker/picker";
 import { router } from "expo-router";
-import ISO6391 from "iso-639-1";
-import React, { useState } from "react";
-import { Alert, Modal, StyleSheet, Text, TextInput, View } from "react-native";
+import React, { useEffect, useState } from "react";
+import {
+  Alert,
+  Modal,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 export default function LibroScreen() {
   // Steps
   const [step, setStep] = useState(1);
   const [showScanner, setShowScanner] = useState(false);
   const { libro, updateLibro } = usePublicacion();
-  const idiomas = ISO6391.getAllNames().map((name) => ({
-    label: name,
-    value: ISO6391.getCode(name),
-  }));
+  const [idiomas, setIdiomas] = useState<{ value: string; label: string }[]>(
+    []
+  );
+  const { getValidAccessToken } = useAuth();
+  const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    const fetchIdiomas = async () => {
+      try {
+        const access = await getValidAccessToken();
+        const res = await fetch(
+          `${process.env.EXPO_PUBLIC_API_URL}enums/idiomas`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${access}`,
+            },
+          }
+        );
+        const data = await res.json();
+        setIdiomas(
+          data.map((item: { nombre: string }) => ({
+            value: item.nombre,
+            label: item.nombre,
+          }))
+        );
+      } catch (err) {
+        console.error(err);
+        Alert.alert("Error fetching idiomas", String(err));
+      }
+    };
+    fetchIdiomas();
+  }, []);
+  const handleBack = () => {
+    if (step > 1) {
+      setStep(step - 1);
+    } else {
+      router.back();
+    }
+  };
   // Fetch a Google Books API
   const fetchBookData = async (isbn: string) => {
+    setLoading(true);
     try {
       const res = await fetch(
         `https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=data`
@@ -33,18 +79,20 @@ export default function LibroScreen() {
           titulo: book.title || "",
           autor: book.authors?.map((a: any) => a.name).join(", ") || "",
           editorial: book.publishers?.map((p: any) => p.name).join(", ") || "",
-          idioma: book.languages?.[0]?.key
-            ? book.languages[0].key.replace("/languages/", "")
-            : libro.idioma,
           sinopsis: book.excerpts?.[0]?.text || "",
         });
-        setStep(2);
       } else {
         Alert.alert("No se encontró información para este ISBN");
+        setStep(2);
       }
+      setStep(2);
     } catch (err) {
       console.error(err);
       Alert.alert("Error buscando libro", String(err));
+      updateLibro({ isbn: parseInt(isbn) });
+      setStep(2);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -53,7 +101,7 @@ export default function LibroScreen() {
     switch (step) {
       case 1:
         return (
-          <View>
+          <View style={{ marginTop: 120 }}>
             <Text style={styles.title}>Ingresar código ISBN</Text>
             <Text style={styles.subtitle}>
               El ISBN es el código único de tu libro. Podés encontrarlo en la
@@ -71,11 +119,13 @@ export default function LibroScreen() {
                 styleBtn={styles.styleBtn}
                 title="Escanear código"
                 onPress={() => setShowScanner(true)}
+                disabled={loading}
               />
               <PrimaryButton
                 styleBtn={styles.styleBtn}
-                title="Buscar por ISBN"
+                title={loading ? "Cargando..." : "Buscar por ISBN"}
                 onPress={() => fetchBookData(String(libro.isbn))}
+                disabled={loading || !libro.isbn}
               />
             </View>
           </View>
@@ -169,6 +219,16 @@ export default function LibroScreen() {
 
   return (
     <View style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity
+          onPress={(event) => handleBack()}
+          style={styles.backButton}
+        >
+          <Ionicons name="arrow-back" size={24} color={Colors.text} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Crear publicación</Text>
+        <View style={{ width: 40 }} />
+      </View>
       {renderStep()}
 
       {/* Navegación de steps */}
@@ -183,7 +243,7 @@ export default function LibroScreen() {
         <PrimaryButton
           styleBtn={{ marginTop: 26, height: 36 }}
           title="Siguiente"
-          onPress={() => router.push("/(tabs)/(publicacion)/publicacion")}
+          onPress={() => router.push("/(publicacion)/publicacion")}
         />
       )}
 
@@ -205,7 +265,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    justifyContent: "center",
     backgroundColor: Colors.background,
   },
   input_isbn: {
@@ -216,6 +275,26 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     height: 50,
   },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    height: 56,
+    marginTop: 30,
+    marginBottom: 65,
+  },
+  backButton: {
+    width: 40,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  headerTitle: {
+    flex: 1,
+    textAlign: "center",
+    fontSize: 16,
+    fontWeight: 700,
+    color: "#000000",
+  },
+
   nav: { flexDirection: "row", justifyContent: "space-between", marginTop: 20 },
   title: {
     fontSize: 25,

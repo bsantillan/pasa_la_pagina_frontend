@@ -1,3 +1,4 @@
+import BottomNavbar from "@/components/ui/BottomNavbar";
 import { useAuth } from "@/contexts/AuthContext";
 import { PublicacionProvider } from "@/contexts/PublicacionContext";
 import { Slot, useRouter } from "expo-router";
@@ -20,6 +21,7 @@ export default function PublicacionLayout() {
     <View style={styles.container}>
       <PublicacionProvider>
         <Slot />
+        <BottomNavbar></BottomNavbar>
       </PublicacionProvider>
     </View>
   );

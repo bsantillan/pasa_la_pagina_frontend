@@ -7,11 +7,12 @@ type Props = {
     onPress: (event: GestureResponderEvent) => void;
     styleBtn?: object;
     styleTxt?: object;
+    disabled?: boolean;
 }
 
-export default function PrimaryButton({ title, onPress, styleBtn, styleTxt }: Props) {
+export default function PrimaryButton({ title, onPress, styleBtn, styleTxt, disabled= false}: Props) {
     return (
-        <TouchableOpacity style={[styles.button, styleBtn]} onPress={onPress}>
+        <TouchableOpacity style={[styles.button, styleBtn]} onPress={onPress} disabled={disabled}>
             <Text style={[styles.buttonText, styleTxt]}>{title}</Text>
         </TouchableOpacity>
     );

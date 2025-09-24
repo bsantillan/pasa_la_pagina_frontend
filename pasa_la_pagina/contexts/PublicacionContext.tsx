@@ -35,6 +35,7 @@ type ComunesData = {
   precio?: number;
   cantidad?: number;
   tipo_oferta?: string;
+  usuario_id?: number;
 };
 
 type PublicacionContextType = {

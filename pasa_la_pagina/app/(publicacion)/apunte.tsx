@@ -1,6 +1,7 @@
 import PrimaryButton from "@/components/ui/Boton/Primary";
 import { Colors } from "@/constants/Colors";
 import { usePublicacion } from "@/contexts/PublicacionContext";
+import Ionicons from "@expo/vector-icons/build/Ionicons";
 import { Picker } from "@react-native-picker/picker";
 import { router } from "expo-router";
 import { useState } from "react";
@@ -9,15 +10,33 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  TouchableOpacity,
   View
 } from "react-native";
 
 export default function ApunteForm() {
   const [step, setStep] = useState(1);
   const { apunte, updateApunte } = usePublicacion(); 
+  const handleBack = () => {
+    if (step === 1) {
+      router.back();
+    } else {
+      setStep(step - 1);
+    }
+  };
 
   return (
     <ScrollView contentContainerStyle={styles.scrollContent}>
+      <View style={styles.headerNav}>
+        <TouchableOpacity
+          onPress={(event) => handleBack()}
+          style={styles.backButton}
+        >
+          <Ionicons name="arrow-back" size={24} color={Colors.text} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitleNav}>Crear publicación</Text>
+        <View style={{ width: 40 }} />
+      </View>
       <View style={styles.container}>
         <Text style={styles.title}>Agregar informacion del apunte</Text>
         <Text style={styles.subtitle}>Contanos de qué trata tu apunte.</Text>
@@ -133,7 +152,7 @@ export default function ApunteForm() {
 
             <PrimaryButton
               title="Siguiente"
-              onPress={() => router.push("/(tabs)/(publicacion)/publicacion")}
+              onPress={() => router.push("/(publicacion)/publicacion")}
               styleBtn={styles.primaryButton}
             />
           </View>
@@ -156,6 +175,25 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 16,
     backgroundColor: Colors.background,
+  },
+  headerNav: {
+    flexDirection: "row",
+    alignItems: "center",
+    height: 56,
+    marginTop: 30,
+    marginBottom: 0,
+  },
+  backButton: {
+    width: 40,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  headerTitleNav: {
+    flex: 1,
+    textAlign: "center",
+    fontSize: 16,
+    fontWeight: 700,
+    color: "#000000",
   },
   title: {
     fontSize: 25,
