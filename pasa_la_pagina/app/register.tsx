@@ -50,7 +50,7 @@ export default function RegisterScreen() {
     }
     try {
       await register(nombre, apellido, email, password); 
-      router.replace("/(tabs)"); 
+      router.replace("/(tabs)");
     } catch (err: any) {
       setError(err.message || "Error al registrarse");
     }

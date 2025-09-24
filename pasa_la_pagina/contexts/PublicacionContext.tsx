@@ -26,7 +26,7 @@ export const PublicacionContext = createContext<PublicacionContextType | undefin
 );
 
 export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
-    const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:8080/";
+    const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "";
     const { getValidAccessToken } = useAuth();
 
     const [publicaciones, setPublicaciones] = useState<Publicacion[]>([]);
@@ -38,11 +38,20 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
         setError(null);
         try {
             const token = await getValidAccessToken();
+            console.log("Token", token);
+            console.log("longitud", longitud);
+            console.log("latitud", latitud);
             if (!token) throw new Error("No hay token válido");
 
             const res = await fetch(`${API_URL}publicacion/paginado?usuario_latitud=${latitud}&usuario_longitud=${longitud}`, {
-                headers: { Authorization: `Bearer ${token}` },
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
             });
+            console.log("Response status:", res);
 
             if (!res.ok) {
                 const text = await res.text();

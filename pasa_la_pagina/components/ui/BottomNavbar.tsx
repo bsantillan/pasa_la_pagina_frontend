@@ -8,10 +8,10 @@ type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 const TABS = [
     { name: "home", label: "Home", icon: "home-outline", activeIcon: "home" },
     {
-        name: "search",
-        label: "Search",
-        icon: "search-outline",
-        activeIcon: "search",
+        name: "map",
+        label: "Map",
+        icon: "map-outline",
+        activeIcon: "map",
     },
     { name: "add", label: "", icon: "add", isCenter: true },
     {

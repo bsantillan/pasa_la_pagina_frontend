@@ -1,43 +1,64 @@
-import { AlertCard } from '@/components/ui/AlertaCard';
-import { Avatar } from '@/components/ui/Avatar';
-import PrimaryButton from '@/components/ui/Boton/Primary';
-import SecondaryButton from '@/components/ui/Boton/Secondary';
-import { ConnectCard } from '@/components/ui/ConnectCard';
-import { ProductCard } from '@/components/ui/ProductCard';
-import { ReviewCard } from '@/components/ui/ReviewCard';
-import { useAuth } from '@/contexts/AuthContext';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { Buscador } from "@/components/ui/Search";
+import { useAuth } from "@/contexts/AuthContext";
+import { PublicacionContext, PublicacionProvider } from "@/contexts/PublicacionContext"; // ajusta la ruta
+import { useContext, useEffect } from "react";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
+import HomeCategoria from "../(home)/HomeCategoria";
+import HomeCerca from "../(home)/HomeCerca";
+import HomeRecomendacion from "../(home)/HomeRecomendacion";
 
-export default function HomeScreen() {
-  
-  const { logout } =  useAuth();
+function HomeContent() {
+  const { logout } = useAuth();
+  const context = useContext(PublicacionContext);
+
+  useEffect(() => {
+    context?.fetchPublicaciones(); // carga las publicaciones al montar el componente
+  }, []);
+
+  if (!context) return <Text>No hay contexto disponible</Text>;
+  if (context.loading) return <Text>Cargando publicaciones...</Text>;
+  if (context.error) return <Text>Error: {context.error}</Text>;
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.text}>Hola</Text>
-      <PrimaryButton title="Presióname" onPress={() => logout()} />
-      <SecondaryButton title="Presióname también" onPress={() => alert('Botón secundario presionado!')} />
-      <Image source={require('../../assets/images/logo.png')} style={{ width: 100, height: 100, marginTop: 20 }} />
-      <Avatar name="Ana" size={80} />
-      <PrimaryButton title="Presióname" onPress={() => logout()} />
-      <ConnectCard   username="Ana"  publicationTitle="Zapatillas Nike" onSend={() => console.log("Mensaje enviado")} onCancel={() => console.log("Acción cancelada")}/>
-      <AlertCard title='hola' description='esta es una alerta' onAccept={() => logout()}/>
-      <ProductCard imageUrl='https://img.freepik.com/foto-gratis/composicion-libros-libro-abierto_23-2147690555.jpg?semt=ais_hybrid&w=740&q=80' title='Producto 1' description='Descripción del producto 1' />
-      <ReviewCard username='usuario123' headline='Gran producto' description='Me encantó este producto, lo recomiendo mucho.' date='2023-10-01' />
-    </View>
+    <ScrollView contentContainerStyle={styles.container}>
+      {context.publicaciones.map((pub) => (
+        <View key={pub.id} style={styles.card}>
+          <Text style={styles.title}>{pub.titulo}</Text>
+          <Text>{pub.descripcion}</Text>
+          <Text>Precio: {pub.precio ?? "Gratis"}</Text>
+          <Text>Tipo: {pub.tipo}</Text>
+          <Text>Usuario ID: {pub.usuario_id}</Text>
+        </View>
+      ))}
+    </ScrollView>
+  );
+}
+
+export default function HomeScreen() {
+  return (
+    <PublicacionProvider>
+      <HomeCerca />
+      <HomeRecomendacion />
+      <HomeCategoria />
+      <Buscador onSelect={(pub) => console.log("Seleccionado:", pub)} />
+      <HomeContent />
+    </PublicacionProvider>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: '#fff', // fondo blanco
-    justifyContent: 'center', // centra verticalmente
-    alignItems: 'center',     // centra horizontalmente
+    padding: 16,
   },
-  text: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#000', // texto negro
+  card: {
+    backgroundColor: "#f0f0f0",
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 12,
+  },
+  title: {
+    fontWeight: "bold",
+    fontSize: 18,
+    marginBottom: 4,
   },
 });

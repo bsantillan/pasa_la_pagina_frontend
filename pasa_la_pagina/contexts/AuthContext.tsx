@@ -147,6 +147,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         body: JSON.stringify({ refreshToken }),
       });
 
+      console.log("Refresh token response status:", response);
+
       if (!response.ok) {
         await logout(); // <--- esto es Promise<void>
         refreshPromise = null;
@@ -166,12 +168,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const getValidAccessToken = async () => {
     if (!accessToken) return null;
 
+
+
     try {
       const decoded = decodeJWT(accessToken);
       if (!decoded || !decoded.exp || Date.now() >= decoded.exp * 1000) {
         // Token vencido o inválido
         return await refreshAccessToken();
       }
+
       return accessToken;
     } catch (err) {
       // Token corrupto, refrescar
