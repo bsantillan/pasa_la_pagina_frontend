@@ -1,24 +1,24 @@
+import PrimaryButton from "@/components/ui/Boton/Primary";
+import { Colors } from "@/constants/Colors";
+import { useAuth } from "@/contexts/AuthContext";
+import { usePublicacion } from "@/contexts/PublicacionContext";
+import Ionicons from "@expo/vector-icons/build/Ionicons";
+import { Picker } from "@react-native-picker/picker";
+import * as ImagePicker from "expo-image-picker";
+import * as Location from "expo-location";
+import { router } from "expo-router";
 import React, { useState } from "react";
 import {
-  Text,
-  TextInput,
+  Alert,
   Image,
   ScrollView,
-  Alert,
   StyleSheet,
-  View,
+  Text,
+  TextInput,
   TouchableOpacity,
+  View,
 } from "react-native";
-import * as Location from "expo-location";
-import * as ImagePicker from "expo-image-picker";
-import { usePublicacion } from "@/contexts/PublicacionContext";
 import MapView, { Marker } from "react-native-maps";
-import { Colors } from "@/constants/Colors";
-import { Picker } from "@react-native-picker/picker";
-import PrimaryButton from "@/components/ui/Boton/Primary";
-import { useAuth } from "@/contexts/AuthContext";
-import { router } from "expo-router";
-import Ionicons from "@expo/vector-icons/build/Ionicons";
 
 export default function FinalizarPublicacionScreen() {
   const { comunes, updateComunes, libro, apunte, tipo, reset } =
@@ -140,7 +140,7 @@ export default function FinalizarPublicacionScreen() {
 
   // Construir payload para apunte según DTO backend
   const buildApuntePayload = (uploadedUrls: string[]) => {
-    const payload: any =  {
+    const payload: any = {
       titulo: apunte?.titulo ?? "",
       descripcion: comunes?.descripcion ?? "",
       nuevo: comunes?.nuevo ?? false,
@@ -200,7 +200,7 @@ export default function FinalizarPublicacionScreen() {
 
       // armar payload segun tipo
       let payload: any;
-      let endpoint = `${process.env.EXPO_PUBLIC_API_URL}publicacion/nuevo`;
+      let endpoint;
       if (tipo === "libro") {
         payload = buildLibroPayload(uploadedUrls);
         endpoint = `${process.env.EXPO_PUBLIC_API_URL}publicacion/nuevo/libro`;
@@ -210,7 +210,6 @@ export default function FinalizarPublicacionScreen() {
       } else {
         throw new Error("Tipo de publicación inválido");
       }
-
 
       const response = await fetch(endpoint, {
         method: "POST",
@@ -308,7 +307,10 @@ export default function FinalizarPublicacionScreen() {
         />
 
         {/* Subir fotos */}
-        <PrimaryButton title="Seleccionar Imágenes" onPress={pickImages} />
+        <PrimaryButton
+          styleBtn={styles.styleBtn}
+          title="Seleccionar Imágenes"
+          onPress={pickImages} />
         <ScrollView horizontal style={{ marginVertical: 10 }}>
           {images.map((uri, idx) => (
             <Image
@@ -322,11 +324,13 @@ export default function FinalizarPublicacionScreen() {
         {/* Ubicación */}
         <View style={styles.buttonContainer}>
           <PrimaryButton
+            styleBtn={styles.styleBtn}
             title={mapVisible ? "Ocultar Mapa" : "Mostrar Mapa"}
             onPress={() => setMapVisible((prev) => !prev)}
           />
           <PrimaryButton
-            title="Usar mi ubicación actual"
+            styleBtn={styles.styleBtn}
+            title="Ubicación actual"
             onPress={getCurrentLocation}
           />
         </View>
@@ -356,7 +360,10 @@ export default function FinalizarPublicacionScreen() {
         )}
 
         {/* Publicar */}
-        <PrimaryButton title="Publicar" onPress={handleSubmit} />
+        <PrimaryButton
+          styleBtn={styles.styleBtn}
+          title="Publicar"
+          onPress={handleSubmit} />
       </View>
     </ScrollView>
   );
@@ -446,8 +453,17 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     flexDirection: "row",
-    justifyContent: "space-between",
     width: "100%",
-    marginBottom: 20,
+    justifyContent: "center",
+    marginHorizontal: 16,
+    gap: 10,
+  },
+  styleBtn: {
+    flex: 1,
+    paddingHorizontal: 16,
+    width: "100%",
+    height: 36,
+    justifyContent: "center",
+    alignItems: "center",
   },
 });

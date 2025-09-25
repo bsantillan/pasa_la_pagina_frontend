@@ -98,6 +98,16 @@ export default function LibroScreen() {
 
   // --- Render de cada step ---
   const renderStep = () => {
+    // Dentro del renderStep o en el return del step 2
+    const isStep2Complete = () => {
+      return (
+        libro.titulo?.trim() &&
+        libro.autor?.trim() &&
+        libro.editorial?.trim() &&
+        libro.sinopsis?.trim()
+      );
+    };
+
     switch (step) {
       case 1:
         return (
@@ -157,13 +167,6 @@ export default function LibroScreen() {
               value={libro.editorial}
               onChangeText={(text) => updateLibro({ editorial: text })}
               placeholder="Editorial"
-              style={styles.input}
-            />
-            <Text style={styles.label}>Sinopsis</Text>
-            <TextInput
-              value={libro.sinopsis}
-              onChangeText={(text) => updateLibro({ sinopsis: text })}
-              placeholder="Sinopsis"
               style={styles.input}
             />
           </View>
@@ -234,7 +237,7 @@ export default function LibroScreen() {
       {/* Navegación de steps */}
       {step === 2 && (
         <PrimaryButton
-          styleBtn={{ marginTop: 26, height: 36 }}
+          styleBtn={{ height: 36 }}
           title="Siguiente"
           onPress={() => setStep(step + 1)}
         />
@@ -318,13 +321,19 @@ const styles = StyleSheet.create({
   },
   view_isbn: {
     flexDirection: "row",
+    justifyContent: "center",
+    marginHorizontal: 16,
     gap: 10,
   },
   styleBtn: {
-    width: "48%",
+    flex: 1,
+    paddingHorizontal: 16,
     height: 36,
+    justifyContent: "center",
+    alignItems: "center",
   },
   styleTxt: {
+    textAlign: "center",
     fontSize: 12,
   },
   input: {

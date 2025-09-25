@@ -40,11 +40,37 @@ export default function ISBNScanner({ onScanned, onClose }: Props) {
           }
         }}
       />
-      <PrimaryButton title="Cerrar" onPress={onClose} />
+      <View style={styles.buttonOverlay}>
+        <PrimaryButton
+          title="Cerrar"
+          onPress={onClose}
+          styleBtn={styles.styleBtn}
+          styleTxt={styles.textBtn}
+        />
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
+  buttonOverlay: {
+    position: "absolute",
+    bottom: 40,       
+    left: 16,         
+    right: 16,        
+    alignItems: "center",
+  },
+  styleBtn: {
+    paddingHorizontal: 16,
+    width: "100%",
+    height: 36,
+    justifyContent: "center",
+    alignItems: "center",
+    margin: 16,
+  },
+  textBtn: {
+    fontSize: 14,
+    fontWeight: "bold",
+  },
 });
