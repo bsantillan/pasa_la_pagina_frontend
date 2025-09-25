@@ -1,64 +1,50 @@
+import PrimaryButton from "@/components/ui/Boton/Primary";
 import { Buscador } from "@/components/ui/Search";
+import { Colors } from "@/constants/Colors";
 import { useAuth } from "@/contexts/AuthContext";
-import { PublicacionContext, PublicacionProvider } from "@/contexts/PublicacionContext"; // ajusta la ruta
-import { useContext, useEffect } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
-import HomeCategoria from "../(home)/HomeCategoria";
-import HomeCerca from "../(home)/HomeCerca";
-import HomeRecomendacion from "../(home)/HomeRecomendacion";
+import { PublicacionProvider } from "@/contexts/PublicacionContext";
+import React from "react";
+import { ScrollView, StyleSheet, View } from "react-native";
+import CercaTuyo from "../home/homeCercaTuyo";
 
-function HomeContent() {
-  const { logout } = useAuth();
-  const context = useContext(PublicacionContext);
+// Secciones
 
-  useEffect(() => {
-    context?.fetchPublicaciones(); // carga las publicaciones al montar el componente
-  }, []);
-
-  if (!context) return <Text>No hay contexto disponible</Text>;
-  if (context.loading) return <Text>Cargando publicaciones...</Text>;
-  if (context.error) return <Text>Error: {context.error}</Text>;
-
-  return (
-    <ScrollView contentContainerStyle={styles.container}>
-      {context.publicaciones.map((pub) => (
-        <View key={pub.id} style={styles.card}>
-          <Text style={styles.title}>{pub.titulo}</Text>
-          <Text>{pub.descripcion}</Text>
-          <Text>Precio: {pub.precio ?? "Gratis"}</Text>
-          <Text>Tipo: {pub.tipo}</Text>
-          <Text>Usuario ID: {pub.usuario_id}</Text>
-        </View>
-      ))}
-    </ScrollView>
-  );
-}
 
 export default function HomeScreen() {
+  const { logout } = useAuth();
+
   return (
     <PublicacionProvider>
-      <HomeCerca />
-      <HomeRecomendacion />
-      <HomeCategoria />
-      <Buscador onSelect={(pub) => console.log("Seleccionado:", pub)} />
-      <HomeContent />
+      <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
+        {/* Buscador arriba */}
+        <View style={styles.searchWrapper}>
+          <Buscador onSelect={(pub) => console.log("Seleccionado:", pub)} />
+        </View>
+
+        {/* Secciones */}
+        <CercaTuyo />
+
+
+        {/* Botón de logout */}
+        <View style={styles.buttonWrapper}>
+          <PrimaryButton title="Cerrar sesión" onPress={() => logout()} />
+        </View>
+      </ScrollView>
     </PublicacionProvider>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
+  searchWrapper: {
     padding: 16,
+    backgroundColor: Colors.background,
   },
-  card: {
-    backgroundColor: "#f0f0f0",
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 12,
-  },
-  title: {
-    fontWeight: "bold",
-    fontSize: 18,
-    marginBottom: 4,
+  buttonWrapper: {
+    paddingHorizontal: 16,
+    marginTop: 16,
   },
 });
