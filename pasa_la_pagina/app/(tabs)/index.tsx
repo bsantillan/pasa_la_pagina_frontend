@@ -6,8 +6,9 @@ import { MaterialIcons } from "@expo/vector-icons";
 import React from "react";
 import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import ApuntesRecientes from "../home/homeApunte";
 import CercaTuyo from "../home/homeCercaTuyo";
-import NovedadesRecientes from "../home/homeRecomendacion";
+import LibrosRecientes from "../home/homeLibro";
 
 export default function HomeScreen() {
   const { logout } = useAuth();
@@ -28,7 +29,8 @@ export default function HomeScreen() {
 
         {/* Secciones */}
         <CercaTuyo />
-        <NovedadesRecientes />
+        <LibrosRecientes />
+        <ApuntesRecientes />
 
       </ScrollView>
       </SafeAreaView>
