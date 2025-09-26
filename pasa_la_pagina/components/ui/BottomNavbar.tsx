@@ -1,38 +1,29 @@
 import { Colors } from '@/constants/Colors';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 
 const TABS = [
-    { name: "home", label: "Home", icon: "home-outline", activeIcon: "home" },
-    {
-        name: "map",
-        label: "Map",
-        icon: "map-outline",
-        activeIcon: "map",
-    },
-    { name: "add", label: "", icon: "add", isCenter: true },
-    {
-        name: "messages",
-        label: "Message",
-        icon: "chatbubble-outline",
-        activeIcon: "chatbubble",
-    },
-    {
-        name: "profile",
-        label: "Profile",
-        icon: "person-outline",
-        activeIcon: "person",
-    },
+    { name: "home", label: "Home", icon: "home-outline", activeIcon: "home", route: "/(tabs)/index" },
+    { name: "map", label: "Map", icon: "map-outline", activeIcon: "map", route: "/" },
+    { name: "add", label: "", icon: "add", isCenter: true, route: "/" },
+    { name: "messages", label: "Message", icon: "chatbubble-outline", activeIcon: "chatbubble", route: "/" },
+    { name: "profile", label: "Profile", icon: "person-outline", activeIcon: "person", route: "/" },
 ];
+
 
 export default function BottomNavbar() {
     const [active, setActive] = useState('home');
+    const router = useRouter();
 
-    const handlePress = (tabName: string) => {
-        setActive(tabName);
+    const handlePress = (tab: typeof TABS[number]) => {
+        setActive(tab.name);
+        if (tab.route) {
+            router.push(tab.route as any);
+        }
     };
 
     return (
@@ -45,7 +36,7 @@ export default function BottomNavbar() {
                         <View key={index} style={styles.centerWrapper}>
                             <TouchableOpacity
                                 style={styles.centerButton}
-                                onPress={() => handlePress(tab.name)}
+                                onPress={() => handlePress(tab)}
                                 activeOpacity={0.8}
                             >
                                 <Ionicons name="add" size={32} color={Colors.white} />
@@ -58,7 +49,7 @@ export default function BottomNavbar() {
                     <TouchableOpacity
                         key={index}
                         style={styles.tabButton}
-                        onPress={() => handlePress(tab.name)}
+                        onPress={() => handlePress(tab)}
                         activeOpacity={0.7}
                     >
                         <Ionicons
