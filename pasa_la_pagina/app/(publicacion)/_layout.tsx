@@ -1,5 +1,6 @@
 import BottomNavbar from "@/components/ui/BottomNavbar";
 import { useAuth } from "@/contexts/AuthContext";
+import { EnumsProvider } from "@/contexts/EnumsContext"; // 👈 importalo
 import { PublicacionProvider } from "@/contexts/PublicacionContext";
 import { Slot, useRouter } from "expo-router";
 import { useEffect } from "react";
@@ -20,13 +21,15 @@ export default function PublicacionLayout() {
   return (
     <View style={styles.container}>
       <PublicacionProvider>
-        <Slot />
-        <BottomNavbar></BottomNavbar>
+        <EnumsProvider>
+          <Slot />
+          <BottomNavbar />
+        </EnumsProvider>
       </PublicacionProvider>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 }, // importante para que el contenido ocupe toda la pantalla
+  container: { flex: 1 },
 });

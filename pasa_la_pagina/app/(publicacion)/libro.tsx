@@ -1,7 +1,7 @@
 import PrimaryButton from "@/components/ui/Boton/Primary";
 import ISBNScanner from "@/components/ui/ISBNScanner";
 import { Colors } from "@/constants/Colors";
-import { useAuth } from "@/contexts/AuthContext";
+import { useEnums } from "@/contexts/EnumsContext";
 import { usePublicacion } from "@/contexts/PublicacionContext";
 import Ionicons from "@expo/vector-icons/build/Ionicons";
 import { Picker } from "@react-native-picker/picker";
@@ -22,40 +22,32 @@ export default function LibroScreen() {
   const [step, setStep] = useState(1);
   const [showScanner, setShowScanner] = useState(false);
   const { libro, updateLibro } = usePublicacion();
-  const [idiomas, setIdiomas] = useState<{ value: string; label: string }[]>(
-    []
-  );
-  const { getValidAccessToken } = useAuth();
-  const [loading, setLoading] = useState(false);
+
+  const isStep2Complete = () => {
+    return (
+      libro.titulo?.trim() &&
+      libro.autor?.trim() &&
+      libro.editorial?.trim()
+    );
+  };
+
+  const isStep3Complete = () => {
+    return (
+      libro.idioma?.trim() &&
+      libro.genero?.trim() &&
+      (libro.digital === true || libro.digital === false)
+    );
+  };
+
+  // dentro de tu componente
+  const { idiomas, fetchIdiomas, loading } = useEnums();
 
   useEffect(() => {
-    const fetchIdiomas = async () => {
-      try {
-        const access = await getValidAccessToken();
-        const res = await fetch(
-          `${process.env.EXPO_PUBLIC_API_URL}enums/idiomas`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${access}`,
-            },
-          }
-        );
-        const data = await res.json();
-        setIdiomas(
-          data.map((item: { nombre: string }) => ({
-            value: item.nombre,
-            label: item.nombre,
-          }))
-        );
-      } catch (err) {
-        console.error(err);
-        Alert.alert("Error fetching idiomas", String(err));
-      }
-    };
-    fetchIdiomas();
+    if (!idiomas) fetchIdiomas();
   }, []);
+
+  const [loading2, setLoading] = useState(false);
+
   const handleBack = () => {
     if (step > 1) {
       setStep(step - 1);
@@ -129,13 +121,13 @@ export default function LibroScreen() {
                 styleBtn={styles.styleBtn}
                 title="Escanear código"
                 onPress={() => setShowScanner(true)}
-                disabled={loading}
+                disabled={loading2}
               />
               <PrimaryButton
                 styleBtn={styles.styleBtn}
-                title={loading ? "Cargando..." : "Buscar por ISBN"}
+                title={loading2 ? "Cargando..." : "Buscar por ISBN"}
                 onPress={() => fetchBookData(String(libro.isbn))}
-                disabled={loading || !libro.isbn}
+                disabled={loading2 || !libro.isbn}
               />
             </View>
           </View>
@@ -182,16 +174,14 @@ export default function LibroScreen() {
             <Text style={styles.label}>Idioma</Text>
             <View style={styles.pickerWrapper}>
               <Picker
-                selectedValue={libro.idioma}
+                selectedValue={libro.idioma ?? ""}
                 onValueChange={(value) => updateLibro({ idioma: value })}
                 style={styles.picker}
               >
-                {idiomas.map((lang) => (
-                  <Picker.Item
-                    key={lang.value}
-                    label={lang.label}
-                    value={lang.value}
-                  />
+                <Picker.Item label="Seleccionar..." value="" />
+                {loading && <Picker.Item label="Cargando..." value="" />}
+                {idiomas?.map((idioma) => (
+                  <Picker.Item key={idioma} label={idioma} value={idioma} />
                 ))}
               </Picker>
             </View>
@@ -209,8 +199,9 @@ export default function LibroScreen() {
                 onValueChange={(value) => updateLibro({ digital: value })}
                 style={styles.picker}
               >
-                <Picker.Item label="Físico" value={false} />
+                <Picker.Item label="Seleccionar..." value="" />
                 <Picker.Item label="Digital" value={true} />
+                <Picker.Item label="Físico" value={false} />
               </Picker>
             </View>
           </View>
@@ -240,6 +231,7 @@ export default function LibroScreen() {
           styleBtn={{ height: 36 }}
           title="Siguiente"
           onPress={() => setStep(step + 1)}
+          disabled={!isStep2Complete()}
         />
       )}
       {step === 3 && (
@@ -247,6 +239,7 @@ export default function LibroScreen() {
           styleBtn={{ marginTop: 26, height: 36 }}
           title="Siguiente"
           onPress={() => router.push("/(publicacion)/publicacion")}
+          disabled={!isStep3Complete()}
         />
       )}
 

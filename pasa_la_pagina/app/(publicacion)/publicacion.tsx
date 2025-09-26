@@ -1,13 +1,14 @@
 import PrimaryButton from "@/components/ui/Boton/Primary";
 import { Colors } from "@/constants/Colors";
 import { useAuth } from "@/contexts/AuthContext";
+import { useEnums } from "@/contexts/EnumsContext";
 import { usePublicacion } from "@/contexts/PublicacionContext";
 import Ionicons from "@expo/vector-icons/build/Ionicons";
 import { Picker } from "@react-native-picker/picker";
 import * as ImagePicker from "expo-image-picker";
 import * as Location from "expo-location";
 import { router } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Alert,
   Image,
@@ -21,6 +22,13 @@ import {
 import MapView, { Marker } from "react-native-maps";
 
 export default function FinalizarPublicacionScreen() {
+
+  const { tiposOferta, fetchTiposOferta, loading } = useEnums();
+
+  useEffect(() => {
+    if (!tiposOferta) fetchTiposOferta();
+  }, []);
+
   const { comunes, updateComunes, libro, apunte, tipo, reset } =
     usePublicacion();
 
@@ -171,10 +179,32 @@ export default function FinalizarPublicacionScreen() {
   };
 
   const handleSubmit = async () => {
+    // Validaciones
+    if (!comunes.descripcion?.trim()) {
+      Alert.alert("Error", "La descripción es obligatoria.");
+      return;
+    }
+
+    if (!comunes.tipo_oferta) {
+      Alert.alert("Error", "Debes seleccionar un tipo de oferta.");
+      return;
+    }
+
+    if (comunes.tipo_oferta === "Venta" && (!comunes.precio || comunes.precio <= 0)) {
+      Alert.alert("Error", "El precio es obligatorio para ventas.");
+      return;
+    }
+
+    if (!comunes.cantidad || comunes.cantidad <= 0) {
+      Alert.alert("Error", "Debes ingresar la cantidad.");
+      return;
+    }
+
     if (!images.length) {
       Alert.alert("Error", "Debes seleccionar al menos una imagen.");
       return;
     }
+
     if (!location && !manualLocation) {
       Alert.alert("Error", "Debes seleccionar una ubicación.");
       return;
@@ -267,15 +297,14 @@ export default function FinalizarPublicacionScreen() {
           <Picker
             style={styles.picker}
             selectedValue={comunes.tipo_oferta || ""}
-            onValueChange={(itemValue) =>
-              updateComunes({ tipo_oferta: itemValue })
-            }
+            onValueChange={(itemValue) => updateComunes({ tipo_oferta: itemValue })}
           >
             <Picker.Item label="Seleccione un tipo de oferta" value="" />
-            <Picker.Item label="Venta" value="Venta" />
-            <Picker.Item label="Intercambio" value="Intercambio" />
-            <Picker.Item label="Donación" value="Donacion" />
+            {tiposOferta?.map((tipo) => (
+              <Picker.Item key={tipo} label={tipo} value={tipo} />
+            ))}
           </Picker>
+
         </View>
 
         {/* Precio */}

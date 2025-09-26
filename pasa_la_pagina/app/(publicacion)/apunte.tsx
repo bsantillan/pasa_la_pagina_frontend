@@ -1,10 +1,11 @@
 import PrimaryButton from "@/components/ui/Boton/Primary";
 import { Colors } from "@/constants/Colors";
+import { useEnums } from "@/contexts/EnumsContext";
 import { usePublicacion } from "@/contexts/PublicacionContext";
 import Ionicons from "@expo/vector-icons/build/Ionicons";
 import { Picker } from "@react-native-picker/picker";
 import { router } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -16,7 +17,8 @@ import {
 
 export default function ApunteForm() {
   const [step, setStep] = useState(1);
-  const { apunte, updateApunte } = usePublicacion(); 
+  const { apunte, updateApunte } = usePublicacion();
+  const { idiomas, fetchIdiomas, nivelesEducativos, fetchNivelesEducativos, loading } = useEnums();
   const handleBack = () => {
     if (step === 1) {
       router.back();
@@ -24,6 +26,28 @@ export default function ApunteForm() {
       setStep(step - 1);
     }
   };
+
+  useEffect(() => {
+    if (!idiomas) fetchIdiomas();
+    if (!nivelesEducativos) fetchNivelesEducativos();
+  }, []);
+
+  // ApunteForm.tsx (fragmento)
+  const isStep1Valid =
+    !!apunte.titulo?.trim() &&
+    Number.isFinite(apunte.paginas) &&
+    apunte.paginas! > 0 &&
+    Number.isFinite(apunte.anio_elaboracion) &&
+    apunte.anio_elaboracion! > 0 &&
+    typeof apunte.digital === "boolean" &&
+    !!apunte.idioma?.trim();
+
+  const isStep2Valid =
+    !!apunte.nivel_educativo?.trim() &&
+    !!apunte.institucion?.trim() &&
+    !!apunte.materia?.trim() &&
+    !!apunte.seccion?.trim() &&
+    (apunte.nivel_educativo !== "Superior" || !!apunte.carrera?.trim());
 
   return (
     <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -76,7 +100,8 @@ export default function ApunteForm() {
                 selectedValue={apunte.digital}
                 onValueChange={(value) => updateApunte({ digital: value })}
               >
-                <Picker.Item label="Digital" value= {true} />
+                <Picker.Item label="Seleccionar..." value="" />
+                <Picker.Item label="Digital" value={true} />
                 <Picker.Item label="Físico" value={false} />
               </Picker>
             </View>
@@ -87,9 +112,15 @@ export default function ApunteForm() {
                 selectedValue={apunte.idioma}
                 onValueChange={(value) => updateApunte({ idioma: value })}
               >
-                <Picker.Item label="Español" value="Español" />
-                <Picker.Item label="Inglés" value="Inglés" />
-                <Picker.Item label="Otro" value="Otro" />
+                <Picker.Item label="Seleccionar..." value="" />
+                {loading && <Picker.Item label="Cargando..." value="" />}
+                {idiomas?.map((idioma) => (
+                  <Picker.Item
+                    key={idioma}
+                    label={idioma}
+                    value={idioma}
+                  />
+                ))}
               </Picker>
             </View>
 
@@ -97,7 +128,8 @@ export default function ApunteForm() {
               title="Siguiente"
               onPress={() => setStep(2)}
               styleBtn={styles.primaryButton}
-            />          
+              disabled={!isStep1Valid}
+            />
           </View>
         )}
 
@@ -108,13 +140,13 @@ export default function ApunteForm() {
             <View style={styles.pickerWrapper}>
               <Picker
                 selectedValue={apunte.nivel_educativo}
-                onValueChange={(value) =>
-                  updateApunte({ nivel_educativo: value })
-                }
+                onValueChange={(value) => updateApunte({ nivel_educativo: value })}
               >
-                <Picker.Item label="Primaria" value="Primaria" />
-                <Picker.Item label="Secundaria" value="Secundaria" />
-                <Picker.Item label="Superior" value="Superior" />
+                <Picker.Item label="Seleccionar..." value="" />
+                {loading && <Picker.Item label="Cargando..." value="" />}
+                {nivelesEducativos?.map((nivel) => (
+                  <Picker.Item key={nivel} label={nivel} value={nivel} />
+                ))}
               </Picker>
             </View>
 
@@ -145,7 +177,7 @@ export default function ApunteForm() {
                 <TextInput
                   style={styles.input}
                   value={apunte.carrera}
-                  onChangeText={(text) => updateApunte({ carrera : text})}
+                  onChangeText={(text) => updateApunte({ carrera: text })}
                 />
               </>
             )}
@@ -154,6 +186,7 @@ export default function ApunteForm() {
               title="Siguiente"
               onPress={() => router.push("/(publicacion)/publicacion")}
               styleBtn={styles.primaryButton}
+              disabled={!isStep2Valid}
             />
           </View>
         )}
