@@ -22,6 +22,7 @@ type PublicacionContextType = {
     error: string | null;
     fetchCercaTuyo: () => Promise<void>;
     buscarPublicaciones: (query: string, page?: number, size?: number) => Promise<void>;
+    fetchTodasPublicaciones: (limit?: number) => Promise<void>;
 };
 
 export const PublicacionContext = createContext<PublicacionContextType | undefined>(
@@ -52,25 +53,24 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
         lat2: number,
         lon2: number
     ) => {
-        const R = 6371; // radio de la Tierra en km
+        const R = 6371;
         const dLat = ((lat2 - lat1) * Math.PI) / 180;
         const dLon = ((lon2 - lon1) * Math.PI) / 180;
         const a =
-            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.sin(dLat / 2) ** 2 +
             Math.cos((lat1 * Math.PI) / 180) *
             Math.cos((lat2 * Math.PI) / 180) *
-            Math.sin(dLon / 2) *
-            Math.sin(dLon / 2);
+            Math.sin(dLon / 2) ** 2;
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         return R * c;
     };
 
     const sortAndLimitByDistance = (
-        publicaciones: Publicacion[],
+        pubs: Publicacion[],
         userLocation: { latitude: number; longitude: number },
         limit = 20
     ) => {
-        const pubsConDistancia = publicaciones
+        const pubsConDistancia = pubs
             .filter(pub => pub.latitud && pub.longitud)
             .map(pub => ({
                 ...pub,
@@ -83,7 +83,6 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
             }));
 
         pubsConDistancia.sort((a, b) => a.distancia! - b.distancia!);
-
         return pubsConDistancia.slice(0, limit);
     };
 
@@ -108,7 +107,17 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
             }
 
             let data = await res.json();
-            let pubs: Publicacion[] = data.content ?? [];
+            let pubs: Publicacion[] = (data.content ?? []).map((p: any) => ({
+                id: p.id,
+                titulo: p.titulo,
+                descripcion: p.descripcion,
+                fotos_url: p.fotos_url,
+                precio: p.precio,
+                tipo: p.tipo_material === "Apunte" ? "apunte" : p.tipo_material === "Libro" ? "libro" : null,
+                usuario_id: p.usuario_id,
+                latitud: p.latitud,
+                longitud: p.longitud,
+            }));
 
             if (sortByLocation) {
                 const userLocation = await getUserLocation();
@@ -126,18 +135,21 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const fetchCercaTuyo = async () => {
-    const userLocation = await getUserLocation();
-    if (!userLocation) return;
+        const userLocation = await getUserLocation();
+        if (!userLocation) return;
 
-    const { latitude, longitude } = userLocation;
+        const { latitude, longitude } = userLocation;
 
-    await fetchPublicacionesGeneric(
-        `publicacion/paginado?usuario_latitud=${latitude}&usuario_longitud=${longitude}`,
-        true,
-        20
-    );
-};
+        await fetchPublicacionesGeneric(
+            `publicacion/paginado?usuario_latitud=${latitude}&usuario_longitud=${longitude}`,
+            true,
+            20
+        );
+    };
 
+    const fetchTodasPublicaciones = async (limit = 50) => {
+        await fetchPublicacionesGeneric(`publicacion/paginado?size=${limit}`);
+    };
 
     const buscarPublicaciones = async (query: string, page = 0, size = 10) => {
         setLoading(true);
@@ -162,8 +174,7 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
             }
 
             let data = await res.json();
-            let pubs: Publicacion[] = data.content ?? [];
-            setPublicaciones(pubs);
+            setPublicaciones(data.content ?? []);
         } catch (err: any) {
             setError(err.message);
         } finally {
@@ -179,6 +190,7 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
                 error,
                 fetchCercaTuyo,
                 buscarPublicaciones,
+                fetchTodasPublicaciones,
             }}
         >
             {children}
