@@ -58,80 +58,86 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
         const a =
             Math.sin(dLat / 2) * Math.sin(dLat / 2) +
             Math.cos((lat1 * Math.PI) / 180) *
-                Math.cos((lat2 * Math.PI) / 180) *
-                Math.sin(dLon / 2) *
-                Math.sin(dLon / 2);
+            Math.cos((lat2 * Math.PI) / 180) *
+            Math.sin(dLon / 2) *
+            Math.sin(dLon / 2);
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         return R * c;
     };
 
-    // --- Filtrar publicaciones por distancia ---
-    const filterByDistance = (publicaciones: Publicacion[], userLocation: { latitude: number; longitude: number }, maxKm = 10) => {
-        return publicaciones.filter(pub => {
-            if (!pub.latitud || !pub.longitud) return false;
-            const distance = getDistanceFromLatLonInKm(
-                userLocation.latitude,
-                userLocation.longitude,
-                pub.latitud,
-                pub.longitud
-            );
-            return distance <= maxKm;
-        });
+    const sortAndLimitByDistance = (
+        publicaciones: Publicacion[],
+        userLocation: { latitude: number; longitude: number },
+        limit = 20
+    ) => {
+        const pubsConDistancia = publicaciones
+            .filter(pub => pub.latitud && pub.longitud)
+            .map(pub => ({
+                ...pub,
+                distancia: getDistanceFromLatLonInKm(
+                    userLocation.latitude,
+                    userLocation.longitude,
+                    pub.latitud!,
+                    pub.longitud!
+                )
+            }));
+
+        pubsConDistancia.sort((a, b) => a.distancia! - b.distancia!);
+
+        return pubsConDistancia.slice(0, limit);
     };
 
-    const fetchPublicacionesGeneric = async (url: string, filterByLocation = false) => {
+    const fetchPublicacionesGeneric = async (url: string, sortByLocation = false, limit?: number) => {
         setLoading(true);
         setError(null);
         try {
             const token = await getValidAccessToken();
             if (!token) throw new Error("No hay token válido");
 
-            let fetchUrl = `${API_URL}${url}`;
+            const res = await fetch(`${API_URL}${url}`, {
+                method: "GET",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                },
+            });
 
-        let userLocation: { latitude: number; longitude: number } | null = null;
-
-        if (filterByLocation) {
-            userLocation = await getUserLocation();
-            if (userLocation) {
-                // Agregar latitud y longitud a la URL para el backend
-                const params = new URLSearchParams({
-                    usuario_latitud: userLocation.latitude.toString(),
-                    usuario_longitud: userLocation.longitude.toString(),
-                });
-                fetchUrl += `?${params.toString()}`;
+            if (!res.ok) {
+                const text = await res.text();
+                throw new Error(`Error al obtener publicaciones: ${res.status} - ${text}`);
             }
+
+            let data = await res.json();
+            let pubs: Publicacion[] = data.content ?? [];
+
+            if (sortByLocation) {
+                const userLocation = await getUserLocation();
+                if (userLocation) {
+                    pubs = sortAndLimitByDistance(pubs, userLocation, limit ?? 20);
+                }
+            }
+
+            setPublicaciones(pubs);
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
         }
+    };
 
-        const res = await fetch(fetchUrl, {
-            method: 'GET',
-            headers: { 
-                'Authorization': `Bearer ${token}`, 
-                'Content-Type': 'application/json' 
-            },
-        });
+    const fetchCercaTuyo = async () => {
+    const userLocation = await getUserLocation();
+    if (!userLocation) return;
 
-        if (!res.ok) {
-            const text = await res.text();
-            throw new Error(`Error al obtener publicaciones: ${res.status} - ${text}`);
-        }
+    const { latitude, longitude } = userLocation;
 
-        let data = await res.json();
-        let pubs: Publicacion[] = data.content ?? [];
-
-        // Filtrar por distancia en frontend solo si quieres un filtro extra local
-        if (filterByLocation && userLocation) {
-            pubs = filterByDistance(pubs, userLocation, 10);
-        }
-
-        setPublicaciones(pubs);
-    } catch (err: any) {
-        setError(err.message);
-    } finally {
-        setLoading(false);
-    }
+    await fetchPublicacionesGeneric(
+        `publicacion/paginado?usuario_latitud=${latitude}&usuario_longitud=${longitude}`,
+        true,
+        20
+    );
 };
 
-    const fetchCercaTuyo = () => fetchPublicacionesGeneric("publicacion/paginado", true);
 
     const buscarPublicaciones = async (query: string, page = 0, size = 10) => {
         setLoading(true);
@@ -157,13 +163,6 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
 
             let data = await res.json();
             let pubs: Publicacion[] = data.content ?? [];
-
-            // filtrar por distancia
-            const userLocation = await getUserLocation();
-            if (userLocation) {
-                pubs = filterByDistance(pubs, userLocation, 10);
-            }
-
             setPublicaciones(pubs);
         } catch (err: any) {
             setError(err.message);
