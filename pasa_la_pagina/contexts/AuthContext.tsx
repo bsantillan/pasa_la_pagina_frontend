@@ -126,7 +126,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ refreshToken }),
     });
-
+    
     if (!response.ok) throw new Error("Token invalido");
 
     await AsyncStorage.removeItem("accessToken");

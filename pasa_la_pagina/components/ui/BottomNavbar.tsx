@@ -4,14 +4,14 @@ import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
+type IoniconName = React.ComponentProps<typeof Ionicons>["name"];
 
 const TABS = [
-    { name: "home", label: "Home", icon: "home-outline", activeIcon: "home", route: "/(tabs)/index" },
-    { name: "map", label: "Map", icon: "map-outline", activeIcon: "map", route: "/" },
-    { name: "add", label: "", icon: "add", isCenter: true, route: "/" },
-    { name: "messages", label: "Message", icon: "chatbubble-outline", activeIcon: "chatbubble", route: "/" },
-    { name: "profile", label: "Profile", icon: "person-outline", activeIcon: "person", route: "/" },
+    { name: "home", label: "Home", icon: "home-outline", activeIcon: "home", route: "/(tabs)/" },
+    { name: "map", label: "Map", icon: "map-outline", activeIcon: "map", route: "/(tabs)/" },
+    { name: "add", label: "", icon: "add", isCenter: true, route: "/(publicacion)/" },
+    { name: "messages", label: "Message", icon: "chatbubble-outline", activeIcon: "chatbubble", route: "/(tabs)/" },
+    { name: "profile", label: "Profile", icon: "person-outline", activeIcon: "person", route: "/(tabs)/" },
 ];
 
 
@@ -26,10 +26,10 @@ export default function BottomNavbar() {
         }
     };
 
-    return (
-        <View style={styles.container}>
-            {TABS.map((tab, index) => {
-                const isActive = active === tab.name;
+  return (
+    <View style={styles.container}>
+      {TABS.map((tab, index) => {
+        const isActive = active === tab.name;
 
                 if (tab.isCenter) {
                     return (
@@ -73,42 +73,42 @@ export default function BottomNavbar() {
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flexDirection: "row",
-        height: 64,
-        backgroundColor: Colors.white,
-        alignItems: "center",
-        justifyContent: "space-around",
-        paddingBottom: Platform.OS === "ios" ? 20 : 8,
-        borderTopWidth: 1,
-        borderTopColor: "#eee",
-    },
-    tabButton: {
-        flex: 1,
-        alignItems: "center",
-        justifyContent: "center",
-    },
-    label: {
-        fontSize: 12,
-        marginTop: 2,
-    },
-    centerWrapper: {
-        position: "relative",
-        top: -20,
-        width: 64,
-        alignItems: "center",
-    },
-    centerButton: {
-        width: 56,
-        height: 56,
-        borderRadius: 28,
-        backgroundColor: Colors.primary,
-        alignItems: "center",
-        justifyContent: "center",
-        shadowColor: Colors.primary,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 6,
-        elevation: 6,
-    },
+  container: {
+    flexDirection: "row",
+    height: 64,
+    backgroundColor: Colors.white,
+    alignItems: "center",
+    justifyContent: "space-around",
+    paddingBottom: Platform.OS === "ios" ? 20 : 8,
+    borderTopWidth: 1,
+    borderTopColor: "#eee",
+  },
+  tabButton: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  label: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  centerWrapper: {
+    position: "relative",
+    top: -20,
+    width: 64,
+    alignItems: "center",
+  },
+  centerButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: Colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 6,
+  },
 });

@@ -89,7 +89,7 @@ export default function RegisterScreen() {
                 <PrimaryButton
                   title="Siguiente"
                   onPress={handleNext}
-                  style={{ height: 42, marginTop: 38, width: "100%" }}
+                  styleBtn={{ height: 42, marginTop: 38, width: "100%" }}
                 />
 
                 <Text style={styles.footerText}>
@@ -133,7 +133,7 @@ export default function RegisterScreen() {
                 <PrimaryButton
                   title="Crear cuenta"
                   onPress={handleRegister}
-                  style={{ height: 42, marginTop: 38, width: "100%" }}
+                  styleBtn={{ height: 42, marginTop: 38, width: "100%" }}
                 />
 
                 <Text style={styles.footerText}>

@@ -1,10 +1,12 @@
 import PrimaryButton from "@/components/ui/Boton/Primary";
 import { Colors } from "@/constants/Colors";
-import useGoogleAuth from "@/hooks/useGoogleAuth";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import * as Google from "expo-auth-session/providers/google";
 import {
+  ActivityIndicator,
+  Alert,
   Dimensions,
   ImageBackground,
   ScrollView,
@@ -19,21 +21,53 @@ const { height } = Dimensions.get("window");
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const { request, promptAsync } = useGoogleAuth(); 
+  const [loading, setLoading] = useState(false);
 
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    androidClientId: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID,
+  });
 
-  const handleLogin = async () => {
+  useEffect(() => {
+    if (response?.type === "success") {
+      const { id_token } = response.params;
+      handleGoogleLogin(id_token);
+    }
+  }, [response]);
+
+  const handleGoogleLogin = async (idToken: string) => {
+    setLoading(true); // activar loading
     try {
-      await login(email, password);
-    } catch (err: any) {
-      setError(err.message || "Error al iniciar sesión");
+      await loginWithGoogle(idToken);
+      router.replace("/(tabs)");
+    } catch (error: any) {
+      setError(error.message);
+      Alert.alert(
+        "Error",
+        error.message || "Ocurrió un error al iniciar sesión con Google"
+      );
+    } finally {
+      setLoading(false); // desactivar loading
     }
   };
-
+  const handleLogin = async () => {
+    setLoading(true); // activar loading
+    try {
+      await login(email, password);
+      router.replace("/(tabs)");
+    } catch (error: any) {
+      setError(error.message);
+      Alert.alert(
+        "Error",
+        error.message || "Ocurrió un error al iniciar sesión"
+      );
+    } finally {
+      setLoading(false); // desactivar loading
+    }
+  };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -78,8 +112,10 @@ export default function LoginScreen() {
         <PrimaryButton
           title="Iniciar sesión"
           onPress={handleLogin}
-          style={{ width: "100%", height: 45, marginTop: 38 }}
+          styleBtn={{ width: "100%", height: 45, marginTop: 38 }}
+          disabled={loading}
         />
+        {loading ? <ActivityIndicator color="#fff" size="small" /> : null}
         <Text style={styles.footerText}>
           ¿No tienes cuenta?{" "}
           <Text style={styles.link} onPress={() => router.push("/register")}>
@@ -91,7 +127,7 @@ export default function LoginScreen() {
 
         <TouchableOpacity
           style={styles.googleButton}
-          disabled={!request}
+          disabled={!request || loading}
           onPress={() => promptAsync()}
         >
           <Text style={styles.googleButtonText}>Login con Google</Text>

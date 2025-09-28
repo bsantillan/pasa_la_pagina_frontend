@@ -21,7 +21,7 @@ export const PublicacionCarousel: React.FC<Props> = ({ publicaciones, onSelect }
                     style={styles.cardWrapper}
                 >
                     <ProductCard
-                        imageUrl={item.fotos_url?.[0] ?? "https://via.placeholder.com/150"}
+                        imageUrl={item.fotos_url?.[0]}
                         title={item.titulo}
                         description={item.descripcion}
                     />

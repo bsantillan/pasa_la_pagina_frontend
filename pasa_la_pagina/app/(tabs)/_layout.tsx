@@ -15,7 +15,7 @@ export default function TabLayout() {
     if (!accessToken) {
       router.replace("/login");
     }
-  }, [accessToken]);
+  }, [accessToken, router]);
 
   if (!accessToken) return null;
 
