@@ -1,108 +1,75 @@
-import { Colors } from "@/constants/Colors";
-import { Ionicons } from "@expo/vector-icons";
-import { Redirect, router } from "expo-router";
-import React, { useState } from "react";
-import {
-  Platform,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Colors } from '@/constants/Colors';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>["name"];
 
 const TABS = [
-  { name: "home", label: "Home", icon: "home-outline", activeIcon: "home" },
-  {
-    name: "search",
-    label: "Search",
-    icon: "search-outline",
-    activeIcon: "search",
-  },
-  { name: "add", label: "", icon: "add", isCenter: true },
-  {
-    name: "messages",
-    label: "Message",
-    icon: "chatbubble-outline",
-    activeIcon: "chatbubble",
-  },
-  {
-    name: "profile",
-    label: "Profile",
-    icon: "person-outline",
-    activeIcon: "person",
-  },
+    { name: "home", label: "Home", icon: "home-outline", activeIcon: "home", route: "/(tabs)/" },
+    { name: "map", label: "Map", icon: "map-outline", activeIcon: "map", route: "/(tabs)/" },
+    { name: "add", label: "", icon: "add", isCenter: true, route: "/(publicacion)/" },
+    { name: "messages", label: "Message", icon: "chatbubble-outline", activeIcon: "chatbubble", route: "/(tabs)/" },
+    { name: "profile", label: "Profile", icon: "person-outline", activeIcon: "person", route: "/(tabs)/" },
 ];
 
-export default function BottomNavbar() {
-  const [active, setActive] = useState("home");
 
-  const handlePress = (tabName: string) => {
-    setActive(tabName);
-    switch (tabName) {
-      case "home":
-        router.replace("/(tabs)")
-        break;
-      case "search":
-        router.push("/explore");
-        break;
-      case "messages":
-        //router.push('/messages'); // Ajusta según tu ruta real
-        break;
-      case "profile":
-        //router.push('/profile'); // Ajusta según tu ruta real
-        break;
-      case "add":
-        router.push("/(publicacion)");
-        break;
-    }
-  };
+export default function BottomNavbar() {
+    const [active, setActive] = useState('home');
+    const router = useRouter();
+
+    const handlePress = (tab: typeof TABS[number]) => {
+        setActive(tab.name);
+        if (tab.route) {
+            router.push(tab.route as any);
+        }
+    };
 
   return (
     <View style={styles.container}>
       {TABS.map((tab, index) => {
         const isActive = active === tab.name;
 
-        if (tab.isCenter) {
-          return (
-            <View key={index} style={styles.centerWrapper}>
-              <TouchableOpacity
-                style={styles.centerButton}
-                onPress={() => handlePress(tab.name)}
-                activeOpacity={0.8}
-              >
-                <Ionicons name="add" size={32} color={Colors.white} />
-              </TouchableOpacity>
-            </View>
-          );
-        }
+                if (tab.isCenter) {
+                    return (
+                        <View key={index} style={styles.centerWrapper}>
+                            <TouchableOpacity
+                                style={styles.centerButton}
+                                onPress={() => handlePress(tab)}
+                                activeOpacity={0.8}
+                            >
+                                <Ionicons name="add" size={32} color={Colors.white} />
+                            </TouchableOpacity>
+                        </View>
+                    );
+                }
 
-        return (
-          <TouchableOpacity
-            key={index}
-            style={styles.tabButton}
-            onPress={() => handlePress(tab.name)}
-            activeOpacity={0.7}
-          >
-            <Ionicons
-              name={isActive ? (tab.activeIcon as any) : (tab.icon as any)}
-              size={24}
-              color={isActive ? Colors.primary : Colors.text}
-            />
-            <Text
-              style={[
-                styles.label,
-                { color: isActive ? Colors.primary : Colors.text },
-              ]}
-            >
-              {tab.label}
-            </Text>
-          </TouchableOpacity>
-        );
-      })}
-    </View>
-  );
+                return (
+                    <TouchableOpacity
+                        key={index}
+                        style={styles.tabButton}
+                        onPress={() => handlePress(tab)}
+                        activeOpacity={0.7}
+                    >
+                        <Ionicons
+                            name={isActive ? (tab.activeIcon as any) : (tab.icon as any)}
+                            size={24}
+                            color={isActive ? Colors.primary : Colors.text}
+                        />
+                        <Text
+                            style={[
+                                styles.label,
+                                { color: isActive ? Colors.primary : Colors.text },
+                            ]}
+                        >
+                            {tab.label}
+                        </Text>
+                    </TouchableOpacity>
+                );
+            })}
+        </View>
+    );
 }
 
 const styles = StyleSheet.create({

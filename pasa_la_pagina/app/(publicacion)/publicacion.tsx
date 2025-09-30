@@ -199,7 +199,7 @@ export default function FinalizarPublicacionScreen() {
       Alert.alert("Éxito", "La publicación fue creada correctamente");
       reset();
       const publicacion = await response.json();
-      router.replace(`/`);
+      router.replace("/(tabs)");
     } catch (err) {
       console.error(err);
       Alert.alert("Error", "Ocurrió un error al crear la publicación.");

@@ -1,43 +1,70 @@
-import { AlertCard } from '@/components/ui/AlertaCard';
-import { Avatar } from '@/components/ui/Avatar';
-import PrimaryButton from '@/components/ui/Boton/Primary';
-import SecondaryButton from '@/components/ui/Boton/Secondary';
-import { ConnectCard } from '@/components/ui/ConnectCard';
-import { ProductCard } from '@/components/ui/ProductCard';
-import { ReviewCard } from '@/components/ui/ReviewCard';
-import { useAuth } from '@/contexts/AuthContext';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { Buscador } from "@/components/ui/Search";
+import { Colors } from "@/constants/Colors";
+import { useAuth } from "@/contexts/AuthContext";
+import { PublicacionProvider } from "@/contexts/PublicacionContext";
+import { MaterialIcons } from "@expo/vector-icons";
+import React from "react";
+import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import ApuntesRecientes from "../home/homeApunte";
+import CercaTuyo from "../home/homeCercaTuyo";
+import LibrosRecientes from "../home/homeLibro";
 
 export default function HomeScreen() {
-  
-  const { logout } =  useAuth();
+  const { logout } = useAuth();
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.text}>Hola</Text>
-      <PrimaryButton title="Presióname" onPress={() => logout()} />
-      <SecondaryButton title="Presióname también" onPress={() => alert('Botón secundario presionado!')} />
-      <Image source={require('../../assets/images/logo.png')} style={{ width: 100, height: 100, marginTop: 20 }} />
-      <Avatar name="Ana" size={80} />
-      <PrimaryButton title="Presióname" onPress={() => logout()} />
-      <ConnectCard   username="Ana"  publicationTitle="Zapatillas Nike" onSend={() => console.log("Mensaje enviado")} onCancel={() => console.log("Acción cancelada")}/>
-      <AlertCard title='hola' description='esta es una alerta' onAccept={() => logout()}/>
-      <ProductCard imageUrl='https://img.freepik.com/foto-gratis/composicion-libros-libro-abierto_23-2147690555.jpg?semt=ais_hybrid&w=740&q=80' title='Producto 1' description='Descripción del producto 1' />
-      <ReviewCard username='usuario123' headline='Gran producto' description='Me encantó este producto, lo recomiendo mucho.' date='2023-10-01' />
-    </View>
+    <PublicacionProvider>
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
+
+        <View style={styles.searchRow}>
+          <View style={{ flex: 1 }}>
+            <Buscador onSelect={(pub) => console.log("Seleccionado:", pub)} />
+          </View>
+          <TouchableOpacity onPress={logout} style={styles.logoutButton}>
+            <MaterialIcons name="logout" size={28} color={Colors.primary} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Secciones */}
+        <CercaTuyo />
+        <LibrosRecientes />
+        <ApuntesRecientes />
+
+      </ScrollView>
+      </SafeAreaView>
+    </PublicacionProvider>
   );
 }
 
 const styles = StyleSheet.create({
+    safeArea: {
+    flex: 1,
+    backgroundColor: Colors.white
+  },
   container: {
     flex: 1,
-    backgroundColor: '#fff', // fondo blanco
-    justifyContent: 'center', // centra verticalmente
-    alignItems: 'center',     // centra horizontalmente
+    backgroundColor: Colors.background,
   },
-  text: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#000', // texto negro
+  searchRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: Colors.background,
+  },
+  logoutButton: {
+  marginLeft: 12,
+  padding: 8, 
+  borderRadius: 8,
+},
+  logoutText: {
+    color: Colors.white,
+    fontWeight: "bold",
+  },
+  buttonWrapper: {
+    paddingHorizontal: 16,
+    marginTop: 16,
   },
 });

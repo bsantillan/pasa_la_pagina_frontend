@@ -10,6 +10,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../contexts/AuthContext";
 
 export default function RegisterScreen() {
@@ -49,106 +50,113 @@ export default function RegisterScreen() {
       return;
     }
     try {
-      await register(nombre, apellido, email, password); 
-      router.replace("/(tabs)"); 
+      await register(nombre, apellido, email, password);
+      router.replace("/(tabs)");
     } catch (err: any) {
       setError(err.message || "Error al registrarse");
     }
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <ImageBackground
-        source={require("../assets/images/Fondo-Registro.png")} // poné la imagen en assets/images
-        style={styles.headerImage}
-        resizeMode="cover"
-      >
-        <View style={styles.form}>
-          {step === 1 ? (
-            <>
-              <Text style={styles.title}>Crear cuenta</Text>
-              <Text style={styles.subtitle}>Primero lo primero</Text>
+    <SafeAreaView style={styles.safeArea} edges={["top"]}>
+      <ScrollView contentContainerStyle={styles.container}>
+        <ImageBackground
+          source={require("../assets/images/Fondo-Registro.png")} // poné la imagen en assets/images
+          style={styles.headerImage}
+          resizeMode="cover"
+        >
+          <View style={styles.form}>
+            {step === 1 ? (
+              <>
+                <Text style={styles.title}>Crear cuenta</Text>
+                <Text style={styles.subtitle}>Primero lo primero</Text>
 
-              <TextInput
-                style={styles.input}
-                placeholder="Nombre"
-                value={nombre}
-                onChangeText={setNombre}
-              />
-              <TextInput
-                style={styles.input}
-                placeholder="Apellido"
-                value={apellido}
-                onChangeText={setApellido}
-              />
-
-              {error ? <Text style={styles.error}>{error}</Text> : null}
-
-              <PrimaryButton
-                title="Siguiente"
-                onPress={handleNext}
-                styleBtn={{ height: 42, marginTop: 38, width: "100%" }}
-              />
-
-              <Text style={styles.footerText}>
-                ¿Ya tienes cuenta?{" "}
-                <Text style={styles.link} onPress={() => router.push("/login")}>
-                  Inicia sesión
-                </Text>
-              </Text>
-            </>
-          ) : (
-            <>
-              <Text style={styles.title}>Casi terminamos, </Text>
-              <Text style={styles.title}>{nombre}</Text>
-              <View style={styles.secInput}>
                 <TextInput
                   style={styles.input}
-                  placeholder="Email"
-                  value={email}
-                  onChangeText={setEmail}
-                  autoCapitalize="none"
-                  keyboardType="email-address"
+                  placeholder="Nombre"
+                  value={nombre}
+                  onChangeText={setNombre}
                 />
                 <TextInput
                   style={styles.input}
-                  placeholder="Contraseña"
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry
-                />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Repetir contraseña"
-                  value={repeatPassword}
-                  onChangeText={setRepeatPassword}
-                  secureTextEntry
+                  placeholder="Apellido"
+                  value={apellido}
+                  onChangeText={setApellido}
                 />
 
                 {error ? <Text style={styles.error}>{error}</Text> : null}
-              </View>
 
-              <PrimaryButton
-                title="Crear cuenta"
-                onPress={handleRegister}
-                styleBtn={{ height: 42, marginTop: 38, width: "100%" }}
-              />
+                <PrimaryButton
+                  title="Siguiente"
+                  onPress={handleNext}
+                  styleBtn={{ height: 42, marginTop: 38, width: "100%" }}
+                />
 
-              <Text style={styles.footerText}>
-                ¿Ya tienes cuenta?{" "}
-                <Text style={styles.link} onPress={() => router.push("/login")}>
-                  Inicia sesión
+                <Text style={styles.footerText}>
+                  ¿Ya tienes cuenta?{" "}
+                  <Text style={styles.link} onPress={() => router.push("/login")}>
+                    Inicia sesión
+                  </Text>
                 </Text>
-              </Text>
-            </>
-          )}
-        </View>
-      </ImageBackground>
-    </ScrollView>
+              </>
+            ) : (
+              <>
+                <Text style={styles.title}>Casi terminamos, </Text>
+                <Text style={styles.title}>{nombre}</Text>
+                <View style={styles.secInput}>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Email"
+                    value={email}
+                    onChangeText={setEmail}
+                    autoCapitalize="none"
+                    keyboardType="email-address"
+                  />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Contraseña"
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry
+                  />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Repetir contraseña"
+                    value={repeatPassword}
+                    onChangeText={setRepeatPassword}
+                    secureTextEntry
+                  />
+
+                  {error ? <Text style={styles.error}>{error}</Text> : null}
+                </View>
+
+                <PrimaryButton
+                  title="Crear cuenta"
+                  onPress={handleRegister}
+                  styleBtn={{ height: 42, marginTop: 38, width: "100%" }}
+                />
+
+                <Text style={styles.footerText}>
+                  ¿Ya tienes cuenta?{" "}
+                  <Text style={styles.link} onPress={() => router.push("/login")}>
+                    Inicia sesión
+                  </Text>
+                </Text>
+              </>
+            )}
+          </View>
+        </ImageBackground>
+      </ScrollView>
+    </SafeAreaView>
   );
+
 }
 
 const styles = StyleSheet.create({
+    safeArea: {
+    flex: 1,
+    backgroundColor: Colors.background, // mismo fondo que tu app
+  },
   container: {
     flexGrow: 1,
     backgroundColor: "#fff",

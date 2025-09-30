@@ -1,8 +1,10 @@
 import BottomNavbar from '@/components/ui/BottomNavbar';
+import { Colors } from '@/constants/Colors';
 import { useAuth } from '@/contexts/AuthContext';
 import { Slot, useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
-import { View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 
 export default function TabLayout() {
@@ -11,16 +13,26 @@ export default function TabLayout() {
 
   useEffect(() => {
     if (!accessToken) {
-      router.replace("/login"); 
+      router.replace("/login");
     }
   }, [accessToken, router]);
 
-  if (!accessToken) return null; 
+  if (!accessToken) return null;
 
   return (
-    <View style={{ flex: 1 }}>
-      <Slot /> 
-      <BottomNavbar></BottomNavbar>
-    </View>
+    <SafeAreaView style={[styles.container, { backgroundColor: Colors.background }]} edges={['top', 'bottom']}>
+      <View style={{ flex: 1 }}>
+        <Slot />
+        <BottomNavbar />
+      </View>
+    </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+container: {
+  flex: 1,
+  backgroundColor: Colors.white,
+},
+
+});
