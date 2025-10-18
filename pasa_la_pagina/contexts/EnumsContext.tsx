@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState } from "react";
-import { useAuth } from "./AuthContext"; // 👈 importá el hook de auth
+import { useAuth } from "./AuthContext";
 
 type EnumsContextType = {
   idiomas: string[] | null;
@@ -7,7 +7,7 @@ type EnumsContextType = {
   tiposMaterial: string[] | null;
   tiposOferta: string[] | null;
   loading: boolean;
-  fetchIdiomas: () => Promise<string[]>;
+  buscarIdiomas: (query: string) => Promise<string[]>;
   fetchNivelesEducativos: () => Promise<string[]>;
   fetchTiposMaterial: () => Promise<string[]>;
   fetchTiposOferta: () => Promise<string[]>;
@@ -17,7 +17,7 @@ const EnumsContext = createContext<EnumsContextType | undefined>(undefined);
 
 export const EnumsProvider = ({ children }: { children: React.ReactNode }) => {
   const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "";
-  const { getValidAccessToken } = useAuth(); // 👈 obtenemos el token
+  const { getValidAccessToken } = useAuth();
 
   const [idiomas, setIdiomas] = useState<string[] | null>(null);
   const [nivelesEducativos, setNivelesEducativos] = useState<string[] | null>(null);
@@ -39,13 +39,15 @@ export const EnumsProvider = ({ children }: { children: React.ReactNode }) => {
     return res.json();
   };
 
-  const fetchIdiomas = async (): Promise<string[]> => {
+  const buscarIdiomas = async (query: string): Promise<string[]> => {
+    if (!query || query.trim().length < 1) return idiomas ?? [];
     setLoading(true);
-    const data = await fetchWithToken("enums/idiomas");
-    const values = data.map((i: any) => i.nombre ?? i); // soporta {nombre} o string
-    setIdiomas(values);
-    setLoading(false);
-    return values;
+    try {
+      const data = await fetchWithToken(`enums/idiomas/buscar?q=${encodeURIComponent(query)}`);
+      return data.map((i: any) => i.nombre ?? i);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const fetchNivelesEducativos = async (): Promise<string[]> => {
@@ -80,7 +82,7 @@ export const EnumsProvider = ({ children }: { children: React.ReactNode }) => {
         tiposMaterial,
         tiposOferta,
         loading,
-        fetchIdiomas,
+        buscarIdiomas,
         fetchNivelesEducativos,
         fetchTiposMaterial,
         fetchTiposOferta,
@@ -96,3 +98,4 @@ export const useEnums = () => {
   if (!context) throw new Error("useEnums debe usarse dentro de EnumsProvider");
   return context;
 };
+

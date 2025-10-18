@@ -1,11 +1,11 @@
 import * as Location from "expo-location";
-import React, { createContext, useContext, ReactNode, useState } from "react";
+import React, { createContext, ReactNode, useContext, useState } from "react";
 import { useAuth } from "./AuthContext";
 
 type PublicacionTipo = "libro" | "apunte" | null;
 
 // ---- Datos de creación ----
-type LibroData = {
+export type LibroData = {
   titulo?: string;
   autor?: string;
   editorial?: string;
