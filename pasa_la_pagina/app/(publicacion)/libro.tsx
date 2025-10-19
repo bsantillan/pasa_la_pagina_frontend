@@ -3,7 +3,7 @@ import ISBNScanner from "@/components/ui/ISBNScanner";
 import { Colors } from "@/constants/Colors";
 import { useEnums } from "@/contexts/EnumsContext";
 import { useLibro } from "@/contexts/LibroContext";
-import { usePublicacion } from "@/contexts/PublicacionContext";
+import { LibroData, usePublicacion } from "@/contexts/PublicacionContext";
 import Ionicons from "@expo/vector-icons/build/Ionicons";
 import { Picker } from "@react-native-picker/picker";
 import { router } from "expo-router";
@@ -26,9 +26,10 @@ export default function LibroScreen() {
   const [idiomasFiltrados, setIdiomasFiltrados] = useState<string[]>([]);
   const [buscando, setBuscando] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [libros, setLibros] = useState<LibroData[]>([]);
 
   const { libro, updateLibro } = usePublicacion();
-  const { libros_api, loading_api, fetchBookFromApi, fetchBookFromBackend, clearBookData } = useLibro();
+  const { fetchBookFromApi, fetchBookFromBackend } = useLibro();
   const { buscarIdiomas } = useEnums();
 
   useEffect(() => {
@@ -60,7 +61,6 @@ export default function LibroScreen() {
       const previousStep = newHistory[newHistory.length - 1];
 
       if (previousStep === 1) {
-        clearBookData(); // limpia la lista de libros del contexto de LibroContext
         updateLibro({
           isbn: undefined,
           titulo: "",
@@ -81,8 +81,9 @@ export default function LibroScreen() {
 
   const handleBuscarISBN = async () => {
     if (!libro.isbn) return;
+    setLoading(true);
 
-    await fetchBookFromApi(String(libro.isbn));
+    const libros_api = await fetchBookFromApi(String(libro.isbn));
 
     if (libros_api.length > 0) {
       updateLibro({ titulo: libros_api[0].titulo })
@@ -90,15 +91,21 @@ export default function LibroScreen() {
       updateLibro({ editorial: libros_api[0].editorial })
       goToStep(3);
     } else {
-      await fetchBookFromBackend(String(libro.isbn));
+      const libros_backend = await fetchBookFromBackend(String(libro.isbn));
 
-      if (libros_api.length > 0) {
+      if (libros_backend.length > 0) {
+        updateLibro({ isbn: undefined })
+        updateLibro({ titulo: "" })
+        updateLibro({ autor: "" })
+        updateLibro({ editorial: "" })
+
+        setLibros(libros_backend);
         goToStep(2);
-        return;
       } else {
         goToStep(3);
       }
     }
+    setLoading(false);
   };
 
   const isStep3Complete = () =>
@@ -138,9 +145,9 @@ export default function LibroScreen() {
               />
               <PrimaryButton
                 styleBtn={styles.styleBtn}
-                title={loading_api ? "Cargando..." : "Buscar por ISBN"}
+                title={loading ? "Cargando..." : "Buscar por ISBN"}
                 onPress={handleBuscarISBN}
-                disabled={loading_api || !libro.isbn}
+                disabled={loading || !libro.isbn}
               />
             </View>
           </View>
@@ -149,21 +156,23 @@ export default function LibroScreen() {
       case 2:
         return (
           <View style={{ flex: 1 }}>
-            <Text style={styles.title}>Resultados encontrados</Text>
+            <Text style={styles.title}>
+              Resultados encontrados con el ISBN: {libro.isbn}
+            </Text>
 
-            {loading_api ? (
+            {loading ? (
               <Text>Cargando libros...</Text>
-            ) : libros_api.length > 0 ? (
+            ) : (
               <>
                 <FlatList
-                  data={libros_api}
+                  data={libros}
                   keyExtractor={(item, index) => String(index)}
                   contentContainerStyle={{ paddingVertical: 8 }}
                   renderItem={({ item }) => (
                     <TouchableOpacity
                       onPress={() => {
-                        updateLibro(item); // copia los datos seleccionados al contexto de publicación
-                        goToStep(3); // pasa al siguiente paso
+                        updateLibro(item);
+                        goToStep(3);
                       }}
                       style={{
                         borderWidth: 1,
@@ -182,15 +191,6 @@ export default function LibroScreen() {
                   )}
                 />
 
-                <PrimaryButton
-                  styleBtn={styles.styleBtn}
-                  title="Crear nuevo libro"
-                  onPress={() => goToStep(3)}
-                />
-              </>
-            ) : (
-              <>
-                <Text>No se encontraron libros con este ISBN.</Text>
                 <PrimaryButton
                   styleBtn={styles.styleBtn}
                   title="Crear nuevo libro"
