@@ -7,6 +7,7 @@ import { Picker } from "@react-native-picker/picker";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import {
+  FlatList,
   ScrollView,
   StyleSheet,
   Text,
@@ -18,7 +19,12 @@ import {
 export default function ApunteForm() {
   const [step, setStep] = useState(1);
   const { apunte, updateApunte } = usePublicacion();
-  const { idiomas, fetchIdiomas, nivelesEducativos, fetchNivelesEducativos, loading } = useEnums();
+  const { idiomas, buscarIdiomas, nivelesEducativos, fetchNivelesEducativos, loading } = useEnums();
+  const [buscando, setBuscando] = useState(false);
+  const [idiomasFiltrados, setIdiomasFiltrados] = useState<string[]>([]);
+  const [query, setQuery] = useState(""); // Búsqueda de idioma
+
+
   const handleBack = () => {
     if (step === 1) {
       router.back();
@@ -28,9 +34,23 @@ export default function ApunteForm() {
   };
 
   useEffect(() => {
-    if (!idiomas) fetchIdiomas();
-    if (!nivelesEducativos) fetchNivelesEducativos();
   }, []);
+
+  useEffect(() => {
+    if (!nivelesEducativos) fetchNivelesEducativos();
+    const fetchData = async () => {
+      if (query.trim().length > 0) {
+        const resultados = await buscarIdiomas(query.trim());
+        setIdiomasFiltrados(resultados);
+        setBuscando(true);
+      } else {
+        setBuscando(false);
+      }
+    };
+
+    const timeout = setTimeout(fetchData, 200); // debounce 200ms
+    return () => clearTimeout(timeout);
+  }, [query]);
 
   // ApunteForm.tsx (fragmento)
   const isStep1Valid =
@@ -74,6 +94,45 @@ export default function ApunteForm() {
               onChangeText={(text) => updateApunte({ titulo: text })}
             />
 
+            {/* --- Input de idioma --- */}
+            <Text style={styles.label}>Idioma</Text>
+            <View style={{ position: "relative" }}>
+              <TextInput
+                value={query || apunte.idioma || ""}
+                onChangeText={(text) => {
+                  setQuery(text);
+                  updateApunte({ idioma: "" });
+                  if (text.trim()) setBuscando(true);
+                  else setBuscando(false);
+                }}
+                placeholder="Seleccioná o escribí un idioma..."
+                style={styles.input}
+              />
+
+              {/* 🔽 Dropdown dinámico */}
+              {buscando && idiomasFiltrados.length > 0 && (
+                <View style={styles.dropdown}>
+                  <FlatList
+                    data={idiomasFiltrados}
+                    keyExtractor={(item) => item}
+                    keyboardShouldPersistTaps="handled"
+                    renderItem={({ item }) => (
+                      <TouchableOpacity
+                        onPress={() => {
+                          setQuery(item);
+                          updateApunte({ idioma: item });
+                          setBuscando(false);
+                        }}
+                        style={styles.dropdownItem}
+                      >
+                        <Text style={styles.dropdownItemText}>{item}</Text>
+                      </TouchableOpacity>
+                    )}
+                  />
+                </View>
+              )}
+            </View>
+
             <Text>Cantidad de páginas</Text>
             <TextInput
               style={styles.input}
@@ -103,24 +162,6 @@ export default function ApunteForm() {
                 <Picker.Item label="Seleccionar..." value="" />
                 <Picker.Item label="Digital" value={true} />
                 <Picker.Item label="Físico" value={false} />
-              </Picker>
-            </View>
-
-            <Text>Idioma</Text>
-            <View style={styles.pickerWrapper}>
-              <Picker
-                selectedValue={apunte.idioma}
-                onValueChange={(value) => updateApunte({ idioma: value })}
-              >
-                <Picker.Item label="Seleccionar..." value="" />
-                {loading && <Picker.Item label="Cargando..." value="" />}
-                {idiomas?.map((idioma) => (
-                  <Picker.Item
-                    key={idioma}
-                    label={idioma}
-                    value={idioma}
-                  />
-                ))}
               </Picker>
             </View>
 
@@ -286,5 +327,33 @@ const styles = StyleSheet.create({
   primaryButtonText: {
     color: Colors.white,
     fontWeight: "bold",
+  },
+  dropdown: {
+    position: "absolute",
+    top: 55,
+    left: 0,
+    right: 0,
+    backgroundColor: Colors.background,
+    borderWidth: 1,
+    borderColor: "#000",
+    borderRadius: 10,
+    maxHeight: 150,
+    zIndex: 1000,
+    elevation: 5,
+  },
+  dropdownItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomColor: "#000",
+  },
+  dropdownItemText: {
+    fontSize: 14,
+    color: "#000",
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: "400",
+    color: "#0C1A30",
+    marginBottom: 6,
   },
 });

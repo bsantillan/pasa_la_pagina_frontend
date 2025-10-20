@@ -94,12 +94,13 @@ export default function LibroScreen() {
       const libros_backend = await fetchBookFromBackend(String(libro.isbn));
 
       if (libros_backend.length > 0) {
-        updateLibro({ isbn: undefined })
         updateLibro({ titulo: "" })
         updateLibro({ autor: "" })
         updateLibro({ editorial: "" })
 
+        console.log(libros_backend);
         setLibros(libros_backend);
+        console.log(libros);
         goToStep(2);
       } else {
         goToStep(3);
@@ -156,10 +157,10 @@ export default function LibroScreen() {
       case 2:
         return (
           <View style={{ flex: 1 }}>
-            <Text style={styles.title}>
-              Resultados encontrados con el ISBN: {libro.isbn}
+            <Text style={styles.title}>Resultados encontrados</Text>
+            <Text style={styles.subtitle}>
+              Encontramos varios libros asociados al ISBN {libro.isbn}. Seleccioná uno de la lista o creá uno nuevo.
             </Text>
-
             {loading ? (
               <Text>Cargando libros...</Text>
             ) : (
@@ -167,35 +168,39 @@ export default function LibroScreen() {
                 <FlatList
                   data={libros}
                   keyExtractor={(item, index) => String(index)}
-                  contentContainerStyle={{ paddingVertical: 8 }}
                   renderItem={({ item }) => (
                     <TouchableOpacity
                       onPress={() => {
                         updateLibro(item);
-                        goToStep(3);
+                        goToStep(4);
                       }}
                       style={{
                         borderWidth: 1,
-                        borderColor: "#ccc",
+                        borderColor: "#838589",
                         borderRadius: 10,
                         padding: 16,
-                        marginVertical: 8,
+                        marginBottom: 8,
+                        flexDirection: "column"
                       }}
                     >
-                      <Text style={{ fontWeight: "bold", fontSize: 16 }}>
-                        {item.titulo}
-                      </Text>
-                      <Text>{item.autor}</Text>
-                      <Text style={{ color: "#666" }}>{item.editorial}</Text>
+                      {/* Título */}
+                      <Text style={styles.bookTitle}>{item.titulo}</Text>
+
+                      <View >
+                        <Text style={{ color: "#838589" }}>Autor: <Text style={{ color: "#000" }}>{item.autor}</Text></Text>
+                        <Text style={{ color: "#838589" }}>Editorial: <Text style={{ color: "#000" }}>{item.editorial}</Text></Text>
+                        <Text style={{ color: "#838589", marginTop: 4 }}>Idioma: <Text style={{ color: "#000" }}>{item.idioma}</Text></Text>
+                      </View>
                     </TouchableOpacity>
                   )}
                 />
-
-                <PrimaryButton
-                  styleBtn={styles.styleBtn}
-                  title="Crear nuevo libro"
-                  onPress={() => goToStep(3)}
-                />
+                <View style={styles.view_isbn}>
+                  <PrimaryButton
+                    styleBtn={styles.styleBtn}
+                    title="Crear nuevo libro"
+                    onPress={() => goToStep(3)}
+                  />
+                </View>
               </>
             )}
           </View>
@@ -325,15 +330,6 @@ export default function LibroScreen() {
 
       {/* --- Botones de navegación --- */}
       {step === 1 && null}
-
-      {step === 2 && (
-        <PrimaryButton
-          styleBtn={{ height: 36 }}
-          title="Siguiente"
-          onPress={() => goToStep(3)}
-          disabled={!isStep3Complete()}
-        />
-      )}
 
       {step === 3 && (
         <PrimaryButton
@@ -470,4 +466,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#000",
   },
+  bookTitle: {
+    fontWeight: "bold",
+    fontSize: 16,
+    textAlign: "center",
+    color: Colors.primary,
+    marginBottom: 4,
+  },
+
 });
