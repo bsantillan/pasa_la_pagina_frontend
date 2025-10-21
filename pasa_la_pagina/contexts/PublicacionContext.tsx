@@ -12,6 +12,7 @@ type ComunesData = {
   nuevo?: boolean;
   digital?: boolean;
   idioma?: string;
+  url?: string;
   latitud?: number;
   longitud?: number;
   fotos_url?: string[];

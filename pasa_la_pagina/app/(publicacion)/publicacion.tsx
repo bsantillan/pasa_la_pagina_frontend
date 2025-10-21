@@ -19,6 +19,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import MapView, { Marker } from "react-native-maps";
 
 export default function FinalizarPublicacionScreen() {
@@ -102,40 +103,40 @@ export default function FinalizarPublicacionScreen() {
   const buildLibroPayload = (uploadedUrls: string[]) => {
     const payload: any = {
       titulo: libro?.titulo ?? "",
-      descripcion: comunes?.descripcion ?? "",
-      nuevo: comunes?.nuevo ?? false,
+      descripcion: libro?.descripcion ?? "",
+      nuevo: libro?.nuevo ?? false,
       digital: libro?.digital ?? false,
-      latitud: comunes?.latitud ?? 0,
-      longitud: comunes?.longitud ?? 0,
+      latitud: libro?.latitud ?? 0,
+      longitud: libro?.longitud ?? 0,
       idioma: libro?.idioma ?? "",
-      cantidad: comunes?.cantidad ?? 1,
-      tipo_oferta: comunes?.tipo_oferta ?? "Venta",
-      usuarioId: comunes?.usuario_id ?? 1,
+      cantidad: libro?.cantidad ?? 1,
+      tipo_oferta: libro?.tipo_oferta ?? "Venta",
+      usuarioId: libro?.usuario_id ?? 1,
       fotos_url: uploadedUrls,
       isbn: String(libro?.isbn ?? ""),
       genero: (libro?.genero ?? "").trim(),
       autor: libro?.autor ?? "",
       editorial: libro?.editorial ?? "",
     };
-    if (comunes?.tipo_oferta === "Venta") payload.precio = comunes?.precio ?? 1;
+    if (libro?.tipo_oferta === "Venta") payload.precio = libro?.precio ?? 1;
     return payload;
   };
 
   const buildApuntePayload = (uploadedUrls: string[]) => {
     const payload: any = {
       titulo: apunte?.titulo ?? "",
-      descripcion: comunes?.descripcion ?? "",
-      nuevo: comunes?.nuevo ?? false,
+      descripcion: apunte?.descripcion ?? "",
+      nuevo: apunte?.nuevo ?? false,
       digital: apunte?.digital ?? false,
-      latitud: comunes?.latitud ?? location?.latitude ?? manualLocation?.latitude,
-      longitud: comunes?.longitud ?? location?.longitude ?? manualLocation?.longitude,
+      latitud: apunte?.latitud ?? location?.latitude ?? manualLocation?.latitude,
+      longitud: apunte?.longitud ?? location?.longitude ?? manualLocation?.longitude,
       idioma: apunte?.idioma ?? "",
-      precio: comunes?.precio ?? null,
-      cantidad: comunes?.cantidad ?? 1,
+      precio: apunte?.precio ?? null,
+      cantidad: apunte?.cantidad ?? 1,
       anio_elaboracion: apunte?.anio_elaboracion ?? new Date().getFullYear(),
-      tipo_oferta: comunes?.tipo_oferta ?? "Venta",
+      tipo_oferta: apunte?.tipo_oferta ?? "Venta",
       fotos_url: uploadedUrls,
-      usuarioId: comunes?.usuario_id ?? 1,
+      usuarioId: apunte?.usuario_id ?? 1,
       cantidad_paginas: apunte?.paginas ?? 1,
       materia: apunte?.materia ?? "",
       institucion: apunte?.institucion ?? "",
@@ -143,7 +144,7 @@ export default function FinalizarPublicacionScreen() {
       seccion: apunte?.seccion ?? "",
       carrera: apunte?.carrera ?? null,
     };
-    if (comunes?.tipo_oferta === "Venta") payload.precio = comunes?.precio ?? 1;
+    if (apunte?.tipo_oferta === "Venta") payload.precio = apunte?.precio ?? 1;
     return payload;
   };
 
@@ -208,10 +209,6 @@ export default function FinalizarPublicacionScreen() {
 
   const handleNextStep = () => {
     // Validaciones
-    if (!comunes.descripcion?.trim()) {
-      Alert.alert("Error", "La descripción es obligatoria.");
-      return;
-    }
 
     if (!comunes.tipo_oferta) {
       Alert.alert("Error", "Debes seleccionar un tipo de oferta.");
@@ -223,8 +220,8 @@ export default function FinalizarPublicacionScreen() {
       return;
     }
 
-    if (!comunes.cantidad || comunes.cantidad <= 0) {
-      Alert.alert("Error", "Debes ingresar la cantidad.");
+    if ((!comunes.cantidad || comunes.cantidad <= 0) && !comunes.digital) {
+      Alert.alert("Error", "Debes ingresar la cantidad ya que el material es de formato fisico.");
       return;
     }
 
@@ -244,7 +241,14 @@ export default function FinalizarPublicacionScreen() {
 
 
   return (
-    <ScrollView contentContainerStyle={styles.scrollContent}>
+    <KeyboardAwareScrollView
+      style={styles.scrollContent}
+      contentContainerStyle={{ flexGrow: 1, paddingBottom: 50 }}
+      keyboardShouldPersistTaps="handled"
+      enableOnAndroid
+      extraScrollHeight={100}
+      enableAutomaticScroll
+    >
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={Colors.text} />
@@ -257,14 +261,6 @@ export default function FinalizarPublicacionScreen() {
         <View style={styles.container}>
           <Text style={styles.title}>Agregar detalles de la publicación</Text>
           <Text style={styles.subtitle}>Sumá información específica sobre tu publicación.</Text>
-
-          {/* Descripción */}
-          <Text style={styles.label}>Descripción:</Text>
-          <TextInput
-            style={styles.input}
-            value={comunes.descripcion || ""}
-            onChangeText={(text) => updateComunes({ descripcion: text })}
-          />
 
           {/* Tipo oferta */}
           <Text style={styles.label}>Tipo de Oferta:</Text>
@@ -288,6 +284,7 @@ export default function FinalizarPublicacionScreen() {
               <TextInput
                 keyboardType="numeric"
                 style={styles.input}
+                placeholder="Precio"
                 value={comunes.precio?.toString() || ""}
                 onChangeText={(text) => {
                   const val = parseFloat(text);
@@ -298,16 +295,21 @@ export default function FinalizarPublicacionScreen() {
           )}
 
           {/* Cantidad */}
-          <Text style={styles.label}>Cantidad:</Text>
-          <TextInput
-            keyboardType="numeric"
-            style={styles.input}
-            value={comunes.cantidad?.toString() || ""}
-            onChangeText={(text) => {
-              const val = parseInt(text, 10);
-              updateComunes({ cantidad: isNaN(val) ? undefined : val });
-            }}
-          />
+          {!comunes.digital && (
+            <>
+              <Text style={styles.label}>Cantidad:</Text>
+              <TextInput
+                keyboardType="numeric"
+                style={styles.input}
+                placeholder="Cantidad"
+                value={comunes.cantidad?.toString() || ""}
+                onChangeText={(text) => {
+                  const val = parseInt(text, 10);
+                  updateComunes({ cantidad: isNaN(val) ? undefined : val });
+                }}
+              />
+            </>
+          )}
 
           {/* Subir fotos */}
           <PrimaryButton styleBtn={styles.styleBtn} title="Seleccionar Imágenes" onPress={pickImages} />
@@ -441,7 +443,7 @@ export default function FinalizarPublicacionScreen() {
           </View>
         </View>
       )}
-    </ScrollView>
+    </KeyboardAwareScrollView>
   );
 }
 

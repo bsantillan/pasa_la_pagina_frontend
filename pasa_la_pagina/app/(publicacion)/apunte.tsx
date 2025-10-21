@@ -7,7 +7,6 @@ import { Picker } from "@react-native-picker/picker";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-  FlatList,
   ScrollView,
   StyleSheet,
   Text,
@@ -15,6 +14,7 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 
 export default function ApunteForm() {
   const [step, setStep] = useState(1);
@@ -24,7 +24,6 @@ export default function ApunteForm() {
   const [idiomasFiltrados, setIdiomasFiltrados] = useState<string[]>([]);
   const [query, setQuery] = useState(""); // Búsqueda de idioma
 
-
   const handleBack = () => {
     if (step === 1) {
       router.back();
@@ -32,9 +31,6 @@ export default function ApunteForm() {
       setStep(step - 1);
     }
   };
-
-  useEffect(() => {
-  }, []);
 
   useEffect(() => {
     if (!nivelesEducativos) fetchNivelesEducativos();
@@ -53,16 +49,20 @@ export default function ApunteForm() {
   }, [query]);
 
   // ApunteForm.tsx (fragmento)
-  const isStep1Valid =
-    !!apunte.titulo?.trim() &&
-    Number.isFinite(apunte.paginas) &&
-    apunte.paginas! > 0 &&
+  const isStep1Valid = () =>
+    apunte.titulo?.trim() &&
     Number.isFinite(apunte.anio_elaboracion) &&
     apunte.anio_elaboracion! > 0 &&
-    typeof apunte.digital === "boolean" &&
-    !!apunte.idioma?.trim();
+    apunte.idioma?.trim();
 
-  const isStep2Valid =
+  const isStep2Valid = () =>
+    Number.isFinite(apunte.paginas) &&
+    apunte.paginas! > 0 &&
+    (apunte.nuevo === true || apunte.nuevo === false) &&
+    (apunte.digital === true || apunte.digital === false) &&
+    (!apunte.digital || apunte.url?.trim());
+
+  const isStep3Valid = () =>
     !!apunte.nivel_educativo?.trim() &&
     !!apunte.institucion?.trim() &&
     !!apunte.materia?.trim() &&
@@ -70,7 +70,14 @@ export default function ApunteForm() {
     (apunte.nivel_educativo !== "Superior" || !!apunte.carrera?.trim());
 
   return (
-    <ScrollView contentContainerStyle={styles.scrollContent}>
+    <KeyboardAwareScrollView
+      style={styles.scrollContent}
+      contentContainerStyle={{ flexGrow: 1, paddingBottom: 50 }}
+      keyboardShouldPersistTaps="handled"
+      enableOnAndroid
+      extraScrollHeight={100}
+      enableAutomaticScroll
+    >
       <View style={styles.headerNav}>
         <TouchableOpacity
           onPress={(event) => handleBack()}
@@ -91,7 +98,17 @@ export default function ApunteForm() {
             <TextInput
               style={styles.input}
               value={apunte.titulo}
+              placeholder="Titulo"
               onChangeText={(text) => updateApunte({ titulo: text })}
+            />
+
+            {/* Descripción */}
+            <Text style={styles.label}>Descripción</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Descripcción"
+              value={apunte.descripcion || ""}
+              onChangeText={(text) => updateApunte({ descripcion: text })}
             />
 
             {/* --- Input de idioma --- */}
@@ -102,58 +119,82 @@ export default function ApunteForm() {
                 onChangeText={(text) => {
                   setQuery(text);
                   updateApunte({ idioma: "" });
-                  if (text.trim()) setBuscando(true);
-                  else setBuscando(false);
+                  setBuscando(Boolean(text.trim()));
                 }}
-                placeholder="Seleccioná o escribí un idioma..."
+                placeholder="Escribí y seleccioná un idioma "
                 style={styles.input}
               />
 
-              {/* 🔽 Dropdown dinámico */}
               {buscando && idiomasFiltrados.length > 0 && (
-                <View style={styles.dropdown}>
-                  <FlatList
-                    data={idiomasFiltrados}
-                    keyExtractor={(item) => item}
-                    keyboardShouldPersistTaps="handled"
-                    renderItem={({ item }) => (
-                      <TouchableOpacity
-                        onPress={() => {
-                          setQuery(item);
-                          updateApunte({ idioma: item });
-                          setBuscando(false);
-                        }}
-                        style={styles.dropdownItem}
-                      >
-                        <Text style={styles.dropdownItemText}>{item}</Text>
-                      </TouchableOpacity>
-                    )}
-                  />
-                </View>
+                <ScrollView
+                  style={styles.dropdownScroll}
+                  keyboardShouldPersistTaps="handled"
+                  nestedScrollEnabled={true}
+                >
+                  {idiomasFiltrados.map((item) => (
+                    <TouchableOpacity
+                      key={item}
+                      onPress={() => {
+                        setBuscando(false);
+                        setQuery("");
+                        updateApunte({ idioma: item });
+                      }}
+                      style={styles.dropdownItem}
+                    >
+                      <Text style={styles.dropdownItemText}>{item}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+
               )}
             </View>
-
-            <Text>Cantidad de páginas</Text>
-            <TextInput
-              style={styles.input}
-              keyboardType="numeric"
-              value={String(apunte.paginas || "")}
-              onChangeText={(cant) =>
-                updateApunte({ paginas: parseInt(cant) })
-              }
-            />
 
             <Text>Año de elaboración</Text>
             <TextInput
               style={styles.input}
               keyboardType="numeric"
+              placeholder="Año de elaboración"
               value={String(apunte.anio_elaboracion || "")}
               onChangeText={(anio) =>
                 updateApunte({ anio_elaboracion: parseInt(anio) })
               }
             />
 
-            <Text>Formato</Text>
+            <PrimaryButton
+              title="Siguiente"
+              onPress={() => setStep(2)}
+              styleBtn={styles.primaryButton}
+              disabled={!isStep1Valid()}
+            />
+          </View>
+        )}
+
+        {step === 2 && (
+          <View style={styles.stepContainer}>
+            <Text>Cantidad de páginas</Text>
+            <TextInput
+              style={styles.input}
+              keyboardType="numeric"
+              placeholder="Cantidad de paginas"
+              value={String(apunte.paginas || "")}
+              onChangeText={(cant) =>
+                updateApunte({ paginas: parseInt(cant) })
+              }
+            />
+
+            <Text style={styles.label}>Nuevo</Text>
+            <View style={styles.pickerWrapper}>
+              <Picker
+                selectedValue={apunte.nuevo}
+                onValueChange={(value) => updateApunte({ nuevo: value })}
+              >
+                <Picker.Item label="Seleccionar..." value="" />
+                <Picker.Item label="Sí" value={true} />
+                <Picker.Item label="No" value={false} />
+              </Picker>
+            </View>
+
+            <Text style={styles.label}>Formato</Text>
             <View style={styles.pickerWrapper}>
               <Picker
                 selectedValue={apunte.digital}
@@ -164,18 +205,29 @@ export default function ApunteForm() {
                 <Picker.Item label="Físico" value={false} />
               </Picker>
             </View>
+            {apunte.digital && (
+              <>
+                <Text style={styles.label}>Enlace</Text>
+                <TextInput
+                  value={apunte.url}
+                  onChangeText={(text) => updateApunte({ url: text })}
+                  placeholder="Enlace"
+                  style={styles.input}
+                />
+              </>
+            )}
 
             <PrimaryButton
               title="Siguiente"
-              onPress={() => setStep(2)}
+              onPress={() => setStep(3)}
               styleBtn={styles.primaryButton}
-              disabled={!isStep1Valid}
+              disabled={!isStep2Valid()}
             />
           </View>
         )}
 
-        {/* Step 2 */}
-        {step === 2 && (
+        {/* Step 3 */}
+        {step === 3 && (
           <View style={styles.stepContainer}>
             <Text>Nivel Educativo</Text>
             <View style={styles.pickerWrapper}>
@@ -227,12 +279,12 @@ export default function ApunteForm() {
               title="Siguiente"
               onPress={() => router.push("/(publicacion)/publicacion")}
               styleBtn={styles.primaryButton}
-              disabled={!isStep2Valid}
+              disabled={!isStep3Valid()}
             />
           </View>
         )}
       </View>
-    </ScrollView>
+    </KeyboardAwareScrollView>
   );
 }
 
@@ -355,5 +407,18 @@ const styles = StyleSheet.create({
     fontWeight: "400",
     color: "#0C1A30",
     marginBottom: 6,
+  },
+  dropdownScroll: {
+    position: "absolute",
+    top: 55,
+    left: 0,
+    right: 0,
+    maxHeight: 125,
+    backgroundColor: Colors.background,
+    borderWidth: 1,
+    borderColor: "#000",
+    borderRadius: 10,
+    zIndex: 1000,
+    elevation: 5,
   },
 });

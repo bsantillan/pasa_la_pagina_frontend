@@ -11,13 +11,14 @@ import React, { useEffect, useState } from "react";
 import {
   FlatList,
   Modal,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View
 } from "react-native";
-
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 export default function LibroScreen() {
   const [step, setStep] = useState(1); // Paso actual del formulario
   const [stepHistory, setStepHistory] = useState<number[]>([1]); // Historial de pasos
@@ -110,12 +111,17 @@ export default function LibroScreen() {
   };
 
   const isStep3Complete = () =>
-    libro.titulo?.trim() && libro.autor?.trim() && libro.editorial?.trim();
+    libro.titulo?.trim() &&
+    libro.autor?.trim() &&
+    libro.editorial?.trim() &&
+    libro.idioma?.trim();
 
   const isStep4Complete = () =>
-    libro.idioma?.trim() &&
     libro.genero?.trim() &&
-    (libro.digital === true || libro.digital === false);
+    libro.descripcion?.trim() &&
+    (libro.nuevo === true || libro.nuevo === false) &&
+    (libro.digital === true || libro.digital === false) &&
+    (!libro.digital || libro.url?.trim());
 
   // --- RENDER DE STEPS ---
   const renderStep = () => {
@@ -168,6 +174,9 @@ export default function LibroScreen() {
                 <FlatList
                   data={libros}
                   keyExtractor={(item, index) => String(index)}
+                  nestedScrollEnabled={true}
+                  scrollEnabled={false} // 👈 Desactiva el scroll interno
+                  keyboardShouldPersistTaps="handled"
                   renderItem={({ item }) => (
                     <TouchableOpacity
                       onPress={() => {
@@ -189,7 +198,7 @@ export default function LibroScreen() {
                       <View >
                         <Text style={{ color: "#838589" }}>Autor: <Text style={{ color: "#000" }}>{item.autor}</Text></Text>
                         <Text style={{ color: "#838589" }}>Editorial: <Text style={{ color: "#000" }}>{item.editorial}</Text></Text>
-                        <Text style={{ color: "#838589", marginTop: 4 }}>Idioma: <Text style={{ color: "#000" }}>{item.idioma}</Text></Text>
+                        <Text style={{ color: "#838589" }}>Idioma: <Text style={{ color: "#000" }}>{item.idioma}</Text></Text>
                       </View>
                     </TouchableOpacity>
                   )}
@@ -236,6 +245,43 @@ export default function LibroScreen() {
               placeholder="Editorial"
               style={styles.input}
             />
+            {/* --- Input de idioma --- */}
+            <Text style={styles.label}>Idioma</Text>
+            <View style={{ position: "relative" }}>
+              <TextInput
+                value={query || libro.idioma || ""}
+                onChangeText={(text) => {
+                  setQuery(text);
+                  updateLibro({ idioma: "" });
+                  setBuscando(Boolean(text.trim()));
+                }}
+                placeholder="Seleccioná o escribí un idioma..."
+                style={styles.input}
+              />
+
+              {buscando && idiomasFiltrados.length > 0 && (
+                <ScrollView
+                  style={styles.dropdownScroll}
+                  keyboardShouldPersistTaps="handled"
+                  nestedScrollEnabled={true}
+                >
+                  {idiomasFiltrados.map((item) => (
+                    <TouchableOpacity
+                      key={item}
+                      onPress={() => {
+                        setBuscando(false);
+                        setQuery("");
+                        updateLibro({ idioma: item });
+                      }}
+                      style={styles.dropdownItem}
+                    >
+                      <Text style={styles.dropdownItemText}>{item}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+
+              )}
+            </View>
           </View>
         );
 
@@ -247,45 +293,6 @@ export default function LibroScreen() {
               Revisá o completá la información que falte antes de continuar.
             </Text>
 
-            {/* --- Input de idioma --- */}
-            <Text style={styles.label}>Idioma</Text>
-            <View style={{ position: "relative" }}>
-              <TextInput
-                value={query || libro.idioma || ""}
-                onChangeText={(text) => {
-                  setQuery(text);
-                  updateLibro({ idioma: "" });
-                  if (text.trim()) setBuscando(true);
-                  else setBuscando(false);
-                }}
-                placeholder="Seleccioná o escribí un idioma..."
-                style={styles.input}
-              />
-
-              {/* 🔽 Dropdown dinámico */}
-              {buscando && idiomasFiltrados.length > 0 && (
-                <View style={styles.dropdown}>
-                  <FlatList
-                    data={idiomasFiltrados}
-                    keyExtractor={(item) => item}
-                    keyboardShouldPersistTaps="handled"
-                    renderItem={({ item }) => (
-                      <TouchableOpacity
-                        onPress={() => {
-                          setQuery(item);
-                          updateLibro({ idioma: item });
-                          setBuscando(false);
-                        }}
-                        style={styles.dropdownItem}
-                      >
-                        <Text style={styles.dropdownItemText}>{item}</Text>
-                      </TouchableOpacity>
-                    )}
-                  />
-                </View>
-              )}
-            </View>
-
             {/* --- Otros campos --- */}
             <Text style={styles.label}>Género</Text>
             <TextInput
@@ -295,18 +302,49 @@ export default function LibroScreen() {
               style={styles.input}
             />
 
+            {/* Descripción */}
+            <Text style={styles.label}>Descripción</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Descripcción"
+              value={libro.descripcion || ""}
+              onChangeText={(text) => updateLibro({ descripcion: text })}
+            />
+
+            <Text style={styles.label}>Nuevo</Text>
+            <View style={styles.pickerWrapper}>
+              <Picker
+                selectedValue={libro.nuevo}
+                onValueChange={(value) => updateLibro({ nuevo: value })}
+              >
+                <Picker.Item label="Seleccionar..." value="" />
+                <Picker.Item label="Sí" value={true} />
+                <Picker.Item label="No" value={false} />
+              </Picker>
+            </View>
+
             <Text style={styles.label}>Formato</Text>
             <View style={styles.pickerWrapper}>
               <Picker
                 selectedValue={libro.digital}
                 onValueChange={(value) => updateLibro({ digital: value })}
-
               >
                 <Picker.Item label="Seleccionar..." value="" />
                 <Picker.Item label="Digital" value={true} />
                 <Picker.Item label="Físico" value={false} />
               </Picker>
             </View>
+            {libro.digital && (
+              <>
+                <Text style={styles.label}>Enlace</Text>
+                <TextInput
+                  value={libro.url}
+                  onChangeText={(text) => updateLibro({ url: text })}
+                  placeholder="Enlace"
+                  style={styles.input}
+                />
+              </>
+            )}
           </View>
         );
 
@@ -316,7 +354,14 @@ export default function LibroScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAwareScrollView
+      style={styles.scrollContent}
+      contentContainerStyle={{ flexGrow: 1, paddingBottom: 50 }} 
+      keyboardShouldPersistTaps="handled"
+      enableOnAndroid
+      extraScrollHeight={100} 
+      enableAutomaticScroll
+    >
       {/* HEADER */}
       <View style={styles.header}>
         <TouchableOpacity onPress={handleBack} style={styles.backButton}>
@@ -342,7 +387,7 @@ export default function LibroScreen() {
 
       {step === 4 && (
         <PrimaryButton
-          styleBtn={{ marginTop: 26, height: 36 }}
+          styleBtn={{ height: 36 }}
           title="Siguiente"
           onPress={() => router.push("/(publicacion)/publicacion")}
           disabled={!isStep4Complete()}
@@ -359,7 +404,7 @@ export default function LibroScreen() {
           }}
         />
       </Modal>
-    </View>
+    </KeyboardAwareScrollView>
   );
 }
 
@@ -382,7 +427,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     height: 56,
     marginTop: 30,
-    marginBottom: 65,
+    marginBottom: 32,
   },
   backButton: {
     width: 40,
@@ -444,19 +489,6 @@ const styles = StyleSheet.create({
     height: 50,
     justifyContent: "center",
   },
-  dropdown: {
-    position: "absolute",
-    top: 55,
-    left: 0,
-    right: 0,
-    backgroundColor: Colors.background,
-    borderWidth: 1,
-    borderColor: "#000",
-    borderRadius: 10,
-    maxHeight: 150,
-    zIndex: 1000,
-    elevation: 5,
-  },
   dropdownItem: {
     paddingVertical: 12,
     paddingHorizontal: 16,
@@ -472,6 +504,25 @@ const styles = StyleSheet.create({
     textAlign: "center",
     color: Colors.primary,
     marginBottom: 4,
+  },
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingVertical: 24,
+    backgroundColor: Colors.background,
+    flexGrow: 1,
+  },
+  dropdownScroll: {
+    position: "absolute",
+    top: 55,
+    left: 0,
+    right: 0,
+    maxHeight: 125,
+    backgroundColor: Colors.background,
+    borderWidth: 1,
+    borderColor: "#000",
+    borderRadius: 10,
+    zIndex: 1000,
+    elevation: 5,
   },
 
 });
