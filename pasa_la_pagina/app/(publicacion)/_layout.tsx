@@ -1,6 +1,7 @@
 import BottomNavbar from "@/components/ui/BottomNavbar";
 import { useAuth } from "@/contexts/AuthContext";
 import { EnumsProvider } from "@/contexts/EnumsContext"; // 👈 importalo
+import { LibroProvider } from "@/contexts/LibroContext";
 import { PublicacionProvider } from "@/contexts/PublicacionContext";
 import { Slot, useRouter } from "expo-router";
 import { useEffect } from "react";
@@ -22,8 +23,10 @@ export default function PublicacionLayout() {
     <View style={styles.container}>
       <PublicacionProvider>
         <EnumsProvider>
-          <Slot />
-          <BottomNavbar />
+          <LibroProvider>
+            <Slot />
+            <BottomNavbar />
+          </LibroProvider>
         </EnumsProvider>
       </PublicacionProvider>
     </View>

@@ -1,4 +1,5 @@
 import PrimaryButton from "@/components/ui/Boton/Primary";
+import CameraModal from "@/components/ui/CameraModal";
 import { Colors } from "@/constants/Colors";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEnums } from "@/contexts/EnumsContext";
@@ -19,12 +20,12 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import MapView, { Marker } from "react-native-maps";
 
 export default function FinalizarPublicacionScreen() {
   const { tiposOferta, fetchTiposOferta } = useEnums();
-  const { comunes, updateComunes, libro, apunte, tipo, reset } =
-    usePublicacion();
+  const { comunes, updateComunes, libro, apunte, tipo, reset } = usePublicacion();
   const { getValidAccessToken } = useAuth();
 
   const [step, setStep] = useState<1 | 2>(1);
@@ -32,6 +33,7 @@ export default function FinalizarPublicacionScreen() {
   const [manualLocation, setManualLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [images, setImages] = useState<string[]>([]);
   const [mapVisible, setMapVisible] = useState(true);
+  const [cameraVisible, setCameraVisible] = useState(false);
 
   useEffect(() => {
     if (!tiposOferta) fetchTiposOferta();
@@ -49,19 +51,6 @@ export default function FinalizarPublicacionScreen() {
     setLocation({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
     updateComunes({ latitud: loc.coords.latitude, longitud: loc.coords.longitude });
     setManualLocation(null);
-  };
-
-  // 📸 Selección de imágenes
-  const pickImages = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
-      allowsMultipleSelection: true,
-      quality: 0.7,
-    });
-
-    if (!result.canceled) {
-      setImages((prev) => [...prev, ...result.assets.map((a) => a.uri)]);
-    }
   };
 
   // 📤 Subir imágenes a Cloudinary
@@ -104,7 +93,8 @@ export default function FinalizarPublicacionScreen() {
       titulo: libro?.titulo ?? "",
       descripcion: comunes?.descripcion ?? "",
       nuevo: comunes?.nuevo ?? false,
-      digital: libro?.digital ?? false,
+      digital: comunes?.digital ?? false,
+      url: comunes?.url,
       latitud: comunes?.latitud ?? 0,
       longitud: comunes?.longitud ?? 0,
       idioma: libro?.idioma ?? "",
@@ -126,7 +116,8 @@ export default function FinalizarPublicacionScreen() {
       titulo: apunte?.titulo ?? "",
       descripcion: comunes?.descripcion ?? "",
       nuevo: comunes?.nuevo ?? false,
-      digital: apunte?.digital ?? false,
+      digital: comunes?.digital ?? false,
+      url: comunes?.url,
       latitud: comunes?.latitud ?? location?.latitude ?? manualLocation?.latitude,
       longitud: comunes?.longitud ?? location?.longitude ?? manualLocation?.longitude,
       idioma: apunte?.idioma ?? "",
@@ -208,10 +199,6 @@ export default function FinalizarPublicacionScreen() {
 
   const handleNextStep = () => {
     // Validaciones
-    if (!comunes.descripcion?.trim()) {
-      Alert.alert("Error", "La descripción es obligatoria.");
-      return;
-    }
 
     if (!comunes.tipo_oferta) {
       Alert.alert("Error", "Debes seleccionar un tipo de oferta.");
@@ -223,8 +210,8 @@ export default function FinalizarPublicacionScreen() {
       return;
     }
 
-    if (!comunes.cantidad || comunes.cantidad <= 0) {
-      Alert.alert("Error", "Debes ingresar la cantidad.");
+    if ((!comunes.cantidad || comunes.cantidad <= 0) && !comunes.digital) {
+      Alert.alert("Error", "Debes ingresar la cantidad ya que el material es de formato fisico.");
       return;
     }
 
@@ -244,7 +231,14 @@ export default function FinalizarPublicacionScreen() {
 
 
   return (
-    <ScrollView contentContainerStyle={styles.scrollContent}>
+    <KeyboardAwareScrollView
+      style={styles.scrollContent}
+      contentContainerStyle={{ flexGrow: 1, paddingBottom: 50 }}
+      keyboardShouldPersistTaps="handled"
+      enableOnAndroid
+      extraScrollHeight={100}
+      enableAutomaticScroll
+    >
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={Colors.text} />
@@ -257,14 +251,6 @@ export default function FinalizarPublicacionScreen() {
         <View style={styles.container}>
           <Text style={styles.title}>Agregar detalles de la publicación</Text>
           <Text style={styles.subtitle}>Sumá información específica sobre tu publicación.</Text>
-
-          {/* Descripción */}
-          <Text style={styles.label}>Descripción:</Text>
-          <TextInput
-            style={styles.input}
-            value={comunes.descripcion || ""}
-            onChangeText={(text) => updateComunes({ descripcion: text })}
-          />
 
           {/* Tipo oferta */}
           <Text style={styles.label}>Tipo de Oferta:</Text>
@@ -288,6 +274,7 @@ export default function FinalizarPublicacionScreen() {
               <TextInput
                 keyboardType="numeric"
                 style={styles.input}
+                placeholder="Precio"
                 value={comunes.precio?.toString() || ""}
                 onChangeText={(text) => {
                   const val = parseFloat(text);
@@ -298,19 +285,34 @@ export default function FinalizarPublicacionScreen() {
           )}
 
           {/* Cantidad */}
-          <Text style={styles.label}>Cantidad:</Text>
-          <TextInput
-            keyboardType="numeric"
-            style={styles.input}
-            value={comunes.cantidad?.toString() || ""}
-            onChangeText={(text) => {
-              const val = parseInt(text, 10);
-              updateComunes({ cantidad: isNaN(val) ? undefined : val });
-            }}
-          />
+          {!comunes.digital && (
+            <>
+              <Text style={styles.label}>Cantidad:</Text>
+              <TextInput
+                keyboardType="numeric"
+                style={styles.input}
+                placeholder="Cantidad"
+                value={comunes.cantidad?.toString() || ""}
+                onChangeText={(text) => {
+                  const val = parseInt(text, 10);
+                  updateComunes({ cantidad: isNaN(val) ? undefined : val });
+                }}
+              />
+            </>
+          )}
 
           {/* Subir fotos */}
-          <PrimaryButton styleBtn={styles.styleBtn} title="Seleccionar Imágenes" onPress={pickImages} />
+          <PrimaryButton
+            styleBtn={styles.styleBtn}
+            title="Sacar foto"
+            onPress={() => setCameraVisible(true)}
+          />
+          <CameraModal
+            visible={cameraVisible}
+            onClose={() => setCameraVisible(false)}
+            onPhotoTaken={(uri) => setImages((prev) => [...prev, uri])}
+          />
+
           <ScrollView horizontal style={{ marginVertical: 10 }}>
             {images.map((uri, idx) => (
               <Image key={idx} source={{ uri }} style={{ width: 100, height: 100, marginRight: 10 }} />
@@ -384,7 +386,7 @@ export default function FinalizarPublicacionScreen() {
 
           <Text style={styles.label}>Idioma: {tipo === "libro" ? libro?.idioma : apunte?.idioma}</Text>
 
-          <Text style={styles.label}>Formato: {libro?.digital ? "Digital" : "Físico"}</Text>
+          <Text style={styles.label}>Formato: {comunes?.digital ? "Digital" : "Físico"}</Text>
 
           {/* --- Tipo específico --- */}
           {tipo === "libro" ? (
@@ -441,7 +443,7 @@ export default function FinalizarPublicacionScreen() {
           </View>
         </View>
       )}
-    </ScrollView>
+    </KeyboardAwareScrollView>
   );
 }
 

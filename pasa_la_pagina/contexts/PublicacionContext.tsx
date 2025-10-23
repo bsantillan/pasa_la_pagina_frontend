@@ -1,24 +1,36 @@
 import * as Location from "expo-location";
-import React, { createContext, useContext, ReactNode, useState } from "react";
+import React, { createContext, ReactNode, useContext, useState } from "react";
 import { useAuth } from "./AuthContext";
 
 type PublicacionTipo = "libro" | "apunte" | null;
 
 // ---- Datos de creación ----
-type LibroData = {
+
+type ComunesData = {
+  descripcion?: string;
+  nuevo?: boolean;
+  digital?: boolean;
+  url?: string;
+  latitud?: number;
+  longitud?: number;
+  fotos_url?: string[];
+  precio?: number;
+  cantidad?: number;
+  tipo_oferta?: string;
+  usuario_id?: number;
+};
+
+export type LibroData = {
   titulo?: string;
+  idioma?: string;
   autor?: string;
   editorial?: string;
-  sinopsis?: string;
-  isbn?: number;
-  idioma?: string;
   genero?: string;
-  digital?: boolean;
+  isbn?: number;
 };
 
 type ApunteData = {
   titulo?: string;
-  digital?: boolean;
   idioma?: string;
   anio_elaboracion?: number;
   materia?: string;
@@ -27,18 +39,6 @@ type ApunteData = {
   nivel_educativo?: string;
   seccion?: string;
   paginas?: number;
-};
-
-type ComunesData = {
-  descripcion?: string;
-  nuevo?: boolean;
-  latitud?: number;
-  longitud?: number;
-  fotos_url?: string[];
-  precio?: number;
-  cantidad?: number;
-  tipo_oferta?: string;
-  usuario_id?: number;
 };
 
 // ---- Publicaciones del backend ----
@@ -120,8 +120,8 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
     const a =
       Math.sin(dLat / 2) ** 2 +
       Math.cos((lat1 * Math.PI) / 180) *
-        Math.cos((lat2 * Math.PI) / 180) *
-        Math.sin(dLon / 2) ** 2;
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) ** 2;
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   };
