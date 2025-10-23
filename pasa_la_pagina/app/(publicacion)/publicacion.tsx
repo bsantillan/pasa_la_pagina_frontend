@@ -1,4 +1,5 @@
 import PrimaryButton from "@/components/ui/Boton/Primary";
+import CameraModal from "@/components/ui/CameraModal";
 import { Colors } from "@/constants/Colors";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEnums } from "@/contexts/EnumsContext";
@@ -24,8 +25,7 @@ import MapView, { Marker } from "react-native-maps";
 
 export default function FinalizarPublicacionScreen() {
   const { tiposOferta, fetchTiposOferta } = useEnums();
-  const { comunes, updateComunes, libro, apunte, tipo, reset } =
-    usePublicacion();
+  const { comunes, updateComunes, libro, apunte, tipo, reset } = usePublicacion();
   const { getValidAccessToken } = useAuth();
 
   const [step, setStep] = useState<1 | 2>(1);
@@ -33,6 +33,7 @@ export default function FinalizarPublicacionScreen() {
   const [manualLocation, setManualLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [images, setImages] = useState<string[]>([]);
   const [mapVisible, setMapVisible] = useState(true);
+  const [cameraVisible, setCameraVisible] = useState(false);
 
   useEffect(() => {
     if (!tiposOferta) fetchTiposOferta();
@@ -50,19 +51,6 @@ export default function FinalizarPublicacionScreen() {
     setLocation({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
     updateComunes({ latitud: loc.coords.latitude, longitud: loc.coords.longitude });
     setManualLocation(null);
-  };
-
-  // 📸 Selección de imágenes
-  const pickImages = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
-      allowsMultipleSelection: true,
-      quality: 0.7,
-    });
-
-    if (!result.canceled) {
-      setImages((prev) => [...prev, ...result.assets.map((a) => a.uri)]);
-    }
   };
 
   // 📤 Subir imágenes a Cloudinary
@@ -103,40 +91,42 @@ export default function FinalizarPublicacionScreen() {
   const buildLibroPayload = (uploadedUrls: string[]) => {
     const payload: any = {
       titulo: libro?.titulo ?? "",
-      descripcion: libro?.descripcion ?? "",
-      nuevo: libro?.nuevo ?? false,
-      digital: libro?.digital ?? false,
-      latitud: libro?.latitud ?? 0,
-      longitud: libro?.longitud ?? 0,
+      descripcion: comunes?.descripcion ?? "",
+      nuevo: comunes?.nuevo ?? false,
+      digital: comunes?.digital ?? false,
+      url: comunes?.url,
+      latitud: comunes?.latitud ?? 0,
+      longitud: comunes?.longitud ?? 0,
       idioma: libro?.idioma ?? "",
-      cantidad: libro?.cantidad ?? 1,
-      tipo_oferta: libro?.tipo_oferta ?? "Venta",
-      usuarioId: libro?.usuario_id ?? 1,
+      cantidad: comunes?.cantidad ?? 1,
+      tipo_oferta: comunes?.tipo_oferta ?? "Venta",
+      usuarioId: comunes?.usuario_id ?? 1,
       fotos_url: uploadedUrls,
       isbn: String(libro?.isbn ?? ""),
       genero: (libro?.genero ?? "").trim(),
       autor: libro?.autor ?? "",
       editorial: libro?.editorial ?? "",
     };
-    if (libro?.tipo_oferta === "Venta") payload.precio = libro?.precio ?? 1;
+    if (comunes?.tipo_oferta === "Venta") payload.precio = comunes?.precio ?? 1;
     return payload;
   };
 
   const buildApuntePayload = (uploadedUrls: string[]) => {
     const payload: any = {
       titulo: apunte?.titulo ?? "",
-      descripcion: apunte?.descripcion ?? "",
-      nuevo: apunte?.nuevo ?? false,
-      digital: apunte?.digital ?? false,
-      latitud: apunte?.latitud ?? location?.latitude ?? manualLocation?.latitude,
-      longitud: apunte?.longitud ?? location?.longitude ?? manualLocation?.longitude,
+      descripcion: comunes?.descripcion ?? "",
+      nuevo: comunes?.nuevo ?? false,
+      digital: comunes?.digital ?? false,
+      url: comunes?.url,
+      latitud: comunes?.latitud ?? location?.latitude ?? manualLocation?.latitude,
+      longitud: comunes?.longitud ?? location?.longitude ?? manualLocation?.longitude,
       idioma: apunte?.idioma ?? "",
-      precio: apunte?.precio ?? null,
-      cantidad: apunte?.cantidad ?? 1,
+      precio: comunes?.precio ?? null,
+      cantidad: comunes?.cantidad ?? 1,
       anio_elaboracion: apunte?.anio_elaboracion ?? new Date().getFullYear(),
-      tipo_oferta: apunte?.tipo_oferta ?? "Venta",
+      tipo_oferta: comunes?.tipo_oferta ?? "Venta",
       fotos_url: uploadedUrls,
-      usuarioId: apunte?.usuario_id ?? 1,
+      usuarioId: comunes?.usuario_id ?? 1,
       cantidad_paginas: apunte?.paginas ?? 1,
       materia: apunte?.materia ?? "",
       institucion: apunte?.institucion ?? "",
@@ -144,7 +134,7 @@ export default function FinalizarPublicacionScreen() {
       seccion: apunte?.seccion ?? "",
       carrera: apunte?.carrera ?? null,
     };
-    if (apunte?.tipo_oferta === "Venta") payload.precio = apunte?.precio ?? 1;
+    if (comunes?.tipo_oferta === "Venta") payload.precio = comunes?.precio ?? 1;
     return payload;
   };
 
@@ -312,7 +302,17 @@ export default function FinalizarPublicacionScreen() {
           )}
 
           {/* Subir fotos */}
-          <PrimaryButton styleBtn={styles.styleBtn} title="Seleccionar Imágenes" onPress={pickImages} />
+          <PrimaryButton
+            styleBtn={styles.styleBtn}
+            title="Sacar foto"
+            onPress={() => setCameraVisible(true)}
+          />
+          <CameraModal
+            visible={cameraVisible}
+            onClose={() => setCameraVisible(false)}
+            onPhotoTaken={(uri) => setImages((prev) => [...prev, uri])}
+          />
+
           <ScrollView horizontal style={{ marginVertical: 10 }}>
             {images.map((uri, idx) => (
               <Image key={idx} source={{ uri }} style={{ width: 100, height: 100, marginRight: 10 }} />
@@ -386,7 +386,7 @@ export default function FinalizarPublicacionScreen() {
 
           <Text style={styles.label}>Idioma: {tipo === "libro" ? libro?.idioma : apunte?.idioma}</Text>
 
-          <Text style={styles.label}>Formato: {libro?.digital ? "Digital" : "Físico"}</Text>
+          <Text style={styles.label}>Formato: {comunes?.digital ? "Digital" : "Físico"}</Text>
 
           {/* --- Tipo específico --- */}
           {tipo === "libro" ? (

@@ -7,11 +7,9 @@ type PublicacionTipo = "libro" | "apunte" | null;
 // ---- Datos de creación ----
 
 type ComunesData = {
-  titulo?: string;
   descripcion?: string;
   nuevo?: boolean;
   digital?: boolean;
-  idioma?: string;
   url?: string;
   latitud?: number;
   longitud?: number;
@@ -22,14 +20,18 @@ type ComunesData = {
   usuario_id?: number;
 };
 
-export type LibroData = ComunesData & {
+export type LibroData = {
+  titulo?: string;
+  idioma?: string;
   autor?: string;
   editorial?: string;
   genero?: string;
   isbn?: number;
 };
 
-type ApunteData = ComunesData & {
+type ApunteData = {
+  titulo?: string;
+  idioma?: string;
   anio_elaboracion?: number;
   materia?: string;
   carrera?: string;
