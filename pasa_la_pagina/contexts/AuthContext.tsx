@@ -126,7 +126,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       await AsyncStorage.removeItem("refreshToken");
       setAccessToken(null);
       setRefreshToken(null);
-      const response = await fetch(`${API_URL}auth/logout`, {
+      await fetch(`${API_URL}auth/logout`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ refreshToken }),

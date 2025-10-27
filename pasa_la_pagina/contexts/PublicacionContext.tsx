@@ -1,5 +1,5 @@
 import * as Location from "expo-location";
-import React, { createContext, ReactNode, useContext, useState } from "react";
+import React, { createContext, ReactNode, useCallback, useContext, useState } from "react";
 import { useAuth } from "./AuthContext";
 
 type PublicacionTipo = "libro" | "apunte" | null;
@@ -102,16 +102,20 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
   const [publicaciones, setPublicaciones] = useState<Publicacion[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
 
-  const getUserLocation = async () => {
+
+  const getUserLocation =  useCallback(async () => {
+    if (userLocation) return userLocation;
+
     const { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== "granted") return null;
+
     const location = await Location.getCurrentPositionAsync({});
-    return {
-      latitude: location.coords.latitude,
-      longitude: location.coords.longitude,
-    };
-  };
+    const coords = { latitude: location.coords.latitude, longitude: location.coords.longitude };
+    setUserLocation(coords);
+    return coords;
+  }, [userLocation]);
 
   const getDistanceFromLatLonInKm = (lat1: number, lon1: number, lat2: number, lon2: number) => {
     const R = 6371;
@@ -143,19 +147,16 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
     return pubsConDistancia.slice(0, limit);
   };
 
-  const fetchPublicacionesGeneric = async (url: string, sortByLocation = false, limit?: number) => {
+  const fetchPublicacionesGeneric = useCallback(async (url: string, sortByLocation = false, limit?: number) => {
     setLoading(true);
     setError(null);
+
     try {
       const token = await getValidAccessToken();
       if (!token) throw new Error("No hay token válido");
 
       const res = await fetch(`${API_URL}${url}`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       });
 
       if (!res.ok) {
@@ -163,7 +164,7 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
         throw new Error(`Error al obtener publicaciones: ${res.status} - ${text}`);
       }
 
-      let data = await res.json();
+      const data = await res.json();
       let pubs: Publicacion[] = (data.content ?? []).map((p: any) => ({
         id: p.id,
         titulo: p.titulo,
@@ -177,10 +178,8 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
       }));
 
       if (sortByLocation) {
-        const userLocation = await getUserLocation();
-        if (userLocation) {
-          pubs = sortAndLimitByDistance(pubs, userLocation, limit ?? 20);
-        }
+        const loc = await getUserLocation();
+        if (loc) pubs = sortAndLimitByDistance(pubs, loc, limit ?? 20);
       }
 
       setPublicaciones(pubs);
@@ -189,39 +188,37 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [API_URL, getValidAccessToken, getUserLocation]);
 
-  const fetchCercaTuyo = async () => {
-    const userLocation = await getUserLocation();
-    if (!userLocation) return;
-    const { latitude, longitude } = userLocation;
+ const fetchCercaTuyo = useCallback(async () => {
+  const loc = await getUserLocation();
+  if (!loc) {
+    setError("No se pudo obtener la ubicación");
+    return;
+  }
 
-    await fetchPublicacionesGeneric(
-      `publicacion/paginado?usuario_latitud=${latitude}&usuario_longitud=${longitude}`,
-      true,
-      20
-    );
-  };
+  const { latitude, longitude } = loc;
+  await fetchPublicacionesGeneric(
+    `publicacion/paginado?usuario_latitud=${latitude}&usuario_longitud=${longitude}&size=50`,
+    true
+  );
+}, [fetchPublicacionesGeneric, getUserLocation]);
 
-  const fetchTodasPublicaciones = async (limit = 50) => {
+  const fetchTodasPublicaciones = useCallback(async (limit = 50) => {
     await fetchPublicacionesGeneric(`publicacion/paginado?size=${limit}`);
-  };
+  }, [fetchPublicacionesGeneric]);
 
-  const buscarPublicaciones = async (query: string, page = 0, size = 10) => {
+  const buscarPublicaciones = useCallback(async (query: string, page = 0, size = 10) => {
     setLoading(true);
     setError(null);
     try {
       const token = await getValidAccessToken();
       if (!token) throw new Error("No hay token válido");
 
-      const body = { query };
       const res = await fetch(`${API_URL}publicacion/buscar?page=${page}&size=${size}`, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(body),
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ query }),
       });
 
       if (!res.ok) {
@@ -229,14 +226,14 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
         throw new Error(`Error al buscar publicaciones: ${res.status} - ${text}`);
       }
 
-      let data = await res.json();
+      const data = await res.json();
       setPublicaciones(data.content ?? []);
     } catch (err: any) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
-  };
+  }, [API_URL, getValidAccessToken]);
 
   return (
     <PublicacionContext.Provider
