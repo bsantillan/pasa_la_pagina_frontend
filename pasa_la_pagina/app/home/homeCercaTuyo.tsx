@@ -1,6 +1,7 @@
 import { PublicacionCarousel } from "@/components/ui/PublicacionCarousel";
 import { Colors } from "@/constants/Colors";
 import { PublicacionContext } from "@/contexts/PublicacionContext";
+import { router } from "expo-router";
 import React, { useContext, useEffect } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
@@ -23,7 +24,7 @@ export default function CercaTuyo() {
             <Text style={styles.sectionDesc}>Publicacion que se encuentran cerca tuyo</Text>
             <PublicacionCarousel
                 publicaciones={context.publicaciones}
-                onSelect={(pub) => console.log("Seleccionado:", pub)}
+                onSelect={(pub) => router.push(`/(publicacion)/visualizar?id=${pub.id}`)}
             />
         </View>
     );
