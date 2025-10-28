@@ -1,4 +1,5 @@
 import PrimaryButton from "@/components/ui/Boton/Primary";
+import CameraModal from "@/components/ui/CameraModal";
 import { Colors } from "@/constants/Colors";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEnums } from "@/contexts/EnumsContext";
@@ -27,6 +28,7 @@ export default function FinalizarPublicacionScreen() {
   const { comunes, updateComunes, libro, apunte, tipo, reset } =
     usePublicacion();
   const { getValidAccessToken } = useAuth();
+  const [cameraVisible, setCameraVisible] = useState(false);
 
   const [step, setStep] = useState<1 | 2>(1);
   const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
@@ -310,6 +312,17 @@ export default function FinalizarPublicacionScreen() {
               />
             </>
           )}
+
+          <PrimaryButton
+            styleBtn={styles.styleBtn}
+            title="Sacar foto"
+            onPress={() => setCameraVisible(true)}
+          />
+          <CameraModal
+            visible={cameraVisible}
+            onClose={() => setCameraVisible(false)}
+            onPhotoTaken={(uri) => setImages((prev) => [...prev, uri])}
+          />
 
           {/* Subir fotos */}
           <PrimaryButton styleBtn={styles.styleBtn} title="Seleccionar Imágenes" onPress={pickImages} />
