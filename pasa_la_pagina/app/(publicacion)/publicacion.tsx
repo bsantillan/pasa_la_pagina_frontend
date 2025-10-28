@@ -27,7 +27,6 @@ export default function FinalizarPublicacionScreen() {
   const { tiposOferta, fetchTiposOferta } = useEnums();
   const { comunes, updateComunes, libro, apunte, tipo, reset } = usePublicacion();
   const { getValidAccessToken } = useAuth();
-  const [cameraVisible, setCameraVisible] = useState(false);
 
   const [step, setStep] = useState<1 | 2>(1);
   const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
