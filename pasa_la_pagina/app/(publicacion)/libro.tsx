@@ -29,7 +29,7 @@ export default function LibroScreen() {
   const [loading, setLoading] = useState(false);
   const [libros, setLibros] = useState<LibroData[]>([]);
 
-  const { libro, updateLibro } = usePublicacion();
+  const { comunes, libro, updateLibro, updateComunes } = usePublicacion();
   const { fetchBookFromApi, fetchBookFromBackend } = useLibro();
   const { buscarIdiomas } = useEnums();
 
@@ -64,12 +64,11 @@ export default function LibroScreen() {
       if (previousStep === 1) {
         updateLibro({
           isbn: undefined,
-          titulo: "",
           autor: "",
           editorial: "",
-          idioma: "",
           genero: "",
-          digital: undefined,
+          titulo: "",
+          idioma: "",
         });
       }
 
@@ -110,6 +109,17 @@ export default function LibroScreen() {
     setLoading(false);
   };
 
+  const crearNuevoLibro = () => {
+    updateLibro({
+      autor: "",
+      editorial: "",
+      genero: "",
+      titulo: "",
+      idioma: "",
+    });
+    goToStep(3);
+  }
+
   const isStep3Complete = () =>
     libro.titulo?.trim() &&
     libro.autor?.trim() &&
@@ -118,10 +128,10 @@ export default function LibroScreen() {
 
   const isStep4Complete = () =>
     libro.genero?.trim() &&
-    libro.descripcion?.trim() &&
-    (libro.nuevo === true || libro.nuevo === false) &&
-    (libro.digital === true || libro.digital === false) &&
-    (!libro.digital || libro.url?.trim());
+    comunes.descripcion?.trim() &&
+    (comunes.nuevo === true || comunes.nuevo === false) &&
+    (comunes.digital === true || comunes.digital === false) &&
+    (!comunes.digital || comunes.url?.trim());
 
   // --- RENDER DE STEPS ---
   const renderStep = () => {
@@ -207,7 +217,7 @@ export default function LibroScreen() {
                   <PrimaryButton
                     styleBtn={styles.styleBtn}
                     title="Crear nuevo libro"
-                    onPress={() => goToStep(3)}
+                    onPress={() => crearNuevoLibro()}
                   />
                 </View>
               </>
@@ -307,15 +317,15 @@ export default function LibroScreen() {
             <TextInput
               style={styles.input}
               placeholder="Descripcción"
-              value={libro.descripcion || ""}
-              onChangeText={(text) => updateLibro({ descripcion: text })}
+              value={comunes.descripcion || ""}
+              onChangeText={(text) => updateComunes({ descripcion: text })}
             />
 
             <Text style={styles.label}>Nuevo</Text>
             <View style={styles.pickerWrapper}>
               <Picker
-                selectedValue={libro.nuevo}
-                onValueChange={(value) => updateLibro({ nuevo: value })}
+                selectedValue={comunes.nuevo}
+                onValueChange={(value) => updateComunes({ nuevo: value })}
               >
                 <Picker.Item label="Seleccionar..." value="" />
                 <Picker.Item label="Sí" value={true} />
@@ -326,20 +336,20 @@ export default function LibroScreen() {
             <Text style={styles.label}>Formato</Text>
             <View style={styles.pickerWrapper}>
               <Picker
-                selectedValue={libro.digital}
-                onValueChange={(value) => updateLibro({ digital: value })}
+                selectedValue={comunes.digital}
+                onValueChange={(value) => updateComunes({ digital: value })}
               >
                 <Picker.Item label="Seleccionar..." value="" />
                 <Picker.Item label="Digital" value={true} />
                 <Picker.Item label="Físico" value={false} />
               </Picker>
             </View>
-            {libro.digital && (
+            {comunes.digital && (
               <>
                 <Text style={styles.label}>Enlace</Text>
                 <TextInput
-                  value={libro.url}
-                  onChangeText={(text) => updateLibro({ url: text })}
+                  value={comunes.url}
+                  onChangeText={(text) => updateComunes({ url: text })}
                   placeholder="Enlace"
                   style={styles.input}
                 />
@@ -356,10 +366,10 @@ export default function LibroScreen() {
   return (
     <KeyboardAwareScrollView
       style={styles.scrollContent}
-      contentContainerStyle={{ flexGrow: 1, paddingBottom: 50 }} 
+      contentContainerStyle={{ flexGrow: 1, paddingBottom: 50 }}
       keyboardShouldPersistTaps="handled"
       enableOnAndroid
-      extraScrollHeight={100} 
+      extraScrollHeight={100}
       enableAutomaticScroll
     >
       {/* HEADER */}

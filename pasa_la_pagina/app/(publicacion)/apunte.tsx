@@ -18,7 +18,7 @@ import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view
 
 export default function ApunteForm() {
   const [step, setStep] = useState(1);
-  const { apunte, updateApunte } = usePublicacion();
+  const { apunte, comunes, updateApunte, updateComunes } = usePublicacion();
   const { idiomas, buscarIdiomas, nivelesEducativos, fetchNivelesEducativos, loading } = useEnums();
   const [buscando, setBuscando] = useState(false);
   const [idiomasFiltrados, setIdiomasFiltrados] = useState<string[]>([]);
@@ -58,9 +58,9 @@ export default function ApunteForm() {
   const isStep2Valid = () =>
     Number.isFinite(apunte.paginas) &&
     apunte.paginas! > 0 &&
-    (apunte.nuevo === true || apunte.nuevo === false) &&
-    (apunte.digital === true || apunte.digital === false) &&
-    (!apunte.digital || apunte.url?.trim());
+    (comunes.nuevo === true || comunes.nuevo === false) &&
+    (comunes.digital === true || comunes.digital === false) &&
+    (!comunes.digital || comunes.url?.trim());
 
   const isStep3Valid = () =>
     !!apunte.nivel_educativo?.trim() &&
@@ -107,8 +107,8 @@ export default function ApunteForm() {
             <TextInput
               style={styles.input}
               placeholder="Descripcción"
-              value={apunte.descripcion || ""}
-              onChangeText={(text) => updateApunte({ descripcion: text })}
+              value={comunes.descripcion || ""}
+              onChangeText={(text) => updateComunes({ descripcion: text })}
             />
 
             {/* --- Input de idioma --- */}
@@ -185,8 +185,8 @@ export default function ApunteForm() {
             <Text style={styles.label}>Nuevo</Text>
             <View style={styles.pickerWrapper}>
               <Picker
-                selectedValue={apunte.nuevo}
-                onValueChange={(value) => updateApunte({ nuevo: value })}
+                selectedValue={comunes.nuevo}
+                onValueChange={(value) => updateComunes({ nuevo: value })}
               >
                 <Picker.Item label="Seleccionar..." value="" />
                 <Picker.Item label="Sí" value={true} />
@@ -197,20 +197,20 @@ export default function ApunteForm() {
             <Text style={styles.label}>Formato</Text>
             <View style={styles.pickerWrapper}>
               <Picker
-                selectedValue={apunte.digital}
-                onValueChange={(value) => updateApunte({ digital: value })}
+                selectedValue={comunes.digital}
+                onValueChange={(value) => updateComunes({ digital: value })}
               >
                 <Picker.Item label="Seleccionar..." value="" />
                 <Picker.Item label="Digital" value={true} />
                 <Picker.Item label="Físico" value={false} />
               </Picker>
             </View>
-            {apunte.digital && (
+            {comunes.digital && (
               <>
                 <Text style={styles.label}>Enlace</Text>
                 <TextInput
-                  value={apunte.url}
-                  onChangeText={(text) => updateApunte({ url: text })}
+                  value={comunes.url}
+                  onChangeText={(text) => updateComunes({ url: text })}
                   placeholder="Enlace"
                   style={styles.input}
                 />
@@ -243,6 +243,17 @@ export default function ApunteForm() {
               </Picker>
             </View>
 
+            {apunte.nivel_educativo === "Superior" && (
+              <>
+                <Text>Carrera</Text>
+                <TextInput
+                  style={styles.input}
+                  value={apunte.carrera}
+                  onChangeText={(text) => updateApunte({ carrera: text })}
+                />
+              </>
+            )}
+
             <Text>Institución</Text>
             <TextInput
               style={styles.input}
@@ -263,17 +274,6 @@ export default function ApunteForm() {
               value={apunte.seccion}
               onChangeText={(text) => updateApunte({ seccion: text })}
             />
-
-            {apunte.nivel_educativo === "Superior" && (
-              <>
-                <Text>Carrera</Text>
-                <TextInput
-                  style={styles.input}
-                  value={apunte.carrera}
-                  onChangeText={(text) => updateApunte({ carrera: text })}
-                />
-              </>
-            )}
 
             <PrimaryButton
               title="Siguiente"
