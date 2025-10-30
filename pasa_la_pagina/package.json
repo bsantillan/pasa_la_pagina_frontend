@@ -18,6 +18,7 @@
     "@react-navigation/bottom-tabs": "^7.3.10",
     "@react-navigation/elements": "^2.3.8",
     "@react-navigation/native": "^7.1.6",
+    "@stomp/stompjs": "^7.2.1",
     "expo": "^54.0.7",
     "expo-auth-session": "~7.0.8",
     "expo-blur": "~15.0.7",
@@ -48,12 +49,15 @@
     "react-native-screens": "~4.16.0",
     "react-native-vector-icons": "^10.3.0",
     "react-native-web": "^0.21.0",
-    "react-native-webview": "13.15.0"
+    "react-native-websocket": "^1.0.2",
+    "react-native-webview": "13.15.0",
+    "sockjs-client": "^1.6.1"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
     "@types/react": "^19.1.12",
     "@types/react-native-maps": "^0.24.1",
+    "@types/sockjs-client": "^1.5.4",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~10.0.0",
     "typescript": "~5.9.2"

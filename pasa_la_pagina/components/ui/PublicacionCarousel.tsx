@@ -1,10 +1,10 @@
 import { Publicacion } from "@/contexts/PublicacionContext";
 import React from "react";
 import {
-    FlatList,
-    Pressable,
-    StyleSheet,
-    View
+  FlatList,
+  Pressable,
+  StyleSheet,
+  View
 } from "react-native";
 import { ProductCard } from "./ProductCard";
 

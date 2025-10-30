@@ -6,7 +6,6 @@ import { useEnums } from "@/contexts/EnumsContext";
 import { usePublicacion } from "@/contexts/PublicacionContext";
 import Ionicons from "@expo/vector-icons/build/Ionicons";
 import { Picker } from "@react-native-picker/picker";
-import * as ImagePicker from "expo-image-picker";
 import * as Location from "expo-location";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -88,7 +87,7 @@ export default function FinalizarPublicacionScreen() {
   };
 
   // ✅ Payloads
-  const buildLibroPayload = (uploadedUrls: string[]) => {
+  const buildLibroPayload = (uploadedUrls: string[], usuarioId: number) => {
     const payload: any = {
       titulo: libro?.titulo ?? "",
       descripcion: comunes?.descripcion ?? "",
@@ -100,7 +99,7 @@ export default function FinalizarPublicacionScreen() {
       idioma: libro?.idioma ?? "",
       cantidad: comunes?.cantidad ?? 1,
       tipo_oferta: comunes?.tipo_oferta ?? "Venta",
-      usuarioId: comunes?.usuario_id ?? 1,
+      usuarioId: usuarioId ?? 1,
       fotos_url: uploadedUrls,
       isbn: String(libro?.isbn ?? ""),
       genero: (libro?.genero ?? "").trim(),
@@ -111,7 +110,7 @@ export default function FinalizarPublicacionScreen() {
     return payload;
   };
 
-  const buildApuntePayload = (uploadedUrls: string[]) => {
+  const buildApuntePayload = (uploadedUrls: string[], usuarioId: number) => {
     const payload: any = {
       titulo: apunte?.titulo ?? "",
       descripcion: comunes?.descripcion ?? "",
@@ -126,7 +125,7 @@ export default function FinalizarPublicacionScreen() {
       anio_elaboracion: apunte?.anio_elaboracion ?? new Date().getFullYear(),
       tipo_oferta: comunes?.tipo_oferta ?? "Venta",
       fotos_url: uploadedUrls,
-      usuarioId: comunes?.usuario_id ?? 1,
+      usuarioId: usuarioId ?? 1,
       cantidad_paginas: apunte?.paginas ?? 1,
       materia: apunte?.materia ?? "",
       institucion: apunte?.institucion ?? "",
@@ -164,10 +163,10 @@ export default function FinalizarPublicacionScreen() {
       let payload: any;
       let endpoint;
       if (tipo === "libro") {
-        payload = buildLibroPayload(uploadedUrls);
+        payload = buildLibroPayload(uploadedUrls, me.id);
         endpoint = `${process.env.EXPO_PUBLIC_API_URL}publicacion/nuevo/libro`;
       } else if (tipo === "apunte") {
-        payload = buildApuntePayload(uploadedUrls);
+        payload = buildApuntePayload(uploadedUrls, me.id);
         endpoint = `${process.env.EXPO_PUBLIC_API_URL}publicacion/nuevo/apunte`;
       } else {
         throw new Error("Tipo de publicación inválido");
