@@ -3,12 +3,14 @@ import PrimaryButton from "@/components/ui/Boton/Primary";
 import { FotoCarousel } from "@/components/ui/FotosCarousel";
 import { Colors } from "@/constants/Colors";
 import { useAuth } from "@/contexts/AuthContext";
+import { useIntercambio } from "@/contexts/IntercambioContext";
 import { Publicacion } from "@/types/Publicacion";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Modal,
   Pressable,
   ScrollView,
@@ -27,10 +29,11 @@ export default function VisualizarPublicacion() {
   const [showAlert, setShowAlert] = useState(false);
   const [verDetalles, setVerDetalles] = useState(false);
   const [userid, setUserid] = useState<number | null>(null);
+  const { solicitarIntercambio } = useIntercambio();
 
   useEffect(() => {
     const fetchPublicacion = async () => {
-      setLoading(true); 
+      setLoading(true);
       try {
         const accessToken = await getValidAccessToken();
         const useridResponse = await fetch(
@@ -70,22 +73,14 @@ export default function VisualizarPublicacion() {
 
   const handleContactar = async () => {
     try {
-      const accessToken = await getValidAccessToken();
-
-      const res = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL}intercambio/solicitar/${publicacion?.id}`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        }
-      );
-      if (!res.ok) {
-        throw new Error(`Error al contactar: ${res.status}`);
+      if (!publicacion?.id) {
+        Alert.alert("Error", "ID de la publicación no disponible");
+        return;
       }
-    } catch (error) {
-      console.error("Error al contactar al usuario:", error);
+      await solicitarIntercambio(publicacion.id);
+      Alert.alert("Éxito", "Has solicitado el intercambio correctamente");
+    } catch (err: any) {
+      Alert.alert("Ya enviaste", err.message);
     }
   };
 
@@ -118,7 +113,15 @@ export default function VisualizarPublicacion() {
         {/* Barra de búsqueda */}
         <TouchableOpacity
           onPress={() => router.push(`/listado`)}
-          style={[styles.input, { flex: 1, marginHorizontal: 8, paddingHorizontal: 12, paddingVertical: 8 }]}
+          style={[
+            styles.input,
+            {
+              flex: 1,
+              marginHorizontal: 8,
+              paddingHorizontal: 12,
+              paddingVertical: 8,
+            },
+          ]}
         >
           <Text>Buscar publicaciones...</Text>
         </TouchableOpacity>
