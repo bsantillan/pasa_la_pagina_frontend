@@ -1,4 +1,3 @@
-import BottomNavbar from "@/components/ui/BottomNavbar";
 import { useAuth } from "@/contexts/AuthContext";
 import { EnumsProvider } from "@/contexts/EnumsContext"; // 👈 importalo
 import { LibroProvider } from "@/contexts/LibroContext";
@@ -25,7 +24,6 @@ export default function PublicacionLayout() {
         <EnumsProvider>
           <LibroProvider>
             <Slot />
-            <BottomNavbar />
           </LibroProvider>
         </EnumsProvider>
       </PublicacionProvider>
