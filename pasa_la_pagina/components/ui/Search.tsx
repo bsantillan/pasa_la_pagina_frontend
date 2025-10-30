@@ -17,17 +17,20 @@ export const Buscador: React.FC<BuscadorProps> = ({ placeholder = "Buscar public
         return <Text>Error: PublicacionContext no disponible</Text>;
     }
 
-    const { publicaciones, loading, error, buscarPublicaciones } = publicacionContext;
+    const { resultadosBusqueda, loading, error, buscarPublicaciones } = publicacionContext;
 
     // Efecto para buscar mientras escribes
     useEffect(() => {
-        if (query.length >= 2) {
-            buscarPublicaciones(query);
-            setShowDropdown(true);
-        } else {
-            setShowDropdown(false);
-        }
-    }, [query]);
+        const busqueda = async () => {
+            if (query.length >= 2) {
+                buscarPublicaciones(query);
+                setShowDropdown(true);
+            } else {
+                setShowDropdown(false);
+            }
+        };
+        busqueda();
+    }, [buscarPublicaciones, query]);
 
     const handleSelect = (publicacion: Publicacion) => {
         if (onSelect) onSelect(publicacion);
@@ -59,13 +62,14 @@ export const Buscador: React.FC<BuscadorProps> = ({ placeholder = "Buscar public
             {loading && <ActivityIndicator style={{ marginVertical: 8 }} size="small" color="#0000ff" />}
             {error && <Text style={styles.error}>{error}</Text>}
 
-            {showDropdown && publicaciones.length > 0 && (
+            {showDropdown && resultadosBusqueda.length > 0 && (
                 <View style={styles.dropdown}>
                     <FlatList
-                        data={publicaciones}
+                        data={resultadosBusqueda}
                         keyExtractor={(item) => item.id.toString()}
                         renderItem={renderItem}
                         keyboardShouldPersistTaps="handled"
+                        scrollEnabled={false}
                     />
                 </View>
             )}

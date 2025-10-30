@@ -121,6 +121,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const logout = async () => {
+    await AsyncStorage.removeItem("accessToken");
+    await AsyncStorage.removeItem("refreshToken");
+    setAccessToken(null);
+    setRefreshToken(null);
     const response = await fetch(`${API_URL}auth/logout`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -129,10 +133,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     
     if (!response.ok) throw new Error("Token invalido");
 
-    await AsyncStorage.removeItem("accessToken");
-    await AsyncStorage.removeItem("refreshToken");
-    setAccessToken(null);
-    setRefreshToken(null);
+    
   };
 
   const refreshAccessToken = async (): Promise<string | null> => {

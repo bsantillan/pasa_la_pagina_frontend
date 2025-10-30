@@ -5,26 +5,29 @@ import { Colors } from "@/constants/Colors";
 import { Intercambio, useIntercambio } from "@/contexts/IntercambioContext";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
-import {
-  Alert,
-  FlatList,
-  Modal,
-  StyleSheet,
-  View
-} from "react-native";
+import { Alert, FlatList, Modal, StyleSheet, View } from "react-native";
 
 export default function Mensajes() {
-  const { intercambios, buscarIntercambios, aceptarIntercambio, cancelarIntercambio, intercambioSeleccionado, seleccionarIntercambio } = useIntercambio();
+  const {
+    intercambios,
+    buscarIntercambios,
+    aceptarIntercambio,
+    cancelarIntercambio,
+    intercambioSeleccionado,
+    seleccionarIntercambio,
+  } = useIntercambio();
   const [solicitudesVisible, setSolicitudesVisible] = useState(true);
 
   const cargarIntercambios = async (mostrarSolicitudes: boolean) => {
     try {
       if (mostrarSolicitudes) {
-        console.log("entro")
+        console.log("entro");
         await buscarIntercambios();
       } else {
-        const response = await buscarIntercambios({ "estadosIntercambio": ["CONCRETADO", "ACEPTADO"] })
-        console.log(response)
+        const response = await buscarIntercambios({
+          estadosIntercambio: ["PENDIENTE", "ACEPTADO"],
+        });
+        console.log(response);
       }
     } catch (err: any) {
       console.error("Error al buscar intercambios:", err);
@@ -103,13 +106,20 @@ export default function Mensajes() {
               estado={item.estadoIntercambio}
               fecha={new Date(item.fechaInicio).toLocaleDateString()}
               onPress={() => handleAbrirModal(item)}
+              solicitanteConcreto={item.solicitanteConcreto}
+              propietarioConcreto={item.propietarioConcreto}
+              rolUsuario={item.rolUsuario}
             />
           )}
         />
       ) : (
         <>
           <FlatList
-            data={intercambios}
+            data={intercambios?.filter(
+              (item) =>
+                item.estadoIntercambio === "PENDIENTE" ||
+                item.estadoIntercambio === "ACEPTADO"
+            )}
             keyExtractor={(item) => item.id.toString()}
             contentContainerStyle={{ gap: 16 }}
             renderItem={({ item }) => (
@@ -119,17 +129,21 @@ export default function Mensajes() {
                 estado={item.estadoIntercambio}
                 fecha={new Date(item.fechaInicio).toLocaleDateString()}
                 onPress={() => {
-                  seleccionarIntercambio(item);
+                  seleccionarIntercambio(null);
                   router.push({
                     pathname: "/(intercambios)/chat",
                     params: {
                       chatId: item.chatId,
                       usuarioEmail: item.usuarioEmail,
+                      tituloPublicacion: item.tituloPublicaicon,
+                      intercambioId: item.id,
                     },
-                  })
-                }
-                }
+                  });
+                }}
                 mensaje
+                solicitanteConcreto={item.solicitanteConcreto}
+                propietarioConcreto={item.propietarioConcreto}
+                rolUsuario={item.rolUsuario}
               />
             )}
           />
@@ -159,7 +173,6 @@ export default function Mensajes() {
                 tituloRechazar={"Rechazar intercambio"}
               />
             )}
-
           </View>
         </View>
       </Modal>
@@ -178,6 +191,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginVertical: 16,
     gap: 10,
+    paddingTop: 60,
   },
   styleBtn: {
     flex: 1,

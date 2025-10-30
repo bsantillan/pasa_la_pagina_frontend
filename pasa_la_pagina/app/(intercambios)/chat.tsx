@@ -4,7 +4,7 @@ import { Colors } from "@/constants/Colors";
 import { useChat } from "@/contexts/ChatContext"; // ✅ Importar tu contexto
 import { useIntercambio } from "@/contexts/IntercambioContext";
 import Ionicons from "@expo/vector-icons/build/Ionicons";
-import { useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
   FlatList,
@@ -13,15 +13,22 @@ import {
   Platform,
   Pressable,
   StyleSheet,
+  Text,
   TextInput,
-  View
+  View,
 } from "react-native";
 
 export default function Chat() {
   const [visible, setVisible] = useState(false);
-  const { chatId, usuarioEmail, tituloPublicacion } = useLocalSearchParams<{ chatId: string; usuarioEmail: string, tituloPublicacion: string }>();
+  const { chatId, usuarioEmail, tituloPublicacion, intercambioId } =
+    useLocalSearchParams<{
+      chatId: string;
+      usuarioEmail: string;
+      tituloPublicacion: string;
+      intercambioId: string;
+    }>();
   const { messages, loadMessages, initWebSocket, sendMessage } = useChat(); // ✅ usar el contexto
-  const { intercambioSeleccionado, cancelarIntercambio, concretarIntercambio } = useIntercambio();
+  const { cancelarIntercambio, concretarIntercambio } = useIntercambio();
   const [text, setText] = useState("");
   const flatListRef = useRef<FlatList<any>>(null);
 
@@ -35,9 +42,8 @@ export default function Chat() {
 
   // Cargar historial y conectar WebSocket
   useEffect(() => {
-
     loadMessages(Number(chatId)); // cargar historial
-    const disconnectWS = initWebSocket(Number(intercambioSeleccionado?.chatId)); // conectar socket
+    const disconnectWS = initWebSocket(Number(chatId)); // conectar socket
 
     return () => disconnectWS(); // limpiar conexión al salir
   }, []);
@@ -45,18 +51,20 @@ export default function Chat() {
   const handleSend = () => {
     if (!text.trim()) return;
 
-    sendMessage(Number(chatId), intercambioSeleccionado!.usuarioEmail, text);
+    sendMessage(Number(chatId), usuarioEmail, text);
 
     setText("");
   };
 
   const handleCancel = (intercambioId: number) => {
+    cancelarIntercambio(intercambioId);
     setVisible(false);
-  }
+  };
 
   const handleConcretar = (intercambioId: number) => {
+    concretarIntercambio(intercambioId);
     setVisible(false);
-  }
+  };
 
   return (
     <KeyboardAvoidingView
@@ -64,12 +72,26 @@ export default function Chat() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       keyboardVerticalOffset={90}
     >
-      <Pressable style={{ marginTop: 20 }} onPress={() => abrirModal()}>
-        <Ionicons name="lock-closed-outline" size={25} color={Colors.primary} />
-      </Pressable>
+      <View style={styles.header}>
+        <Pressable onPress={() => router.back()} style={styles.headerButton}>
+          <Ionicons name="arrow-back" size={24} color={Colors.text} />
+        </Pressable>
+
+        <Text style={styles.headerTitle} numberOfLines={1} ellipsizeMode="tail">
+          {tituloPublicacion}
+        </Text>
+
+        <Pressable onPress={abrirModal} style={styles.headerButton}>
+          <Ionicons
+            name="checkmark-done-outline"
+            size={24}
+            color={Colors.primary}
+          />
+        </Pressable>
+      </View>
       <FlatList
         ref={flatListRef}
-        style={{ flex: 1, backgroundColor: "#FFF8ED", paddingTop: 80 }}
+        style={{ flex: 1, backgroundColor: "#FFF8ED" }}
         data={messages}
         keyExtractor={(item, index) => item.id?.toString() || index.toString()}
         renderItem={({ item }) => (
@@ -79,7 +101,7 @@ export default function Chat() {
               hour: "2-digit",
               minute: "2-digit",
             })}
-            isOwnMessage={item.usuarioEmail === intercambioSeleccionado?.usuarioEmail}
+            isOwnMessage={item.usuarioEmail === usuarioEmail}
           />
         )}
       />
@@ -105,11 +127,11 @@ export default function Chat() {
       >
         <View style={styles.overlay}>
           <AlertCard
-            title={`¿Intercambiar "${intercambioSeleccionado?.tituloPublicaicon}"?`}
-            description="¿Estás seguro de que deseas solicitar este intercambio?"
-            onAccept={() => handleConcretar(intercambioSeleccionado!.id)}
-            onCancel={() => handleCancel(intercambioSeleccionado!.id)}
-            acceptLabel="Sí, intercambiar"
+            title={`Concretar intercambio de "${tituloPublicacion}"?`}
+            description="¿Estás seguro de que deseas concretar este intercambio?"
+            onAccept={() => handleConcretar(Number(intercambioId))}
+            onCancel={() => handleCancel(Number(intercambioId))}
+            acceptLabel="Sí, concretar"
             cancelLabel="Cancelar"
           />
         </View>
@@ -133,6 +155,32 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 12,
     borderTopRightRadius: 12,
   },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: Colors.white,
+    borderBottomWidth: 1,
+    borderBottomColor: "#e0e0e0",
+    marginTop: 50,
+  },
+  headerButton: {
+    padding: 8,
+    width: 40,
+    height: 40,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  headerTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: Colors.text,
+    flex: 1,
+    textAlign: "center",
+    marginHorizontal: 16,
+  },
   inputContainer: {
     flex: 1,
     marginHorizontal: 10,
@@ -145,6 +193,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 10,
     height: 40,
+    marginVertical: 8,
   },
   input: {
     flex: 1,

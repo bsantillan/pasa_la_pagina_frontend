@@ -5,10 +5,14 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 type IntercambioCardProps = {
   nombreUsuario: string;
   tituloPublicacion: string;
-  estado?: "PENDIENTE" | "CANCELADO" | "CONCRETADO" | string;
+  estado?: "PENDIENTE" | "CANCELADO" | "CONCRETADO" | "ACEPTADO" | string;
   fecha: string;
-  mensaje?: boolean; // 👈 nuevo prop opcional
+  mensaje?: boolean;
   onPress?: () => void;
+  // 👇 Nuevas props
+  solicitanteConcreto?: boolean;
+  propietarioConcreto?: boolean;
+  rolUsuario?: string;
 };
 
 export const SolicitudCard: React.FC<IntercambioCardProps> = ({
@@ -18,17 +22,62 @@ export const SolicitudCard: React.FC<IntercambioCardProps> = ({
   fecha,
   mensaje = false,
   onPress,
+  solicitanteConcreto,
+  propietarioConcreto,
+  rolUsuario,
 }) => {
   const inicial = nombreUsuario.charAt(0).toUpperCase();
 
+  // 👇 Función para determinar el estado visual
+  const getEstadoVisual = () => {
+    if (!estado) return "";
+    
+    if (estado === "CONCRETADO") {
+      return "Concretado";
+    }
+    
+    if (estado === "CANCELADO") {
+      return "Cancelado";
+    }
+    
+    if (estado === "PENDIENTE") {
+      return "Pendiente";
+    }
+    
+    // Estado "ACEPTADO" - verificar si ambos concretaron
+    if (estado === "ACEPTADO") {
+      const ambosConcretaron = solicitanteConcreto && propietarioConcreto;
+      const ningunoConcreto = !solicitanteConcreto && !propietarioConcreto;
+      
+      if (ambosConcretaron) {
+        return "Concretado";
+      }
+      
+      if (ningunoConcreto) {
+        return "Aceptado";
+      }
+      
+      // Solo uno concretó
+      return "Esperando respuesta";
+    }
+    
+    return estado;
+  };
+
   const colorEstado = () => {
-    switch (estado) {
-      case "PENDIENTE":
+    const estadoVisual = getEstadoVisual();
+    
+    switch (estadoVisual) {
+      case "Pendiente":
         return "#FFAF00";
-      case "CANCELADO":
+      case "Cancelado":
         return "#EE7300";
-      case "CONCRETADO":
+      case "Concretado":
         return "#333333";
+      case "Esperando respuesta":
+        return "#FFA500";
+      case "Aceptado":
+        return Colors.cta;
       default:
         return Colors.cta;
     }
@@ -65,7 +114,9 @@ export const SolicitudCard: React.FC<IntercambioCardProps> = ({
       {/* Estado + fecha o solo fecha centrada */}
       <View style={[styles.infoContainer, mensaje && styles.infoContainerMensaje]}>
         {!mensaje && (
-          <Text style={[styles.estado, { color: colorEstado() }]}>{estado}</Text>
+          <Text style={[styles.estado, { color: colorEstado() }]}>
+            {getEstadoVisual()}
+          </Text>
         )}
         <Text style={[styles.fecha, mensaje && styles.fechaMensaje]}>{fecha}</Text>
       </View>
