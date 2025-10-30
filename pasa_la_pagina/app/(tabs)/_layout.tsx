@@ -1,6 +1,6 @@
-import BottomNavbar from '@/components/ui/BottomNavbar';
 import { Colors } from '@/constants/Colors';
 import { useAuth } from '@/contexts/AuthContext';
+import { UserProvider } from '@/contexts/UserContext';
 import { Slot, useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -21,18 +21,21 @@ export default function TabLayout() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: Colors.background }]} edges={['top', 'bottom']}>
-      <View style={{ flex: 1 }}>
-        <Slot />
-        <BottomNavbar />
-      </View>
+      
+        <UserProvider>
+          <View style={{ flex: 1 }}>
+            <Slot />
+          </View>
+        </UserProvider>
+      
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-container: {
-  flex: 1,
-  backgroundColor: Colors.white,
-},
+  container: {
+    flex: 1,
+    backgroundColor: Colors.white,
+  },
 
 });

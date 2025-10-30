@@ -9,10 +9,13 @@ import { Slot, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
 
+import BottomNavbar from "@/components/ui/BottomNavbar";
+import { IntercambioProvider } from "@/contexts/IntercambioContext";
+import { PublicacionProvider } from "@/contexts/PublicacionContext";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useEffect } from "react";
 
-function AuthGate(){
+function AuthGate() {
   const { accessToken } = useAuth();
   const router = useRouter();
 
@@ -23,7 +26,6 @@ function AuthGate(){
   }, [accessToken, router]);
 
   return <Slot />;
-
 }
 
 export default function RootLayout() {
@@ -37,13 +39,19 @@ export default function RootLayout() {
     return null;
   }
 
-
   return (
     <AuthProvider>
-      <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-        <AuthGate />
-        <StatusBar style="auto" />
-      </ThemeProvider>
+      <IntercambioProvider>
+        <PublicacionProvider>
+          <ThemeProvider
+            value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
+          >
+            <AuthGate />
+            <StatusBar style="auto" />
+            <BottomNavbar />
+          </ThemeProvider>
+        </PublicacionProvider>
+      </IntercambioProvider>
     </AuthProvider>
   );
 }

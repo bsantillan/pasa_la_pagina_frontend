@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
 
 type AuthContextType = {
   accessToken: string | null;
@@ -30,11 +30,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     const loadTokens = async () => {
+      try {
       const storedAccess = await AsyncStorage.getItem("accessToken");
       const storedRefresh = await AsyncStorage.getItem("refreshToken");
       setAccessToken(storedAccess);
       setRefreshToken(storedRefresh);
+      } catch (error){
+        console.error('Error loading token:', error);
+      } finally{
       setLoading(false);
+      }
     };
     loadTokens();
   }, []);
@@ -121,18 +126,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const logout = async () => {
-    const response = await fetch(`${API_URL}auth/logout`, {
+    try {
+      await AsyncStorage.removeItem("accessToken");
+      await AsyncStorage.removeItem("refreshToken");
+      setAccessToken(null);
+      setRefreshToken(null);
+      await fetch(`${API_URL}auth/logout`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ refreshToken }),
     });
-    
-    if (!response.ok) throw new Error("Token invalido");
-
-    await AsyncStorage.removeItem("accessToken");
-    await AsyncStorage.removeItem("refreshToken");
-    setAccessToken(null);
-    setRefreshToken(null);
+    } catch (error) {
+      console.error("Error during logout:", error);
+    } 
   };
 
   const refreshAccessToken = async (): Promise<string | null> => {
@@ -165,7 +171,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return refreshPromise;
   };
 
-  const getValidAccessToken = async () => {
+  const getValidAccessToken =  useCallback(async () => {
     if (!accessToken) return null;
 
 
@@ -182,7 +188,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       // Token corrupto, refrescar
       return await refreshAccessToken();
     }
-  };
+  }, [accessToken]);
 
   return (
     <AuthContext.Provider

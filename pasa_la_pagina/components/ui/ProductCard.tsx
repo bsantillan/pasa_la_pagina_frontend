@@ -6,11 +6,19 @@ type ProductCardProps = {
     imageUrl: string;
     title: string;
     description: string;
+    width?: number;   // opcional
+    height?: number;  // opcional
 };
 
-export const ProductCard = ({ imageUrl, title, description }: ProductCardProps) => {
+export const ProductCard = ({
+    imageUrl,
+    title,
+    description,
+    width = 245,  // valor por defecto
+    height = 215, // valor por defecto
+}: ProductCardProps) => {
     return (
-        <View style={styles.card}>
+        <View style={[styles.card, { width, height }]}>
             <Image source={{ uri: imageUrl }} style={styles.image} resizeMode="cover" />
             <View style={styles.content}>
                 <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">
@@ -24,29 +32,24 @@ export const ProductCard = ({ imageUrl, title, description }: ProductCardProps) 
     );
 };
 
-const CARD_WIDTH = 245;
-const CARD_HEIGHT = 215; 
-
 const styles = StyleSheet.create({
     card: {
         backgroundColor: Colors.white,
-        width: CARD_WIDTH,
-        height: CARD_HEIGHT, 
         borderRadius: 12,
         overflow: "hidden",
         shadowColor: "#000",
         shadowOpacity: 0.1,
         shadowRadius: 6,
         elevation: 3,
-        margin:8
+        margin: 8,
     },
     image: {
         width: "100%",
-        height: 120,
+        height: 120, // podés hacer que esto también dependa de `height` si querés
     },
     content: {
         padding: 12,
-        flex: 1, 
+        flex: 1,
         justifyContent: "flex-start",
     },
     title: {
