@@ -1,13 +1,14 @@
-import { Buscador } from "@/components/ui/Search";
 import { Colors } from "@/constants/Colors";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePublicacion } from "@/contexts/PublicacionContext";
-import { MaterialIcons } from "@expo/vector-icons";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   RefreshControl,
   ScrollView,
   StyleSheet,
+  Text,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -45,7 +46,20 @@ export default function HomeScreen() {
       >
         <View style={styles.searchRow}>
           <View style={{ flex: 1 }}>
-            <Buscador onSelect={(pub) => console.log("Seleccionado:", pub)} />
+            <View style={styles.inputContainer}>
+              <Ionicons
+                name="search"
+                size={20}
+                color="#999"
+                style={{ marginRight: 8 }}
+              />
+              <TouchableOpacity
+                onPress={()=> router.push(`/listado`)}
+                style={{width: "100%"}}
+              >
+                <Text>Buscar publicaciones...</Text>
+              </TouchableOpacity>
+            </View>
           </View>
           <TouchableOpacity onPress={logout} style={styles.logoutButton}>
             <MaterialIcons name="logout" size={28} color={Colors.primary} />
@@ -72,4 +86,14 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
   },
   logoutButton: { marginLeft: 12, padding: 8, borderRadius: 8 },
+  inputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    height: 40,
+  },
+  input: { flex: 1, height: "100%" },
 });
