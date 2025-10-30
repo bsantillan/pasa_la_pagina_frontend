@@ -5,7 +5,6 @@ import { useAuth } from "./AuthContext";
 type PublicacionTipo = "libro" | "apunte" | null;
 
 // ---- Datos de creación ----
-
 type ComunesData = {
   descripcion?: string;
   nuevo?: boolean;
@@ -52,6 +51,7 @@ export type Publicacion = {
   usuario_id: number;
   latitud?: number;
   longitud?: number;
+  distancia?: number;
 };
 
 type PublicacionContextType = {
@@ -73,6 +73,7 @@ type PublicacionContextType = {
   fetchCercaTuyo: () => Promise<void>;
   buscarPublicaciones: (query: string, page?: number, size?: number) => Promise<void>;
   fetchTodasPublicaciones: (limit?: number) => Promise<void>;
+  fetchPublicacionesByUsuario: (usuario_id: number, page?: number, size?: number) => Promise<void>;
 };
 
 export const PublicacionContext = createContext<PublicacionContextType | undefined>(undefined);
@@ -103,6 +104,7 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
+  // ---- Utilidades de ubicación ----
   const getUserLocation = async () => {
     const { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== "granted") return null;
@@ -143,6 +145,7 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
     return pubsConDistancia.slice(0, limit);
   };
 
+  // ---- Función genérica para fetch ----
   const fetchPublicacionesGeneric = async (url: string, sortByLocation = false, limit?: number) => {
     setLoading(true);
     setError(null);
@@ -163,7 +166,7 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
         throw new Error(`Error al obtener publicaciones: ${res.status} - ${text}`);
       }
 
-      let data = await res.json();
+      const data = await res.json();
       let pubs: Publicacion[] = (data.content ?? []).map((p: any) => ({
         id: p.id,
         titulo: p.titulo,
@@ -191,6 +194,7 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // ---- Funciones expuestas ----
   const fetchCercaTuyo = async () => {
     const userLocation = await getUserLocation();
     if (!userLocation) return;
@@ -207,6 +211,12 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
     await fetchPublicacionesGeneric(`publicacion/paginado?size=${limit}`);
   };
 
+
+  const fetchPublicacionesByUsuario = async (usuario_id: number, page = 0, size = 10) => {
+  await fetchPublicacionesGeneric(`publicacion/usuario/${usuario_id}?page=${page}&size=${size}`);
+};
+
+
   const buscarPublicaciones = async (query: string, page = 0, size = 10) => {
     setLoading(true);
     setError(null);
@@ -214,7 +224,7 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
       const token = await getValidAccessToken();
       if (!token) throw new Error("No hay token válido");
 
-      const body = { query };
+      const body = { titulo: query };
       const res = await fetch(`${API_URL}publicacion/buscar?page=${page}&size=${size}`, {
         method: "POST",
         headers: {
@@ -229,8 +239,20 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
         throw new Error(`Error al buscar publicaciones: ${res.status} - ${text}`);
       }
 
-      let data = await res.json();
-      setPublicaciones(data.content ?? []);
+      const data = await res.json();
+      const pubs = (data.content ?? []).map((p: any) => ({
+        id: p.id,
+        titulo: p.titulo,
+        descripcion: p.descripcion,
+        fotos_url: p.url_fotos,
+        precio: p.precio,
+        tipo: p.tipo_material === "Apunte" ? "apunte" : p.tipo_material === "Libro" ? "libro" : null,
+        usuario_id: p.usuario_id,
+        latitud: p.latitud,
+        longitud: p.longitud,
+      }));
+
+      setPublicaciones(pubs);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -256,6 +278,7 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
         fetchCercaTuyo,
         buscarPublicaciones,
         fetchTodasPublicaciones,
+        fetchPublicacionesByUsuario,
       }}
     >
       {children}
