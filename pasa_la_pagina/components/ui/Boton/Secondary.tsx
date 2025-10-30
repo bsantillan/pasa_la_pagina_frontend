@@ -5,17 +5,20 @@ import { Colors } from "../../../constants/Colors";
 type Props = {
     title: string;
     onPress: (event: GestureResponderEvent) => void;
+    styleBtn?: object;
+    styleTxt?: object;
+    disabled?: boolean;
 }
 
-export default function SecondaryButton({ title, onPress }: Props) {
+export default function SecondaryButton({ title, onPress, styleBtn, styleTxt, disabled= false }: Props) {
     return (
-        <TouchableOpacity style={styles.button} onPress={onPress}>
-            <Text style={styles.buttonText}>{title}</Text>
+        <TouchableOpacity style={[styles.button, styleBtn]} onPress={onPress} disabled={disabled}>
+            <Text style={[styles.buttonText, styleTxt]}>{title}</Text>
         </TouchableOpacity>
     );
 }
 
-    const styles = StyleSheet.create({
+const styles = StyleSheet.create({
     button: {
         backgroundColor: "transparent",
         paddingVertical: 4,
@@ -30,4 +33,4 @@ export default function SecondaryButton({ title, onPress }: Props) {
         fontSize: 16,
         fontWeight: "600",
     },
-    });
+});

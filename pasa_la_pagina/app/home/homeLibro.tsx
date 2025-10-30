@@ -37,18 +37,18 @@ export default function LibrosRecientes() {
 
 const styles = StyleSheet.create({
     container: { marginBottom: 24 },
-    sectionTitle: { 
-        fontSize: 20, 
-        fontWeight: "bold", 
-        color: Colors.primary, 
-        marginBottom: 8, 
-        marginLeft: 8, 
-        paddingHorizontal: 16 
+    sectionTitle: {
+        fontSize: 20,
+        fontWeight: "bold",
+        color: Colors.primary,
+        marginBottom: 8,
+        marginLeft: 8,
+        paddingHorizontal: 16
     },
-    sectionDesc: { 
-        fontSize: 14, 
-        color: "#666", 
-        marginLeft: 26, 
+    sectionDesc: {
+        fontSize: 14,
+        color: "#666",
+        marginLeft: 26,
         marginBottom: 8,
     },
 });
