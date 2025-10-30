@@ -11,7 +11,7 @@ const TABS = [
     { name: "map", label: "Map", icon: "map-outline", activeIcon: "map", route: "/(tabs)/" },
     { name: "add", label: "", icon: "add", isCenter: true, route: "/(publicacion)/" },
     { name: "messages", label: "Message", icon: "chatbubble-outline", activeIcon: "chatbubble", route: "/(tabs)/" },
-    { name: "profile", label: "Profile", icon: "person-outline", activeIcon: "person", route: "/(tabs)/" },
+    { name: "profile", label: "Profile", icon: "person-outline", activeIcon: "person", route: "/(perfil)/" },
 ];
 
 
