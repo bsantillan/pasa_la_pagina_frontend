@@ -11,6 +11,7 @@ import "react-native-reanimated";
 
 import BottomNavbar from "@/components/ui/BottomNavbar";
 import { IntercambioProvider } from "@/contexts/IntercambioContext";
+import { PublicacionProvider } from "@/contexts/PublicacionContext";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useEffect } from "react";
 
@@ -25,7 +26,6 @@ function AuthGate() {
   }, [accessToken, router]);
 
   return <Slot />;
-
 }
 
 export default function RootLayout() {
@@ -39,15 +39,18 @@ export default function RootLayout() {
     return null;
   }
 
-
   return (
     <AuthProvider>
       <IntercambioProvider>
-        <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-          <AuthGate />
-          <StatusBar style="auto" />
-          <BottomNavbar />
-        </ThemeProvider>
+        <PublicacionProvider>
+          <ThemeProvider
+            value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
+          >
+            <AuthGate />
+            <StatusBar style="auto" />
+            <BottomNavbar />
+          </ThemeProvider>
+        </PublicacionProvider>
       </IntercambioProvider>
     </AuthProvider>
   );

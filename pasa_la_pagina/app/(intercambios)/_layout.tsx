@@ -1,4 +1,3 @@
-import BottomNavbar from "@/components/ui/BottomNavbar";
 import { useAuth } from "@/contexts/AuthContext";
 import { ChatProvider } from "@/contexts/ChatContext";
 import { IntercambioProvider } from "@/contexts/IntercambioContext";
@@ -23,7 +22,6 @@ export default function IntercambiosLayout() {
             <IntercambioProvider>
                 <ChatProvider>
                     <Slot />
-                    <BottomNavbar />
                 </ChatProvider>
             </IntercambioProvider>
         </View>

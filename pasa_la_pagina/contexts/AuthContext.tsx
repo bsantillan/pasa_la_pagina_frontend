@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
 
 type AuthContextType = {
   accessToken: string | null;
@@ -30,11 +30,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     const loadTokens = async () => {
+      try {
       const storedAccess = await AsyncStorage.getItem("accessToken");
       const storedRefresh = await AsyncStorage.getItem("refreshToken");
       setAccessToken(storedAccess);
       setRefreshToken(storedRefresh);
+      } catch (error){
+        console.error('Error loading token:', error);
+      } finally{
       setLoading(false);
+      }
     };
     loadTokens();
   }, []);
@@ -166,7 +171,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return refreshPromise;
   };
 
-  const getValidAccessToken = async () => {
+  const getValidAccessToken =  useCallback(async () => {
     if (!accessToken) return null;
 
 
@@ -183,7 +188,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       // Token corrupto, refrescar
       return await refreshAccessToken();
     }
-  };
+  }, [accessToken]);
 
   return (
     <AuthContext.Provider

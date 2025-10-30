@@ -1,3 +1,4 @@
+// HomeScreen.tsx - versión corregida
 import { Colors } from "@/constants/Colors";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePublicacion } from "@/contexts/PublicacionContext";
@@ -5,6 +6,7 @@ import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -18,19 +20,45 @@ import CercaTuyo from "../home/homeCercaTuyo";
 import LibrosRecientes from "../home/homeLibro";
 
 export default function HomeScreen() {
-  const { logout } = useAuth();
-  const { loading, fetchCercaTuyo } = usePublicacion();
+  const { logout, accessToken } = useAuth(); // 👈 Añade accessToken
+  const { loading, fetchCercaTuyo, error } = usePublicacion();
   const [refreshing, setRefreshing] = useState(false);
+  const [initialLoad, setInitialLoad] = useState(true);
 
+  // 👇 Solo cargar datos cuando el token esté disponible
   useEffect(() => {
-    fetchCercaTuyo(); // fetch inicial solo una vez
-  }, [fetchCercaTuyo]);
+    if (accessToken) {
+      fetchCercaTuyo().finally(() => setInitialLoad(false));
+    } else {
+      setInitialLoad(false);
+    }
+  }, [accessToken, fetchCercaTuyo]);
 
   const onRefresh = async () => {
-    setRefreshing(true);
-    await fetchCercaTuyo();
-    setRefreshing(false);
+    if (accessToken) {
+      setRefreshing(true);
+      await fetchCercaTuyo();
+      setRefreshing(false);
+    }
   };
+
+  // 👇 Mostrar loading mientras se verifica la autenticación
+  if (initialLoad) {
+    return (
+      <SafeAreaView style={styles.container} edges={["top"]}>
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+          <Text>Cargando...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // 👇 Redirigir si no hay token (aunque esto debería manejarse en AuthGate)
+  if (!accessToken) {
+    router.replace("/login");
+    return null;
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -66,11 +94,21 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Secciones */}
-
-        <CercaTuyo />
-        <LibrosRecientes />
-        <ApuntesRecientes />
+        {/* Mostrar error si lo hay */}
+        {error ? (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>Error al cargar publicaciones</Text>
+            <TouchableOpacity onPress={() => fetchCercaTuyo()}>
+              <Text style={styles.retryText}>Reintentar</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <>
+            <CercaTuyo />
+            <LibrosRecientes />
+            <ApuntesRecientes />
+          </>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -78,6 +116,11 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
+  center: { 
+    flex: 1, 
+    justifyContent: 'center', 
+    alignItems: 'center' 
+  },
   searchRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -95,5 +138,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     height: 40,
   },
-  input: { flex: 1, height: "100%" },
+  errorContainer: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  errorText: {
+    color: 'red',
+    marginBottom: 10,
+  },
+  retryText: {
+    color: Colors.primary,
+    fontWeight: 'bold',
+  },
 });

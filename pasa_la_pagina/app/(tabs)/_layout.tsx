@@ -1,6 +1,5 @@
 import { Colors } from '@/constants/Colors';
 import { useAuth } from '@/contexts/AuthContext';
-import { PublicacionProvider } from '@/contexts/PublicacionContext';
 import { UserProvider } from '@/contexts/UserContext';
 import { Slot, useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
@@ -22,13 +21,13 @@ export default function TabLayout() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: Colors.background }]} edges={['top', 'bottom']}>
-      <PublicacionProvider>
+      
         <UserProvider>
           <View style={{ flex: 1 }}>
             <Slot />
           </View>
         </UserProvider>
-      </PublicacionProvider>
+      
     </SafeAreaView>
   );
 }

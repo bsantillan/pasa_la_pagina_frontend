@@ -1,4 +1,5 @@
-import { Buscador } from "@/components/ui/Search";
+// PerfilScreen.tsx - versión corregida
+import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -7,37 +8,27 @@ import { Avatar } from "../../components/ui/Avatar";
 import { ProductCard } from "../../components/ui/ProductCard";
 import { ReviewCard } from "../../components/ui/ReviewCard";
 import { Colors } from "../../constants/Colors";
-import { PublicacionProvider, usePublicacion } from "../../contexts/PublicacionContext";
+import { usePublicacion } from "../../contexts/PublicacionContext"; // 👈 Solo el hook
 import { useUser } from "../../contexts/UserContext";
 
 const filtros = ["Reseñas", "Publicaciones", "Historial"];
 
 export default function PerfilScreen() {
-  return (
-    <PublicacionProvider>
-      <PerfilContenido />
-    </PublicacionProvider>
-  );
-}
-
-function PerfilContenido() {
   const { usuario, reseniasRecibidas, reseniasHechas, loading: userLoading } = useUser();
-  const { publicaciones, fetchPublicacionesByUsuario, loading, error } = usePublicacion();
+  const { pubsUser, fetchPublicacionesByUsuario, loading, error } = usePublicacion();
   const [selectedFiltro, setSelectedFiltro] = useState(filtros[0]);
 
   useEffect(() => {
-
     if (usuario?.id) {
-      fetchPublicacionesByUsuario(usuario.id)
+      fetchPublicacionesByUsuario(usuario.id);
     }
-  }, [usuario]);
-
+  }, [fetchPublicacionesByUsuario, usuario]);
 
   if (userLoading || loading) return <ActivityIndicator style={{ marginTop: 20 }} />;
   if (error) return <Text style={{ color: "red" }}>Error: {error}</Text>;
 
   const renderPublicaciones = () => {
-    if (!publicaciones.length) {
+    if (!pubsUser.length) {
       return (
         <Text style={{ color: Colors.disabled_primary, textAlign: "center", marginTop: 20 }}>
           No tiene publicaciones aún.
@@ -45,7 +36,7 @@ function PerfilContenido() {
       );
     }
 
-    return publicaciones.map((p) => (
+    return pubsUser.map((p) => (
       <View key={p.id} style={styles.row}>
         <ProductCard
           title={p.titulo}
@@ -55,7 +46,6 @@ function PerfilContenido() {
       </View>
     ));
   };
-
 
   const renderResenias = () => {
     if (!reseniasRecibidas.length) {
@@ -99,7 +89,28 @@ function PerfilContenido() {
   return (
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
       <View style={styles.container}>
-        <Buscador onSelect={(pub) => console.log("Seleccionado:", pub)} showBackIcon={true} onBackPress={() => router.back()} />
+        <View style={styles.searchRow}>
+          <TouchableOpacity onPress={()=> router.back()} >
+            <Ionicons name="arrow-back" size={28} color="#000" />
+          </TouchableOpacity>
+          <View style={{ flex: 1 }}>
+            <View style={styles.inputContainer}>
+              <Ionicons
+                name="search"
+                size={20}
+                color="#999"
+                style={{ marginRight: 8 }}
+              />
+              <TouchableOpacity
+                onPress={()=> router.push(`/listado`)}
+                style={{width: "100%"}}
+              >
+                <Text>Buscar publicaciones...</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+          
+        </View>
         <View style={styles.header}>
           <Avatar name={usuario?.nombre || "U"} size={80} />
           <Text style={styles.nombre}>
@@ -154,6 +165,23 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     marginTop: 8,
     color: Colors.text,
+  },
+   searchRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: Colors.background,
+  },
+  inputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    height: 40,
+    marginHorizontal: 8
   },
   filtrosContainer: {
     flexDirection: "row",
