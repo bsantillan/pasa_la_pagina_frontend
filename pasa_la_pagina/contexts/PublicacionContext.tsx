@@ -13,7 +13,6 @@ import { useAuth } from "./AuthContext";
 type PublicacionTipo = "libro" | "apunte" | null;
 
 // ---- Datos de creación ----
-
 type ComunesData = {
   descripcion?: string;
   nuevo?: boolean;
@@ -60,6 +59,7 @@ export type Publicacion = {
   usuario_id: number;
   latitud?: number;
   longitud?: number;
+  distancia?: number;
 };
 
 export type Filtros = {
@@ -120,6 +120,7 @@ type PublicacionContextType = {
     latitude: number;
     longitude: number;
   } | null>;
+  fetchPublicacionesByUsuario: (usuario_id: number, page?: number, size?: number) => Promise<void>;
 };
 
 export const PublicacionContext = createContext<
@@ -466,6 +467,9 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
     },
     [fetchPublicacionesGeneric]
   );
+  const fetchPublicacionesByUsuario = async (usuario_id: number, page = 0, size = 10) => {
+    await fetchPublicacionesGeneric(`publicacion/usuario/${usuario_id}?page=${page}&size=${size}`);
+  }
 
   const buscarPublicaciones = useCallback(
     async (query: string, page = 0, size = 10) => {
@@ -536,6 +540,7 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
         hasMore,
         resetPagination,
         loadMore,
+        fetchPublicacionesByUsuario,
       }}
     >
       {children}

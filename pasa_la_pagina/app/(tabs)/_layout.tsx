@@ -1,11 +1,12 @@
-import BottomNavbar from "@/components/ui/BottomNavbar";
-import { Colors } from "@/constants/Colors";
-import { useAuth } from "@/contexts/AuthContext";
-import { PublicacionProvider } from "@/contexts/PublicacionContext";
-import { Slot, useRouter } from "expo-router";
-import React, { useEffect } from "react";
-import { StyleSheet, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { Colors } from '@/constants/Colors';
+import { useAuth } from '@/contexts/AuthContext';
+import { PublicacionProvider } from '@/contexts/PublicacionContext';
+import { UserProvider } from '@/contexts/UserContext';
+import { Slot, useRouter } from 'expo-router';
+import React, { useEffect } from 'react';
+import { StyleSheet, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
 
 export default function TabLayout() {
   const { accessToken } = useAuth();
@@ -20,17 +21,15 @@ export default function TabLayout() {
   if (!accessToken) return null;
 
   return (
-    <PublicacionProvider>
-      <SafeAreaView
-        style={[styles.container, { backgroundColor: Colors.background }]}
-        edges={["top", "bottom"]}
-      >
-        <View style={{ flex: 1 }}>
-          <Slot />
-          <BottomNavbar />
-        </View>
-      </SafeAreaView>
-    </PublicacionProvider>
+    <SafeAreaView style={[styles.container, { backgroundColor: Colors.background }]} edges={['top', 'bottom']}>
+      <PublicacionProvider>
+        <UserProvider>
+          <View style={{ flex: 1 }}>
+            <Slot />
+          </View>
+        </UserProvider>
+      </PublicacionProvider>
+    </SafeAreaView>
   );
 }
 
@@ -39,4 +38,5 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.white,
   },
+
 });

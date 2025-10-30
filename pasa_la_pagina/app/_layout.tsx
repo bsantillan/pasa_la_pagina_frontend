@@ -9,6 +9,7 @@ import { Slot, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
 
+import BottomNavbar from "@/components/ui/BottomNavbar";
 import { IntercambioProvider } from "@/contexts/IntercambioContext";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useEffect } from "react";
@@ -45,6 +46,7 @@ export default function RootLayout() {
         <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
           <AuthGate />
           <StatusBar style="auto" />
+          <BottomNavbar />
         </ThemeProvider>
       </IntercambioProvider>
     </AuthProvider>
