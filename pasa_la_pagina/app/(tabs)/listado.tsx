@@ -3,18 +3,18 @@ import FilterModal from "@/components/ui/FilterModal";
 import { ProductCard } from "@/components/ui/ProductCard";
 import { Colors } from "@/constants/Colors";
 import { usePublicacion } from "@/contexts/PublicacionContext";
-import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
-    ActivityIndicator,
-    Dimensions,
-    FlatList,
-    Pressable,
-    StyleSheet,
-    Text,
-    TextInput,
-    View,
+  ActivityIndicator,
+  Dimensions,
+  FlatList,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -137,16 +137,9 @@ export default function ListadoScreen() {
             onPress={() => setShowFilters(true)}
             style={{ padding: 8 }}
           >
-            <Ionicons name="funnel" size={24} color="#000" />
+            <Ionicons name="funnel" size={24} color={Colors.primary} />
           </Pressable>
 
-          {/* Botón de notificaciones */}
-          <Pressable
-            onPress={() => router.push("/notificaciones")}
-            style={{ padding: 8 }}
-          >
-            <MaterialIcons name="notifications-none" size={24} color="#000" />
-          </Pressable>
         </View>
 
         {/* Modal de filtros */}

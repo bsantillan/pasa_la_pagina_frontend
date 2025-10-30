@@ -2,13 +2,13 @@
 import { usePublicacion } from "@/contexts/PublicacionContext";
 import React, { useState } from "react";
 import {
-    Modal,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 import Slider from "@react-native-community/slider";
@@ -38,7 +38,7 @@ export default function FilterModal({ visible, onClose }: FilterModalProps) {
   };
 
   // Funciones específicas para cada tipo de filtro
-  const handleToggleOferta = (oferta: "Venta" | "Intercambio" | "Donación") => {
+  const handleToggleOferta = (oferta: "Venta" | "Intercambio" | "Donacion") => {
     const current = filtros.tipos_oferta || [];
     if (current.includes(oferta)) {
       setFiltros({
@@ -109,13 +109,13 @@ export default function FilterModal({ visible, onClose }: FilterModalProps) {
     <View style={styles.tabContent}>
       <Text style={styles.sectionTitle}>Oferta</Text>
       <View style={styles.buttonRow}>
-        {["Venta", "Intercambio", "Donación"].map((oferta) => (
+        {["Venta", "Intercambio", "Donacion"].map((oferta) => (
           <TouchableOpacity
             key={oferta}
             style={[
               styles.filterButton,
               filtros.tipos_oferta?.includes(oferta) &&
-                styles.filterButtonActive,
+              styles.filterButtonActive,
             ]}
             onPress={() => handleToggleOferta(oferta as any)}
           >
@@ -152,37 +152,41 @@ export default function FilterModal({ visible, onClose }: FilterModalProps) {
           style={[styles.switch, filtros.digital === false && styles.switchOn]}
           onPress={() => setFiltros({ ...filtros, digital: false })}
         >
-          <Text style={[styles.switchText, filtros.digital === true && styles.fileterButtonTextActive]}>No</Text>
+          <Text style={[styles.switchText, filtros.digital === false && styles.fileterButtonTextActive]}>No</Text>
         </TouchableOpacity>
       </View>
 
-      <Text style={styles.sectionTitle}>Precio</Text>
-      <View style={styles.priceRow}>
-        <TextInput
-          style={styles.priceInput}
-          placeholder="Mínimo"
-          keyboardType="numeric"
-          value={filtros.precio_minimo?.toString() || ""}
-          onChangeText={(text) =>
-            setFiltros({
-              ...filtros,
-              precio_minimo: text ? parseFloat(text) : undefined,
-            })
-          }
-        />
-        <TextInput
-          style={styles.priceInput}
-          placeholder="Máximo"
-          keyboardType="numeric"
-          value={filtros.precio_maximo?.toString() || ""}
-          onChangeText={(text) =>
-            setFiltros({
-              ...filtros,
-              precio_maximo: text ? parseFloat(text) : undefined,
-            })
-          }
-        />
-      </View>
+      {filtros.tipos_oferta?.includes("Venta") && (
+        <>
+          <Text style={styles.sectionTitle}>Precio</Text>
+          <View style={styles.priceRow}>
+            <TextInput
+              style={styles.priceInput}
+              placeholder="Mínimo"
+              keyboardType="numeric"
+              value={filtros.precio_minimo?.toString() || ""}
+              onChangeText={(text) =>
+                setFiltros({
+                  ...filtros,
+                  precio_minimo: text ? parseFloat(text) : undefined,
+                })
+              }
+            />
+            <TextInput
+              style={styles.priceInput}
+              placeholder="Máximo"
+              keyboardType="numeric"
+              value={filtros.precio_maximo?.toString() || ""}
+              onChangeText={(text) =>
+                setFiltros({
+                  ...filtros,
+                  precio_maximo: text ? parseFloat(text) : undefined,
+                })
+              }
+            />
+          </View>
+        </>
+      )}
     </View>
   );
 
@@ -196,7 +200,7 @@ export default function FilterModal({ visible, onClose }: FilterModalProps) {
             style={[
               styles.filterButton,
               filtros.tipos_material?.includes(material) &&
-                styles.filterButtonActive,
+              styles.filterButtonActive,
             ]}
             onPress={() => handleToggleMaterial(material as any)}
           >
@@ -215,7 +219,7 @@ export default function FilterModal({ visible, onClose }: FilterModalProps) {
                 style={[
                   styles.filterButton,
                   filtros.niveles_educativos?.includes(nivel) &&
-                    styles.filterButtonActive,
+                  styles.filterButtonActive,
                 ]}
                 onPress={() => handleToggleNivel(nivel as any)}
               >

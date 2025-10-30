@@ -17,7 +17,7 @@ export default function PrimaryButton({
     styleBtn,
     styleTxt,
     disabled = false,
-    selected = false, 
+    selected = true, 
 }: Props) {
     return (
         <TouchableOpacity

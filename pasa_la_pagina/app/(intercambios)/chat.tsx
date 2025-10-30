@@ -1,4 +1,5 @@
 import { AlertCard } from "@/components/ui/AlertaCard";
+import { Avatar } from "@/components/ui/Avatar";
 import { MessageCard } from "@/components/ui/MensajeCard";
 import { Colors } from "@/constants/Colors";
 import { useChat } from "@/contexts/ChatContext"; // ✅ Importar tu contexto
@@ -77,10 +78,18 @@ export default function Chat() {
           <Ionicons name="arrow-back" size={24} color={Colors.text} />
         </Pressable>
 
-        <Text style={styles.headerTitle} numberOfLines={1} ellipsizeMode="tail">
-          {tituloPublicacion}
-        </Text>
+        <View style={styles.headerCenter}>
+          <Avatar name={usuarioEmail} size={40} />
 
+          <View style={styles.headerInfo}>
+            <Text style={styles.headerTitle} numberOfLines={1} ellipsizeMode="tail">
+              {usuarioEmail}
+            </Text>
+            <Text style={styles.headerSubtitle} numberOfLines={1} ellipsizeMode="tail">
+              {tituloPublicacion}
+            </Text>
+          </View>
+        </View>
         <Pressable onPress={abrirModal} style={styles.headerButton}>
           <Ionicons
             name="checkmark-done-outline"
@@ -173,14 +182,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  headerTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: Colors.text,
-    flex: 1,
-    textAlign: "center",
-    marginHorizontal: 16,
-  },
+headerTitle: {
+  fontSize: 16,
+  fontWeight: "600",
+  color: Colors.text,
+},
   inputContainer: {
     flex: 1,
     marginHorizontal: 10,
@@ -212,4 +218,26 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  headerCenter: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-start",
+    gap: 10, // espacio entre el avatar y el texto
+  },
+
+  headerInfo: {
+    flexShrink: 1,
+    marginLeft: 16,
+    alignItems: "flex-start",
+    justifyContent: "center",
+  },
+
+  headerSubtitle: {
+    fontSize: 13,
+    color: "#6e6e6e",
+    marginTop: 2,
+  },
+
+
 });
