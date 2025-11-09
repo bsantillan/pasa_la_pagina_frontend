@@ -1,6 +1,4 @@
 // PerfilScreen.tsx - versión corregida
-import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -89,28 +87,6 @@ export default function PerfilScreen() {
   return (
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
       <View style={styles.container}>
-        <View style={styles.searchRow}>
-          <TouchableOpacity onPress={()=> router.back()} >
-            <Ionicons name="arrow-back" size={28} color="#000" />
-          </TouchableOpacity>
-          <View style={{ flex: 1 }}>
-            <View style={styles.inputContainer}>
-              <Ionicons
-                name="search"
-                size={20}
-                color="#999"
-                style={{ marginRight: 8 }}
-              />
-              <TouchableOpacity
-                onPress={()=> router.push(`/listado`)}
-                style={{width: "100%"}}
-              >
-                <Text>Buscar publicaciones...</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-          
-        </View>
         <View style={styles.header}>
           <Avatar name={usuario?.nombre || "U"} size={80} />
           <Text style={styles.nombre}>

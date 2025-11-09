@@ -1,9 +1,10 @@
 import PrimaryButton from "@/components/ui/Boton/Primary";
+import CustomInput from "@/components/ui/CustomInput";
 import { Colors } from "@/constants/Colors";
+import * as Google from "expo-auth-session/providers/google";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
-import * as Google from "expo-auth-session/providers/google";
 import {
   ActivityIndicator,
   Alert,
@@ -12,9 +13,8 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { useAuth } from "../contexts/AuthContext";
 const { height } = Dimensions.get("window");
@@ -59,11 +59,7 @@ export default function LoginScreen() {
       await login(email, password);
       router.replace("/(tabs)");
     } catch (error: any) {
-      setError(error.message);
-      Alert.alert(
-        "Error",
-        error.message || "Ocurrió un error al iniciar sesión"
-      );
+      setError("Contraseña o email invalidos");
     } finally {
       setLoading(false); // desactivar loading
     }
@@ -91,16 +87,13 @@ export default function LoginScreen() {
           <Text style={styles.title}>Log in</Text>
           <Text style={styles.subtitle}>Bienvenido</Text>
         </View>
-        <TextInput
-          style={styles.input}
+        <CustomInput
           placeholder="Email"
           value={email}
           onChangeText={setEmail}
-          autoCapitalize="none"
           keyboardType="email-address"
         />
-        <TextInput
-          style={styles.input}
+        <CustomInput
           placeholder="Contraseña"
           value={password}
           onChangeText={setPassword}

@@ -1,4 +1,5 @@
 import PrimaryButton from "@/components/ui/Boton/Primary";
+import CustomInput from "@/components/ui/CustomInput";
 import { Colors } from "@/constants/Colors";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
@@ -27,6 +28,11 @@ export default function RegisterScreen() {
   const [repeatPassword, setRepeatPassword] = useState("");
   const [error, setError] = useState("");
 
+  const isValidEmail = (email: string) => {
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regex.test(email);
+  };
+
   const handleNext = () => {
     if (!nombre || !apellido) {
       setError("Completa todos los campos");
@@ -45,6 +51,12 @@ export default function RegisterScreen() {
       setError("Completa todos los campos");
       return;
     }
+
+    if (!isValidEmail(email)) {
+      setError("Introduce un email válido");
+      return;
+    }
+
     if (password !== repeatPassword) {
       setError("Las contraseñas no coinciden");
       return;
@@ -104,23 +116,19 @@ export default function RegisterScreen() {
                 <Text style={styles.title}>Casi terminamos, </Text>
                 <Text style={styles.title}>{nombre}</Text>
                 <View style={styles.secInput}>
-                  <TextInput
-                    style={styles.input}
+                  <CustomInput
                     placeholder="Email"
                     value={email}
                     onChangeText={setEmail}
-                    autoCapitalize="none"
                     keyboardType="email-address"
                   />
-                  <TextInput
-                    style={styles.input}
+                  <CustomInput
                     placeholder="Contraseña"
                     value={password}
                     onChangeText={setPassword}
                     secureTextEntry
                   />
-                  <TextInput
-                    style={styles.input}
+                  <CustomInput
                     placeholder="Repetir contraseña"
                     value={repeatPassword}
                     onChangeText={setRepeatPassword}
@@ -153,7 +161,7 @@ export default function RegisterScreen() {
 }
 
 const styles = StyleSheet.create({
-    safeArea: {
+  safeArea: {
     flex: 1,
     backgroundColor: Colors.background, // mismo fondo que tu app
   },
@@ -219,5 +227,7 @@ const styles = StyleSheet.create({
   error: {
     color: "red",
     marginBottom: 10,
+    textAlign: "center",
+    width: "100%",
   },
 });

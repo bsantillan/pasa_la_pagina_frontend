@@ -1,4 +1,5 @@
 import * as Location from "expo-location";
+import { useRouter } from "expo-router";
 import React, {
   createContext,
   ReactNode,
@@ -91,6 +92,7 @@ type PublicacionContextType = {
   filtros: Filtros;
   setFiltros: (filtros: Filtros) => void;
   aplicarFiltros: (page?: number) => Promise<void>;
+  cargarinicial: () => Promise<void>;
   limpiarFiltros: () => Promise<void>;
   buscarPorTexto: (query: string) => Promise<void>;
 
@@ -135,6 +137,7 @@ export const PublicacionContext = createContext<
 export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
   const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "";
   const { getValidAccessToken } = useAuth();
+  const router = useRouter();
 
   // ---- Estado de creación ----
   const [tipo, setTipo] = useState<PublicacionTipo>(null);
@@ -337,12 +340,18 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
     [fetchPublicacionesConFiltros]
   );
 
-  const limpiarFiltros = useCallback(async () => {
-    const filtrosLimpios: Filtros = {};
-    setFiltros(filtrosLimpios);
-    filtrosRef.current = filtrosLimpios; // 👈 Añade esta línea
+  const cargarinicial = useCallback(async () => {
     await fetchPublicacionesConFiltros(0);
   }, [fetchPublicacionesConFiltros]);
+
+  const limpiarFiltros = useCallback(async () => {
+    const filtrosLimpios: Filtros = {
+      query: filtros.query, // conservamos el valor actual de query
+    };
+    setFiltros(filtrosLimpios);
+    filtrosRef.current = filtrosLimpios;
+    await fetchPublicacionesConFiltros(0);
+  }, [fetchPublicacionesConFiltros, filtros.query]);
 
   const buscarPorTexto = useCallback(
     async (query: string) => {
@@ -353,16 +362,20 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
       const controller = new AbortController();
       abortControllerRef.current = controller;
 
-      if (query.trim().length < 2) {
-        await limpiarFiltros();
-        return;
-      }
-      const nuevosFiltros: Filtros = { query: query.trim() };
+      const trimmedQuery = query.trim();
+
+
+      // Solo actualizar la query dentro de filtros, sin borrar otros filtros
+      const nuevosFiltros: Filtros = {
+        ...filtrosRef.current,
+        query: trimmedQuery,
+      };
       setFiltros(nuevosFiltros);
       filtrosRef.current = nuevosFiltros;
+
       await fetchPublicacionesConFiltros(0);
     },
-    [limpiarFiltros, fetchPublicacionesConFiltros]
+    [cargarinicial, fetchPublicacionesConFiltros]
   );
 
   const resetPagination = useCallback(() => {
@@ -376,15 +389,6 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [hasMore, loading, currentPage, fetchPublicacionesConFiltros]);
 
-  //  Cargar publicaciones iniciales
-  const initialLoadRef = useRef(false);
-  useEffect(() => {
-    if (!initialLoadRef.current) {
-      initialLoadRef.current = true;
-      limpiarFiltros();
-    }
-  }, [limpiarFiltros]);
-
   const getDistanceFromLatLonInKm = (
     lat1: number,
     lon1: number,
@@ -397,8 +401,8 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
     const a =
       Math.sin(dLat / 2) ** 2 +
       Math.cos((lat1 * Math.PI) / 180) *
-        Math.cos((lat2 * Math.PI) / 180) *
-        Math.sin(dLon / 2) ** 2;
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) ** 2;
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   };
@@ -458,8 +462,8 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
             p.tipo_material === "Apunte"
               ? "apunte"
               : p.tipo_material === "Libro"
-              ? "libro"
-              : null,
+                ? "libro"
+                : null,
           usuario_id: p.usuario_id,
           latitud: p.latitud,
           longitud: p.longitud,
@@ -560,8 +564,8 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
             p.tipo_material === "Apunte"
               ? "apunte"
               : p.tipo_material === "Libro"
-              ? "libro"
-              : null,
+                ? "libro"
+                : null,
           usuario_id: p.usuario_id,
           latitud: p.latitud,
           longitud: p.longitud,
@@ -639,6 +643,7 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
         filtros,
         setFiltros,
         aplicarFiltros,
+        cargarinicial,
         limpiarFiltros,
         buscarPorTexto,
         currentPage,
