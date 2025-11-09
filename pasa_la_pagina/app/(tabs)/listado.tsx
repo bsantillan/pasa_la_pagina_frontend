@@ -1,11 +1,9 @@
 // ListadoScreen.tsx
-import FilterModal from "@/components/ui/FilterModal";
 import { ProductCard } from "@/components/ui/ProductCard";
 import { Colors } from "@/constants/Colors";
 import { usePublicacion } from "@/contexts/PublicacionContext";
-import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
@@ -13,7 +11,6 @@ import {
   Pressable,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -23,27 +20,19 @@ export default function ListadoScreen() {
     publicaciones,
     loading,
     error,
-    aplicarFiltros,
-    limpiarFiltros,
-    buscarPorTexto,
-    currentPage,
-    totalPages,
+    cargarinicial,
     hasMore,
     loadMore,
-    resetPagination,
-    getUserLocation,
   } = usePublicacion();
 
   const [localLoading, setLocalLoading] = useState(false);
-  const [query, setQuery] = useState("");
-  const inputRef = useRef<TextInput>(null);
-  const [showFilters, setShowFilters] = useState(false);
 
+  // 👇 Inicializar pantalla y abrir modal si viene query
   useEffect(() => {
     const cargarInicial = async () => {
       setLocalLoading(true);
       try {
-        await limpiarFiltros();
+        await cargarinicial();
       } catch (err) {
         console.error(err);
       } finally {
@@ -51,25 +40,12 @@ export default function ListadoScreen() {
       }
     };
     cargarInicial();
-  }, [limpiarFiltros]);
+  }, [cargarinicial]);
 
-  // 👇 Abrir teclado automáticamente
-  useEffect(() => {
-    const focusInput = () => {
-      if (inputRef.current) {
-        inputRef.current.focus();
-      }
-    };
-    const mainTimeout = setTimeout(focusInput, 200);
-    const backupTimeout = setTimeout(focusInput, 500);
-    return () => {
-      clearTimeout(mainTimeout);
-      clearTimeout(backupTimeout);
-    };
-  }, []);
-
-  // 👇 Datos a mostrar = exactamente lo que devuelve el backend
-  const dataToShow = publicaciones;
+  const screenWidth = Dimensions.get("window").width;
+  const cardMargin = 8;
+  const columns = 2;
+  const cardWidth = (screenWidth - cardMargin * (columns * 2 + 1)) / columns;
 
   if (loading || localLoading) {
     return (
@@ -88,73 +64,20 @@ export default function ListadoScreen() {
     );
   }
 
-  const screenWidth = Dimensions.get("window").width;
-  const cardMargin = 8;
-  const columns = 2;
-  const cardWidth = (screenWidth - cardMargin * (columns * 2 + 1)) / columns;
-
   return (
     <SafeAreaView
       style={{ flex: 1, backgroundColor: Colors.background }}
       edges={["top"]}
     >
-      <View style={{ padding: 8, paddingTop: 8, flex: 1 }}>
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            marginBottom: 8,
-          }}
-        >
-          {/* Botón de volver */}
-          <Pressable onPress={() => router.back()} style={{ padding: 8 }}>
-            <Ionicons name="arrow-back" size={28} color="#000" />
-          </Pressable>
+      <View style={{ flex: 1, padding: 8, paddingTop: 8 }}>
 
-          {/* Barra de búsqueda */}
-          <TextInput
-            ref={inputRef}
-            autoFocus={true}
-            style={[styles.input, { flex: 1, marginHorizontal: 8 }]}
-            placeholder="Buscar publicaciones..."
-            value={query}
-            onChangeText={(text) => {
-              setQuery(text);
-              if (text.trim() === "") {
-                limpiarFiltros();
-              }
-            }}
-            onSubmitEditing={() => {
-              if (query.trim().length >= 2) {
-                buscarPorTexto(query);
-              }
-            }}
-          />
-          
-
-          {/* Botón de filtros */}
-          <Pressable
-            onPress={() => setShowFilters(true)}
-            style={{ padding: 8 }}
-          >
-            <Ionicons name="funnel" size={24} color={Colors.primary} />
-          </Pressable>
-
-        </View>
-
-        {/* Modal de filtros */}
-        <FilterModal
-          visible={showFilters}
-          onClose={() => setShowFilters(false)}
-        />
-
-        {dataToShow.length === 0 ? (
+        {publicaciones.length === 0 ? (
           <Text style={{ textAlign: "center", marginTop: 20 }}>
             No se encontraron publicaciones.
           </Text>
         ) : (
           <FlatList
-            data={dataToShow}
+            data={publicaciones}
             keyExtractor={(item) => item.id.toString()}
             numColumns={columns}
             showsVerticalScrollIndicator={false}
@@ -162,7 +85,6 @@ export default function ListadoScreen() {
             renderItem={({ item, index }) => {
               const isLeft = index % columns === 0;
               const isRight = index % columns === 1;
-
               return (
                 <Pressable
                   onPress={() =>
@@ -185,9 +107,7 @@ export default function ListadoScreen() {
               );
             }}
             onEndReached={() => {
-              if (hasMore && !loading) {
-                loadMore();
-              }
+              if (hasMore && !loading) loadMore();
             }}
             onEndReachedThreshold={0.5}
             ListFooterComponent={() =>
@@ -206,12 +126,4 @@ export default function ListadoScreen() {
 
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: "center", justifyContent: "center" },
-  input: {
-    height: 40,
-    borderColor: "#ccc",
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    backgroundColor: Colors.white,
-  },
 });

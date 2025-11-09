@@ -2,7 +2,6 @@
 import { Colors } from "@/constants/Colors";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePublicacion } from "@/contexts/PublicacionContext";
-import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
@@ -20,7 +19,7 @@ import CercaTuyo from "../home/homeCercaTuyo";
 import LibrosRecientes from "../home/homeLibro";
 
 export default function HomeScreen() {
-  const { logout, accessToken } = useAuth(); // 👈 Añade accessToken
+  const { accessToken } = useAuth(); // 👈 Añade accessToken
   const { loading, fetchCercaTuyo, error } = usePublicacion();
   const [refreshing, setRefreshing] = useState(false);
   const [initialLoad, setInitialLoad] = useState(true);
@@ -72,27 +71,6 @@ export default function HomeScreen() {
           />
         }
       >
-        <View style={styles.searchRow}>
-          <View style={{ flex: 1 }}>
-            <View style={styles.inputContainer}>
-              <Ionicons
-                name="search"
-                size={20}
-                color="#999"
-                style={{ marginRight: 8 }}
-              />
-              <TouchableOpacity
-                onPress={()=> router.push(`/listado`)}
-                style={{width: "100%"}}
-              >
-                <Text>Buscar publicaciones...</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-          <TouchableOpacity onPress={logout} style={styles.logoutButton}>
-            <MaterialIcons name="logout" size={28} color={Colors.primary} />
-          </TouchableOpacity>
-        </View>
 
         {/* Mostrar error si lo hay */}
         {error ? (
@@ -115,7 +93,7 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1, backgroundColor: Colors.background},
   center: { 
     flex: 1, 
     justifyContent: 'center', 
