@@ -134,6 +134,7 @@ export default function Mensajes() {
                     pathname: "/(intercambios)/chat",
                     params: {
                       chatId: item.chatId,
+                      usuario: item.usuario,
                       usuarioEmail: item.usuarioEmail,
                       tituloPublicacion: item.tituloPublicaicon,
                       intercambioId: item.id,

@@ -12,6 +12,7 @@ import "react-native-reanimated";
 import BottomNavbar from "@/components/ui/BottomNavbar";
 import Header from "@/components/ui/Header";
 import { IntercambioProvider } from "@/contexts/IntercambioContext";
+import { NotificationProvider } from "@/contexts/NotificacionContext";
 import { PublicacionProvider } from "@/contexts/PublicacionContext";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useEffect } from "react";
@@ -30,11 +31,13 @@ export default function RootLayout() {
     <AuthProvider>
       <IntercambioProvider>
         <PublicacionProvider>
-          <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-            <StatusBar style="auto" />
+          <NotificationProvider>
+            <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+              <StatusBar style="auto" />
 
-            <AuthGateLayout />
-          </ThemeProvider>
+              <AuthGateLayout />
+            </ThemeProvider>
+          </NotificationProvider>
         </PublicacionProvider>
       </IntercambioProvider>
     </AuthProvider>
@@ -45,11 +48,11 @@ function AuthGateLayout() {
   const { accessToken } = useAuth();
   const router = useRouter();
   const segments = useSegments();
-  const currentSegment = segments[0];
-  const hideHeaderInHeader = ["login", "register", "(publicacion)", "chat"];
-  const hideHeaderInNavBar = ["login", "register", "chat"];
-  const showHeader = !hideHeaderInHeader.includes(currentSegment ?? "");
-  const showNavBar = !hideHeaderInNavBar.includes(currentSegment ?? "");
+  const currentPath = segments.join("/"); // ejemplo: "(intercambios)/chat"
+  const hideHeaderPaths = ["login", "register", "(publicacion)", "chat"];
+  const hideNavbarPaths = ["login", "register", "chat"];
+  const showHeader = !hideHeaderPaths.some((path) => currentPath.includes(path));
+  const showNavBar = !hideNavbarPaths.some((path) => currentPath.includes(path));
 
   useEffect(() => {
     if (accessToken) {

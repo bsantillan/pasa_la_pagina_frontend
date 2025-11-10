@@ -2,6 +2,7 @@ import { AlertCard } from "@/components/ui/AlertaCard";
 import { Avatar } from "@/components/ui/Avatar";
 import { MessageCard } from "@/components/ui/MensajeCard";
 import { Colors } from "@/constants/Colors";
+import { useAuth } from "@/contexts/AuthContext";
 import { useChat } from "@/contexts/ChatContext"; // ✅ Importar tu contexto
 import { useIntercambio } from "@/contexts/IntercambioContext";
 import Ionicons from "@expo/vector-icons/build/Ionicons";
@@ -21,14 +22,16 @@ import {
 
 export default function Chat() {
   const [visible, setVisible] = useState(false);
-  const { chatId, usuarioEmail, tituloPublicacion, intercambioId } =
+  const { chatId, usuario, usuarioEmail, tituloPublicacion, intercambioId } =
     useLocalSearchParams<{
       chatId: string;
+      usuario: string;
       usuarioEmail: string;
       tituloPublicacion: string;
       intercambioId: string;
     }>();
-  const { messages, loadMessages, initWebSocket, sendMessage } = useChat(); // ✅ usar el contexto
+  const { messages, loadMessages, initWebSocket, sendMessage } = useChat();
+  const { user } = useAuth();
   const { cancelarIntercambio, concretarIntercambio } = useIntercambio();
   const [text, setText] = useState("");
   const flatListRef = useRef<FlatList<any>>(null);
@@ -43,16 +46,16 @@ export default function Chat() {
 
   // Cargar historial y conectar WebSocket
   useEffect(() => {
-    loadMessages(Number(chatId)); // cargar historial
-    const disconnectWS = initWebSocket(Number(chatId)); // conectar socket
+    loadMessages(Number(chatId)); 
+    const disconnectWS = initWebSocket(Number(chatId)); 
 
-    return () => disconnectWS(); // limpiar conexión al salir
+    return () => disconnectWS(); 
   }, []);
 
   const handleSend = () => {
     if (!text.trim()) return;
 
-    sendMessage(Number(chatId), usuarioEmail, text);
+    sendMessage(Number(chatId), user!.email, text);
 
     setText("");
   };
@@ -79,11 +82,11 @@ export default function Chat() {
         </Pressable>
 
         <View style={styles.headerCenter}>
-          <Avatar name={usuarioEmail} size={40} />
+          <Avatar name={usuario} size={40} />
 
           <View style={styles.headerInfo}>
             <Text style={styles.headerTitle} numberOfLines={1} ellipsizeMode="tail">
-              {usuarioEmail}
+              {usuario}
             </Text>
             <Text style={styles.headerSubtitle} numberOfLines={1} ellipsizeMode="tail">
               {tituloPublicacion}
@@ -110,7 +113,7 @@ export default function Chat() {
               hour: "2-digit",
               minute: "2-digit",
             })}
-            isOwnMessage={item.usuarioEmail === usuarioEmail}
+            isOwnMessage={item.usuarioEmail === user?.email}
           />
         )}
       />
@@ -182,11 +185,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-headerTitle: {
-  fontSize: 16,
-  fontWeight: "600",
-  color: Colors.text,
-},
+  headerTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: Colors.text,
+  },
   inputContainer: {
     flex: 1,
     marginHorizontal: 10,
