@@ -46,10 +46,10 @@ export default function Chat() {
 
   // Cargar historial y conectar WebSocket
   useEffect(() => {
-    loadMessages(Number(chatId)); 
-    const disconnectWS = initWebSocket(Number(chatId)); 
+    loadMessages(Number(chatId));
+    const disconnectWS = initWebSocket(Number(chatId));
 
-    return () => disconnectWS(); 
+    return () => disconnectWS();
   }, []);
 
   const handleSend = () => {
@@ -60,15 +60,24 @@ export default function Chat() {
     setText("");
   };
 
-  const handleCancel = (intercambioId: number) => {
-    cancelarIntercambio(intercambioId);
-    setVisible(false);
+  const handleCancel = async (intercambioId: number) => {
+    try {
+      await cancelarIntercambio(intercambioId);
+      setVisible(false);
+    } catch (err: any) {
+      alert(err.message ?? "Error al cancelar el intercambio");
+    }
   };
 
-  const handleConcretar = (intercambioId: number) => {
-    concretarIntercambio(intercambioId);
-    setVisible(false);
+  const handleConcretar = async (intercambioId: number) => {
+    try {
+      await concretarIntercambio(intercambioId);
+      setVisible(false);
+    } catch (err: any) {
+      alert(err.message ?? "Error al concretar el intercambio");
+    }
   };
+
 
   return (
     <KeyboardAvoidingView

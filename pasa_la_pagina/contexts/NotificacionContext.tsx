@@ -1,5 +1,6 @@
 // src/contexts/NotificationContext.tsx
 import { Client } from "@stomp/stompjs";
+import * as Notificacions from 'expo-notifications';
 import React, { createContext, useContext, useEffect } from "react";
 import { Alert } from "react-native";
 import SockJS from "sockjs-client";
@@ -45,9 +46,20 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
           const mensaje = `${noti.titulo}: ${noti.mensaje}`;
           console.log(mensaje)
 
-          
-            Alert.alert(noti.titulo, noti.mensaje);
-          
+          Alert.alert(mensaje);
+
+          try {
+            await Notificacions.scheduleNotificationAsync({
+              content: {
+                title: noti.titulo,
+                body: noti.mensaje
+              },
+              trigger: null
+            })
+          } catch (e) {
+            
+          }
+
         });
       },
       onStompError: (frame) => {

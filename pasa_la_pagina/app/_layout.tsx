@@ -16,7 +16,6 @@ import { NotificationProvider } from "@/contexts/NotificacionContext";
 import { PublicacionProvider } from "@/contexts/PublicacionContext";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useEffect } from "react";
-import { View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function RootLayout() {
@@ -67,9 +66,7 @@ function MainLayout({ showHeader, showNavBar }: { showHeader: boolean, showNavBa
   return (
     <SafeAreaView style={{ flex: 1 }}>
       {showHeader && <Header />}
-      <View style={{ flex: 1 }}>
         <Slot />
-      </View>
       {showNavBar && <BottomNavbar />}
     </SafeAreaView>
   );
