@@ -366,7 +366,7 @@ export default function LibroScreen() {
   return (
     <KeyboardAwareScrollView
       style={styles.scrollContent}
-      contentContainerStyle={{ flexGrow: 1, paddingBottom: 50 }}
+      contentContainerStyle={{ flex: 1, paddingBottom: 50 }}
       keyboardShouldPersistTaps="handled"
       enableOnAndroid
       extraScrollHeight={100}
@@ -380,7 +380,6 @@ export default function LibroScreen() {
         <Text style={styles.headerTitle}>Crear publicación</Text>
         <View style={{ width: 40 }} />
       </View>
-
       {renderStep()}
 
       {/* --- Botones de navegación --- */}
@@ -436,8 +435,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     height: 56,
-    marginTop: 30,
-    marginBottom: 32,
+    marginBottom: 10,
   },
   backButton: {
     width: 40,
@@ -516,9 +514,6 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   scrollContent: {
-    paddingHorizontal: 16,
-    paddingVertical: 24,
-    backgroundColor: Colors.background,
     flexGrow: 1,
   },
   dropdownScroll: {

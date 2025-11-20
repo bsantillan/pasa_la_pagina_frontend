@@ -1,4 +1,4 @@
-import PrimaryButton from "@/components/ui/Boton/Primary";
+import SecondaryButton from "@/components/ui/Boton/Secondary";
 import { Colors } from "@/constants/Colors";
 import { usePublicacion } from "@/contexts/PublicacionContext";
 import Ionicons from "@expo/vector-icons/build/Ionicons";
@@ -35,13 +35,13 @@ export default function ElegirTipoScreen() {
       </View>
       <View style={styles.content}>
         <Text style={styles.title}>¿Qué querés publicar?</Text>
-        <PrimaryButton
+        <SecondaryButton
           title="Libro"
           styleBtn={styles.styleBtn}
           styleTxt={styles.styleTxt}
           onPress={elegirLibro}
         />
-        <PrimaryButton
+        <SecondaryButton
           title="Apunte"
           styleBtn={styles.styleBtn}
           styleTxt={styles.styleTxt}
@@ -64,8 +64,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     height: 56,
-    marginTop: 40,
-    marginBottom: 65,
+    marginBottom: 10,
   },
   backButton: {
     width: 40,

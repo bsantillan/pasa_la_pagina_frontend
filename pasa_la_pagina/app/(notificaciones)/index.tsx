@@ -93,8 +93,6 @@ export default function NotificacionesScreen() {
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    paddingTop: 16,
-    backgroundColor: Colors.background,
   },
 
   noDataText: {

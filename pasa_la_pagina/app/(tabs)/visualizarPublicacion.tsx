@@ -5,21 +5,17 @@ import { Colors } from "@/constants/Colors";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIntercambio } from "@/contexts/IntercambioContext";
 import { Publicacion } from "@/types/Publicacion";
-import { Ionicons, MaterialIcons } from "@expo/vector-icons";
-import { router, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   Modal,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
-  View,
+  View
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function VisualizarPublicacion() {
   const { id } = useLocalSearchParams();
@@ -101,39 +97,7 @@ export default function VisualizarPublicacion() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
-      <View
-        style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}
-      >
-        {/* Botón de volver */}
-        <Pressable onPress={() => router.back()} style={{ padding: 8 }}>
-          <Ionicons name="arrow-back" size={28} color="#000" />
-        </Pressable>
-
-        {/* Barra de búsqueda */}
-        <TouchableOpacity
-          onPress={() => router.push(`/listado`)}
-          style={[
-            styles.input,
-            {
-              flex: 1,
-              marginHorizontal: 8,
-              paddingHorizontal: 12,
-              paddingVertical: 8,
-            },
-          ]}
-        >
-          <Text>Buscar publicaciones...</Text>
-        </TouchableOpacity>
-
-        {/* Botón de notificaciones */}
-        <Pressable
-          onPress={() => router.push("/notificaciones")}
-          style={{ padding: 8 }}
-        >
-          <MaterialIcons name="notifications-none" size={24} color="#000" />
-        </Pressable>
-      </View>
+    <View style={{flex:1}}>
       <ScrollView
         style={styles.containerScroll}
         contentContainerStyle={{ paddingBottom: 40 }}
@@ -252,15 +216,13 @@ export default function VisualizarPublicacion() {
           </Modal>
         </View>
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
-    padding: 8,
   },
   input: {
     height: 40,
@@ -278,7 +240,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: Colors.primary,
     marginBottom: 20,
-    marginTop: 0,
   },
   descripcion: {
     fontSize: 20,

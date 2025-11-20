@@ -4,7 +4,7 @@ import { usePublicacion } from "@/contexts/PublicacionContext";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter, useSegments } from "expo-router";
 import React, { useState } from "react";
-import { StyleSheet, TextInput, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import FilterModal from "./FilterModal";
 
 export default function Header() {
@@ -12,17 +12,14 @@ export default function Header() {
     const segments = useSegments() as string[];
     const [openFilter, setOpenFilter] = useState(false);
     const { logout } = useAuth();
-    const {
-        filtros,
-        cargarinicial,
-        setFiltros,
-    } = usePublicacion();
-    const isInTabsRoot = segments[0] === "(tabs)" && segments.length === 1;
+    const { filtros, cargarinicial, setFiltros } = usePublicacion();
 
-    // Si el usuario toca Enter, busca y redirige a listado
+    const isInTabsRoot = segments[0] === "(tabs)" && segments.length === 1;
+    const isInNotificaciones = segments.includes("(notificaciones)");
+
     const handleSubmitEditing = async () => {
         if (segments.includes("listado")) {
-            await cargarinicial()
+            await cargarinicial();
         } else {
             router.push("/listado");
         }
@@ -31,48 +28,65 @@ export default function Header() {
     return (
         <View style={styles.container}>
             <View style={styles.row}>
+
+                {/* Botón de volver SIEMPRE visible cuando no estás en root */}
                 {!isInTabsRoot && (
                     <TouchableOpacity onPress={() => router.back()} style={styles.iconBtn}>
                         <Ionicons name="arrow-back" size={24} color={Colors.text} />
                     </TouchableOpacity>
                 )}
 
-                {/* Barra de búsqueda */}
-                <View style={styles.searchContainer}>
-                    <Ionicons name="search" size={18} color="#999" style={{ marginRight: 6 }} />
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Buscar publicaciones..."
-                        placeholderTextColor="#888"
-                        value={filtros.query}
-                        onChangeText={(text) => setFiltros({ query: text })}
-                        onSubmitEditing={handleSubmitEditing}
-                        returnKeyType="search"
-                    />
-                </View>
+                {/* ----------------------------- */}
+                {/*        MODO NOTIFICACIONES   */}
+                {/* ----------------------------- */}
+                {isInNotificaciones ? (
+                    <View style={styles.notificacionesContainer}>
+                        <Text style={styles.notificacionesText}>Notificaciones</Text>
+                    </View>
+                ) : (
+                    <>
+                        {/* BUSCADOR - solo si NO estamos en notificaciones */}
+                        <View style={styles.searchContainer}>
+                            <Ionicons name="search" size={18} color="#999" style={{ marginRight: 6 }} />
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Buscar publicaciones..."
+                                placeholderTextColor="#888"
+                                value={filtros.query}
+                                onChangeText={(text) => setFiltros({ query: text })}
+                                onSubmitEditing={handleSubmitEditing}
+                                returnKeyType="search"
+                            />
+                        </View>
 
-                {/* Iconos derecha */}
-                <View style={styles.rightIcons}>
-                    {segments.includes("listado") && (
-                        <TouchableOpacity onPress={() => setOpenFilter(true)} style={styles.filterBtn}>
-                            <Ionicons name="funnel" size={20} color={Colors.primary} />
-                        </TouchableOpacity>
-                    )}
-                    <TouchableOpacity style={styles.notificationBtn} onPress={() => router.push("../(notificaciones)")}>
-                        <Ionicons name="notifications-outline" size={22} color={Colors.primary} />
-                        <View style={styles.notificationDot} />
-                    </TouchableOpacity>
-                    {segments.includes("(perfil)") && (
-                        <TouchableOpacity onPress={() => logout()} style={styles.filterBtn}>
-                            <Ionicons name="log-out-outline" size={25} color={Colors.primary} />
-                        </TouchableOpacity>
-                    )}
-                </View>
+                        {/* Iconos derecha */}
+                        <View style={styles.rightIcons}>
+                            {segments.includes("listado") && (
+                                <TouchableOpacity onPress={() => setOpenFilter(true)} style={styles.filterBtn}>
+                                    <Ionicons name="funnel" size={20} color={Colors.primary} />
+                                </TouchableOpacity>
+                            )}
+                            <TouchableOpacity
+                                style={styles.notificationBtn}
+                                onPress={() => router.push("../(notificaciones)")}
+                            >
+                                <Ionicons name="notifications-outline" size={22} color={Colors.primary} />
+                                <View style={styles.notificationDot} />
+                            </TouchableOpacity>
+                            {segments.includes("(perfil)") && (
+                                <TouchableOpacity onPress={() => logout()} style={styles.filterBtn}>
+                                    <Ionicons name="log-out-outline" size={25} color={Colors.primary} />
+                                </TouchableOpacity>
+                            )}
+                        </View>
+                    </>
+                )}
             </View>
-            <FilterModal
-                visible={openFilter}
-                onClose={() => setOpenFilter(false)}
-            />
+
+            {/* Modal de filtro solo si NO estamos en notificaciones */}
+            {!isInNotificaciones && (
+                <FilterModal visible={openFilter} onClose={() => setOpenFilter(false)} />
+            )}
         </View>
     );
 }
@@ -92,6 +106,16 @@ const styles = StyleSheet.create({
     },
     iconBtn: {
         padding: 6,
+    },
+    notificacionesContainer: {
+        flex: 1,
+        alignItems: "center",
+    },
+    notificacionesText: {
+        fontSize: 18,
+        fontWeight: "600",
+        color: Colors.text,
+        textAlign: "center",
     },
     searchContainer: {
         flexDirection: "row",

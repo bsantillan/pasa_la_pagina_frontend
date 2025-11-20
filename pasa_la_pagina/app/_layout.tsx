@@ -11,6 +11,7 @@ import "react-native-reanimated";
 
 import BottomNavbar from "@/components/ui/BottomNavbar";
 import Header from "@/components/ui/Header";
+import { Colors } from "@/constants/Colors";
 import { IntercambioProvider } from "@/contexts/IntercambioContext";
 import { NotificationProvider } from "@/contexts/NotificacionContext";
 import { PublicacionProvider } from "@/contexts/PublicacionContext";
@@ -47,11 +48,14 @@ function AuthGateLayout() {
   const { accessToken } = useAuth();
   const router = useRouter();
   const segments = useSegments();
-  const currentPath = segments.join("/"); 
-  const hideHeaderPaths = ["login", "register", "(publicacion)", "chat", "(notificaciones)"];
+  const currentPath = segments.join("/");
+
+  const isRootIndex = currentPath === "";
+
+  const hideHeaderPaths = ["login", "register", "(publicacion)", "chat", "index"];
   const hideNavbarPaths = ["login", "register", "chat"];
-  const showHeader = !hideHeaderPaths.some((path) => currentPath.includes(path));
-  const showNavBar = !hideNavbarPaths.some((path) => currentPath.includes(path));
+  const showHeader = !isRootIndex && !hideHeaderPaths.some((path) => currentPath.includes(path));
+  const showNavBar = !isRootIndex && !hideNavbarPaths.some((path) => currentPath.includes(path));
 
   useEffect(() => {
     if (accessToken) {
@@ -64,9 +68,9 @@ function AuthGateLayout() {
 
 function MainLayout({ showHeader, showNavBar }: { showHeader: boolean, showNavBar: boolean }) {
   return (
-    <SafeAreaView style={{ flex: 1 }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.background }}>
       {showHeader && <Header />}
-        <Slot />
+      <Slot />
       {showNavBar && <BottomNavbar />}
     </SafeAreaView>
   );
