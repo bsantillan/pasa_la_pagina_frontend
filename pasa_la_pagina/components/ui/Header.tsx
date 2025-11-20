@@ -11,7 +11,7 @@ export default function Header() {
     const router = useRouter();
     const segments = useSegments() as string[];
     const [openFilter, setOpenFilter] = useState(false);
-    const {logout} = useAuth();
+    const { logout } = useAuth();
     const {
         filtros,
         cargarinicial,
@@ -58,10 +58,15 @@ export default function Header() {
                             <Ionicons name="funnel" size={20} color={Colors.primary} />
                         </TouchableOpacity>
                     )}
-                    <TouchableOpacity style={styles.notificationBtn} onPress={() => logout()}>
+                    <TouchableOpacity style={styles.notificationBtn} onPress={() => router.push("../(notificaciones)")}>
                         <Ionicons name="notifications-outline" size={22} color={Colors.primary} />
                         <View style={styles.notificationDot} />
                     </TouchableOpacity>
+                    {segments.includes("(perfil)") && (
+                        <TouchableOpacity onPress={() => logout()} style={styles.filterBtn}>
+                            <Ionicons name="log-out-outline" size={25} color={Colors.primary} />
+                        </TouchableOpacity>
+                    )}
                 </View>
             </View>
             <FilterModal

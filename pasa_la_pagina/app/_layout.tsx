@@ -47,8 +47,8 @@ function AuthGateLayout() {
   const { accessToken } = useAuth();
   const router = useRouter();
   const segments = useSegments();
-  const currentPath = segments.join("/"); // ejemplo: "(intercambios)/chat"
-  const hideHeaderPaths = ["login", "register", "(publicacion)", "chat"];
+  const currentPath = segments.join("/"); 
+  const hideHeaderPaths = ["login", "register", "(publicacion)", "chat", "(notificaciones)"];
   const hideNavbarPaths = ["login", "register", "chat"];
   const showHeader = !hideHeaderPaths.some((path) => currentPath.includes(path));
   const showNavBar = !hideNavbarPaths.some((path) => currentPath.includes(path));

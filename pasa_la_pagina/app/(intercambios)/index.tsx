@@ -136,11 +136,7 @@ export default function Mensajes() {
                   router.push({
                     pathname: "/(intercambios)/chat",
                     params: {
-                      chatId: item.chatId,
-                      usuario: item.usuario,
-                      usuarioEmail: item.usuarioEmail,
-                      tituloPublicacion: item.tituloPublicaicon,
-                      intercambioId: item.id,
+                      chatId: item.chatId
                     },
                   });
                 }}
