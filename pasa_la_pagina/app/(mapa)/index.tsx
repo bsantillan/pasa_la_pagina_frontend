@@ -23,184 +23,121 @@ const CARD_HEIGHT = 120;
 const CARD_HEIGHT_SELECTED = 130;
 const SPACING = 16;
 
-// Estilo del mapa: natural pero sin POIs comerciales
-const mapStyle = [
-    // Ocultar POIs comerciales (restaurantes, tiendas, etc)
-    {
-        featureType: "poi.business",
-        stylers: [{ visibility: "off" }],
-    },
-    {
-        featureType: "poi.attraction",
-        stylers: [{ visibility: "off" }],
-    },
-    {
-        featureType: "poi.place_of_worship",
-        stylers: [{ visibility: "off" }],
-    },
-    {
-        featureType: "poi.school",
-        stylers: [{ visibility: "off" }],
-    },
-    {
-        featureType: "poi.medical",
-        stylers: [{ visibility: "off" }],
-    },
-    {
-        featureType: "poi.government",
-        stylers: [{ visibility: "off" }],
-    },
-    {
-        featureType: "poi.sports_complex",
-        stylers: [{ visibility: "off" }],
-    },
-    // Mantener parques y áreas verdes
-    {
-        featureType: "poi.park",
-        elementType: "geometry",
-        stylers: [{ visibility: "on" }, { color: "#c8e6c9" }],
-    },
-    {
-        featureType: "poi.park",
-        elementType: "labels",
-        stylers: [{ visibility: "on" }],
-    },
-    // Agua visible
-    {
-        featureType: "water",
-        elementType: "geometry",
-        stylers: [{ visibility: "on" }, { color: "#b3e5fc" }],
-    },
-    {
-        featureType: "water",
-        elementType: "labels.text",
-        stylers: [{ visibility: "on" }],
-    },
-    // Calles normales
-    {
-        featureType: "road",
-        elementType: "geometry",
-        stylers: [{ visibility: "on" }],
-    },
-    {
-        featureType: "road",
-        elementType: "labels",
-        stylers: [{ visibility: "on" }],
-    },
-    // Transito visible pero sutil
-    {
-        featureType: "transit.station",
-        stylers: [{ visibility: "off" }],
-    },
-    // Ocultar iconos de POIs
-    {
-        elementType: "labels.icon",
-        stylers: [{ visibility: "off" }],
-    },
-];
-
-// Marker personalizado
-const CustomMarker = ({ isSelected, tipo }: { isSelected: boolean; tipo: string }) => (
-    <View style={styles.markerContainer}>
-        <View
-            style={[
-                styles.marker,
-                { backgroundColor: isSelected ? Colors.cta : Colors.primary },
-            ]}
-        >
-            <Ionicons
-                name={tipo === "apunte" ? "document-text" : "book"}
-                size={14}
-                color={Colors.white}
+/* ---------------------------
+   MARKER MEMOIZADO
+--------------------------- */
+const CustomMarker = React.memo(
+    ({ isSelected, tipo }: { isSelected: boolean; tipo: string }) => (
+        <View style={styles.markerContainer}>
+            <View
+                style={[
+                    styles.marker,
+                    { backgroundColor: isSelected ? Colors.cta : Colors.primary },
+                ]}
+            >
+                <Ionicons
+                    name={tipo === "apunte" ? "document-text" : "book"}
+                    size={14}
+                    color={Colors.white}
+                />
+            </View>
+            <View
+                style={[
+                    styles.markerArrow,
+                    { borderTopColor: isSelected ? Colors.cta : Colors.primary },
+                ]}
             />
         </View>
-        <View
-            style={[
-                styles.markerArrow,
-                { borderTopColor: isSelected ? Colors.cta : Colors.primary },
-            ]}
-        />
-    </View>
+    ),
+    (prev, next) => prev.isSelected === next.isSelected && prev.tipo === next.tipo
 );
 
-// Tarjeta de publicación estilo imagen
-const PublicacionCard = ({
-    item,
-    isSelected,
-    onPress,
-}: {
-    item: Publicacion;
-    isSelected: boolean;
-    onPress: () => void;
-}) => {
-    const imageUrl = item.fotos_url?.[0] || "https://via.placeholder.com/150x150?text=Sin+imagen";
+/* ---------------------------
+   CARD MEMOIZADA
+--------------------------- */
+const PublicacionCard = React.memo(
+    ({
+        item,
+        isSelected,
+        onPress,
+    }: {
+        item: Publicacion;
+        isSelected: boolean;
+        onPress: () => void;
+    }) => {
+        const imageUrl =
+            item.fotos_url?.[0] || "https://via.placeholder.com/150x150?text=Sin+imagen";
 
-    // Generar descripción corta
-    const getDescripcion = () => {
-        const partes: string[] = [];
-        if (item.tipo) {
-            partes.push(item.tipo === "apunte" ? "Apunte" : "Libro");
-        }
-        if (item.nuevo) partes.push("nuevo");
-        if (item.digital) partes.push("digital");
-        else partes.push("en físico");
-        if (item.tipo) {
-            // Convertimos a formato legible
+        const getDescripcion = () => {
+            const partes: string[] = [];
+            if (item.tipo) partes.push(item.tipo === "apunte" ? "Apunte" : "Libro");
+            if (item.nuevo) partes.push("nuevo");
+            if (item.digital) partes.push("digital");
+            else partes.push("en físico");
             partes.push(`para ${item.tipo_oferta}`);
-        }
-        console.log(item)
-        return partes.join(" ");
-    };
+            return partes.join(" ");
+        };
 
-    return (
-        <TouchableOpacity
-            activeOpacity={0.95}
-            onPress={onPress}
-            style={[
-                styles.card,
-                isSelected && styles.cardSelected,
-                { height: isSelected ? CARD_HEIGHT_SELECTED : CARD_HEIGHT },
-            ]}
-        >
-            <Image source={{ uri: imageUrl }} style={styles.cardImage} />
+        return (
+            <TouchableOpacity
+                activeOpacity={0.95}
+                onPress={onPress}
+                style={[
+                    styles.card,
+                    isSelected && styles.cardSelected,
+                    { height: isSelected ? CARD_HEIGHT_SELECTED : CARD_HEIGHT },
+                ]}
+            >
+                <Image source={{ uri: imageUrl }} style={styles.cardImage} />
 
-            <View style={styles.cardContent}>
-                <Text style={styles.cardTitle} numberOfLines={1}>
-                    {item.titulo}
-                </Text>
+                <View style={styles.cardContent}>
+                    <Text style={styles.cardTitle} numberOfLines={1}>
+                        {item.titulo}
+                    </Text>
 
-                <Text style={styles.cardDescription} numberOfLines={2}>
-                    {getDescripcion()}
-                </Text>
+                    <Text style={styles.cardDescription} numberOfLines={2}>
+                        {getDescripcion()}
+                    </Text>
 
-                {item.precio && item.precio > 0 ? (
-                    <Text style={styles.price}>${item.precio.toLocaleString()}</Text>
-                ) : (
-                    <Text style={styles.priceGratis}>Gratis</Text>
-                )}
+                    {item.precio && item.precio > 0 ? (
+                        <Text style={styles.price}>${item.precio.toLocaleString()}</Text>
+                    ) : (
+                        <Text style={styles.priceGratis}>Gratis</Text>
+                    )}
 
-                <TouchableOpacity
-                    style={styles.viewButton}
-                    onPress={() => router.push(`/(tabs)/visualizarPublicacion?id=${item.id}`)}
-                >
-                    <Text style={styles.viewButtonText}>Ver publicación</Text>
-                </TouchableOpacity>
-            </View>
-        </TouchableOpacity>
-    );
-};
+                    <TouchableOpacity
+                        style={styles.viewButton}
+                        onPress={() =>
+                            router.push(`/(tabs)/visualizarPublicacion?id=${item.id}`)
+                        }
+                    >
+                        <Text style={styles.viewButtonText}>Ver publicación</Text>
+                    </TouchableOpacity>
+                </View>
+            </TouchableOpacity>
+        );
+    },
+    (prev, next) =>
+        prev.item.id === next.item.id &&
+        prev.isSelected === next.isSelected
+);
+
+/* --------------------------- */
 
 export default function MapaPublicaciones() {
     const { publicaciones, loading, error, getUserLocation } = usePublicacion();
     const mapRef = useRef<MapView>(null);
     const flatListRef = useRef<FlatList<Publicacion>>(null);
-    const [selectedIndex, setSelectedIndex] = useState<number>(0);
+    const [selectedIndex, setSelectedIndex] = useState(0);
     const [initialRegion, setInitialRegion] = useState<Region | null>(null);
 
-    // Obtener ubicación inicial
+    /* ------------------------
+        UBICACIÓN INICIAL
+    ------------------------ */
     useEffect(() => {
         const getInitialRegion = async () => {
             const loc = await getUserLocation();
+
             if (loc) {
                 setInitialRegion({
                     latitude: loc.latitude,
@@ -221,99 +158,94 @@ export default function MapaPublicaciones() {
         getInitialRegion();
     }, []);
 
-    const goToUserLocation = useCallback(async () => {
-        const loc = await getUserLocation();
-        if (loc) {
+    /* ------------------------
+        ANIMAR HACIA MARCADOR
+    ------------------------ */
+    const animateToMarker = useCallback(
+        (index: number) => {
+            const pub = publicaciones[index];
+            if (!pub) return;
+
             mapRef.current?.animateToRegion(
                 {
-                    latitude: loc.latitude,
-                    longitude: loc.longitude,
+                    latitude: pub.latitud!,
+                    longitude: pub.longitud!,
                     latitudeDelta: 0.015,
                     longitudeDelta: 0.015,
                 },
-                500
+                350
             );
-        }
-    }, [getUserLocation]);
-
-    const animateToMarker = useCallback(
-        (index: number) => {
-            if (publicaciones[index]) {
-                const pub = publicaciones[index];
-                mapRef.current?.animateToRegion(
-                    {
-                        latitude: pub.latitud!,
-                        longitude: pub.longitud!,
-                        latitudeDelta: 0.015,
-                        longitudeDelta: 0.015,
-                    },
-                    350
-                );
-            }
         },
         [publicaciones]
     );
 
-    const onMarkerPress = useCallback(
-        (index: number) => {
+    /* ------------------------
+        SELECT MARCADOR SEGURO
+    ------------------------ */
+    const onMarkerPress = (index: number) => {
+        setSelectedIndex(index);
+
+        flatListRef.current?.scrollToIndex({
+            index,
+            animated: true,
+            viewPosition: 0.5,
+        });
+
+        animateToMarker(index);
+    };
+
+    /* ------------------------
+        MANEJAR SCROLL
+    ------------------------ */
+    const onScrollEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+        const x = e.nativeEvent.contentOffset.x;
+        const index = Math.round(x / (CARD_WIDTH + SPACING));
+
+        if (index !== selectedIndex && index >= 0 && index < publicaciones.length) {
             setSelectedIndex(index);
-            flatListRef.current?.scrollToIndex({
-                index,
-                animated: true,
-                viewPosition: 0.5,
-            });
             animateToMarker(index);
-        },
-        [animateToMarker]
-    );
+        }
+    };
 
-    const onScrollEnd = useCallback(
-        (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-            const x = e.nativeEvent.contentOffset.x;
-            const index = Math.round(x / (CARD_WIDTH + SPACING));
-            if (index !== selectedIndex && index >= 0 && index < publicaciones.length) {
-                setSelectedIndex(index);
-                animateToMarker(index);
-            }
-        },
-        [selectedIndex, animateToMarker, publicaciones.length]
-    );
+    /* ------------------------
+        ESTADOS VISUALES
+    ------------------------ */
 
-    if (loading) {
+    if (loading)
         return (
             <View style={styles.centerContainer}>
                 <ActivityIndicator size="large" color={Colors.primary} />
                 <Text style={styles.loadingText}>Cargando publicaciones...</Text>
             </View>
         );
-    }
 
-    if (error) {
+    if (error)
         return (
             <View style={styles.centerContainer}>
                 <Ionicons name="alert-circle" size={48} color={Colors.cta} />
                 <Text style={styles.errorText}>Error: {error}</Text>
             </View>
         );
-    }
 
-    if (publicaciones.length === 0) {
+    if (publicaciones.length === 0)
         return (
             <View style={styles.centerContainer}>
                 <Ionicons name="map-outline" size={48} color={Colors.disabled_primary} />
                 <Text style={styles.emptyText}>No hay publicaciones con ubicación</Text>
             </View>
         );
-    }
 
-    if (!initialRegion) {
+    if (!initialRegion)
         return (
             <View style={styles.centerContainer}>
                 <ActivityIndicator size="large" color={Colors.primary} />
                 <Text style={styles.loadingText}>Obteniendo ubicación...</Text>
             </View>
         );
-    }
+
+    /* ------------------------
+        UI PRINCIPAL
+    ------------------------ */
 
     return (
         <View style={styles.container}>
@@ -322,42 +254,58 @@ export default function MapaPublicaciones() {
                 style={styles.map}
                 provider={PROVIDER_GOOGLE}
                 initialRegion={initialRegion}
-                customMapStyle={mapStyle}
-                showsUserLocation={true}
+                showsUserLocation
                 showsMyLocationButton={false}
                 showsCompass={false}
-                showsBuildings={false}
-                showsTraffic={false}
-                showsIndoors={false}
             >
                 {publicaciones.map((pub, index) => (
                     <Marker
                         key={pub.id}
-                        coordinate={{ latitude: pub.latitud!, longitude: pub.longitud! }}
-                        onPress={() => onMarkerPress(index)}
+                        coordinate={{
+                            latitude: pub.latitud!,
+                            longitude: pub.longitud!,
+                        }}
+                        onPress={(e) => {
+                            e.stopPropagation();
+                            onMarkerPress(index);
+                        }}
                         anchor={{ x: 0.5, y: 1 }}
                     >
                         <CustomMarker
                             isSelected={selectedIndex === index}
-                            tipo={pub.tipo === "apunte" ? "apunte" : "libro"}
+                            tipo={pub.tipo || "apunte"}
                         />
                     </Marker>
                 ))}
             </MapView>
-            {/* Botón ubicación del usuario */}
+
+            {/* BOTÓN UBICACIÓN */}
             <TouchableOpacity
                 style={styles.locationButton}
-                onPress={goToUserLocation}
-                activeOpacity={0.8}
+                onPress={async () => {
+                    const loc = await getUserLocation();
+                    if (loc) {
+                        mapRef.current?.animateToRegion(
+                            {
+                                latitude: loc.latitude,
+                                longitude: loc.longitude,
+                                latitudeDelta: 0.015,
+                                longitudeDelta: 0.015,
+                            },
+                            500
+                        );
+                    }
+                }}
             >
                 <Ionicons name="locate" size={24} color={Colors.primary} />
             </TouchableOpacity>
 
-            {/* Carrusel inferior */}
+            {/* CARRUSEL */}
             <View style={styles.carouselContainer}>
                 <FlatList
                     ref={flatListRef}
                     data={publicaciones}
+                    keyExtractor={(item) => item.id.toString()}
                     renderItem={({ item, index }) => (
                         <PublicacionCard
                             item={item}
@@ -365,44 +313,45 @@ export default function MapaPublicaciones() {
                             onPress={() => onMarkerPress(index)}
                         />
                     )}
-                    keyExtractor={(item) => item.id.toString()}
                     horizontal
                     showsHorizontalScrollIndicator={false}
                     snapToInterval={CARD_WIDTH + SPACING}
-                    snapToAlignment="center"
                     decelerationRate="fast"
-                    contentContainerStyle={styles.carouselContent}
                     onMomentumScrollEnd={onScrollEnd}
-                    getItemLayout={(_, index) => ({
-                        length: CARD_WIDTH + SPACING,
-                        offset: (CARD_WIDTH + SPACING) * index,
-                        index,
-                    })}
-                    ItemSeparatorComponent={() => <View style={{ width: 0 }} />}
+                    contentContainerStyle={{
+                        paddingHorizontal: (width - CARD_WIDTH) / 2,
+                        paddingVertical: 16,
+                    }}
+                    initialNumToRender={5}
+                    maxToRenderPerBatch={5}
+                    windowSize={3}
+                    removeClippedSubviews
                 />
             </View>
         </View>
     );
 }
 
+/* ------------------------
+    ESTILOS
+------------------------ */
+
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: Colors.background },
     map: { ...StyleSheet.absoluteFillObject },
+
     centerContainer: {
         flex: 1,
         justifyContent: "center",
         alignItems: "center",
-        backgroundColor: Colors.background,
         padding: 20,
     },
     loadingText: { marginTop: 12, fontSize: 16, color: Colors.text },
     errorText: { marginTop: 12, fontSize: 16, color: Colors.cta, textAlign: "center" },
     emptyText: { marginTop: 12, fontSize: 16, color: Colors.disabled_primary },
 
-    // Markers
-    markerContainer: {
-        alignItems: "center",
-    },
+    /* MARKERS */
+    markerContainer: { alignItems: "center" },
     marker: {
         width: 32,
         height: 32,
@@ -411,10 +360,6 @@ const styles = StyleSheet.create({
         alignItems: "center",
         borderWidth: 2,
         borderColor: Colors.white,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.3,
-        shadowRadius: 3,
         elevation: 5,
     },
     markerArrow: {
@@ -428,63 +373,37 @@ const styles = StyleSheet.create({
         marginTop: -2,
     },
 
-    // Carrusel
+    /* CARRUSEL */
     carouselContainer: {
         position: "absolute",
         bottom: 30,
         left: 0,
         right: 0,
     },
-    carouselContent: {
-        paddingHorizontal: (width - CARD_WIDTH) / 2,
-        paddingVertical: 16,
-    },
 
-    // Tarjetas
+    /* CARDS */
     card: {
         width: CARD_WIDTH,
         marginHorizontal: SPACING / 2,
         backgroundColor: Colors.white,
         borderRadius: 16,
         flexDirection: "row",
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.12,
-        shadowRadius: 8,
         elevation: 4,
-        overflow: "hidden",
     },
     cardSelected: {
         borderWidth: 2,
         borderColor: 'transparent',
-        shadowOpacity: 0.2,
-        shadowRadius: 12,
-        elevation: 8,
     },
     cardImage: {
         width: 120,
         height: 120,
         borderRadius: 12,
         margin: 4,
-        resizeMode: "cover",
     },
-    cardContent: {
-        flex: 1,
-        paddingVertical: 12,
-        paddingRight: 4,
-        paddingLeft: 4,
-        justifyContent: "space-between",
-    },
-    cardTitle: {
-        fontSize: 16,
-        fontWeight: "700",
-        color: Colors.text,
-    },
-    cardDescription: {
-        fontSize: 13,
-        color: "#666",
-        lineHeight: 18,
-    },
+    cardContent: { flex: 1, paddingVertical: 12, paddingHorizontal: 8 },
+    cardTitle: { fontSize: 16, fontWeight: "700", color: Colors.text },
+    cardDescription: { fontSize: 13, color: "#666" },
+
     price: {
         fontSize: 16,
         fontWeight: "600",
@@ -495,6 +414,7 @@ const styles = StyleSheet.create({
         fontWeight: "600",
         color: Colors.cta,
     },
+
     viewButton: {
         backgroundColor: Colors.primary,
         paddingVertical: 8,
@@ -507,6 +427,7 @@ const styles = StyleSheet.create({
         fontSize: 13,
         fontWeight: "600",
     },
+
     locationButton: {
         position: "absolute",
         top: 20,
@@ -517,10 +438,6 @@ const styles = StyleSheet.create({
         borderRadius: 25,
         justifyContent: "center",
         alignItems: "center",
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.12,
-        shadowRadius: 8,
         elevation: 4,
     },
 });
