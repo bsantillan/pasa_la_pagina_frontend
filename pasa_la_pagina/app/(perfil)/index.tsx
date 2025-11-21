@@ -1,7 +1,6 @@
 // PerfilScreen.tsx - versión corregida
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { Avatar } from "../../components/ui/Avatar";
 import { ProductCard } from "../../components/ui/ProductCard";
 import { ReviewCard } from "../../components/ui/ReviewCard";
@@ -28,7 +27,7 @@ export default function PerfilScreen() {
   const renderPublicaciones = () => {
     if (!pubsUser.length) {
       return (
-        <Text style={{ color: Colors.disabled_primary, textAlign: "center", marginTop: 20 }}>
+        <Text style={{ color: Colors.disabled_primary, textAlign: "center", marginTop: 10 }}>
           No tiene publicaciones aún.
         </Text>
       );
@@ -47,7 +46,7 @@ export default function PerfilScreen() {
 
   const renderResenias = () => {
     if (!reseniasRecibidas.length) {
-      return <Text style={{ color: Colors.disabled_primary }}>No tiene reseñas recibidas aún.</Text>;
+      return <Text style={{ color: Colors.disabled_primary, textAlign: "center", marginTop: 10 }}>No tiene reseñas recibidas aún.</Text>;
     }
 
     return reseniasRecibidas.map((r) => (
@@ -75,66 +74,60 @@ export default function PerfilScreen() {
           />
         ))
       ) : (
-        <Text style={{ color: Colors.disabled_primary }}>No ha hecho reseñas aún.</Text>
+        <Text style={{ color: Colors.disabled_primary, textAlign: "center", marginTop: 10 }}>No ha hecho reseñas aún.</Text>
       )}
       <Text style={styles.historialTitulo}>Contactos</Text>
-      <Text style={{ color: Colors.disabled_primary, marginTop: 6 }}>
+      <Text style={{ color: Colors.disabled_primary, textAlign: "center", marginTop: 10 }}>
         Funcionalidad aún no implementada
       </Text>
     </View>
   );
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={["top"]}>
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <Avatar name={usuario?.nombre || "U"} size={80} />
-          <Text style={styles.nombre}>
-            {usuario?.nombre} {usuario?.apellido}
-          </Text>
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Avatar name={usuario?.nombre || "U"} size={80} />
+        <Text style={styles.nombre}>
+          {usuario?.nombre} {usuario?.apellido}
+        </Text>
 
-          <View style={styles.filtrosContainer}>
-            {filtros.map((filtro) => (
-              <TouchableOpacity
-                key={filtro}
-                onPress={() => setSelectedFiltro(filtro)}
+        <View style={styles.filtrosContainer}>
+          {filtros.map((filtro) => (
+            <TouchableOpacity
+              key={filtro}
+              onPress={() => setSelectedFiltro(filtro)}
+              style={[
+                styles.filtroBtn,
+                selectedFiltro === filtro && styles.filtroBtnActivo,
+              ]}
+            >
+              <Text
                 style={[
-                  styles.filtroBtn,
-                  selectedFiltro === filtro && styles.filtroBtnActivo,
+                  styles.filtroTexto,
+                  selectedFiltro === filtro && styles.filtroTextoActivo,
                 ]}
               >
-                <Text
-                  style={[
-                    styles.filtroTexto,
-                    selectedFiltro === filtro && styles.filtroTextoActivo,
-                  ]}
-                >
-                  {filtro}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+                {filtro}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
-
-        <ScrollView style={styles.contenido} showsVerticalScrollIndicator={false}>
-          {selectedFiltro === "Publicaciones"
-            ? renderPublicaciones()
-            : selectedFiltro === "Reseñas"
-              ? renderResenias()
-              : renderHistorial()}
-        </ScrollView>
       </View>
-    </SafeAreaView>
+
+      <ScrollView style={styles.contenido} showsVerticalScrollIndicator={false}>
+        {selectedFiltro === "Publicaciones"
+          ? renderPublicaciones()
+          : selectedFiltro === "Reseñas"
+            ? renderResenias()
+            : renderHistorial()}
+      </ScrollView>
+    </View>
   );
 }
 
 // ------------------ ESTILOS ------------------
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1 },
   header: { alignItems: "center", paddingVertical: 16 },
   nombre: {
     fontSize: 20,
@@ -142,7 +135,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
     color: Colors.text,
   },
-   searchRow: {
+  searchRow: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,

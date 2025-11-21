@@ -2,7 +2,8 @@ import { AlertCard } from "@/components/ui/AlertaCard";
 import { Avatar } from "@/components/ui/Avatar";
 import { MessageCard } from "@/components/ui/MensajeCard";
 import { Colors } from "@/constants/Colors";
-import { useChat } from "@/contexts/ChatContext"; // ✅ Importar tu contexto
+import { useAuth } from "@/contexts/AuthContext";
+import { useChat } from "@/contexts/ChatContext";
 import { useIntercambio } from "@/contexts/IntercambioContext";
 import Ionicons from "@expo/vector-icons/build/Ionicons";
 import { router, useLocalSearchParams } from "expo-router";
@@ -21,125 +22,149 @@ import {
 
 export default function Chat() {
   const [visible, setVisible] = useState(false);
-  const { chatId, usuarioEmail, tituloPublicacion, intercambioId } =
-    useLocalSearchParams<{
-      chatId: string;
-      usuarioEmail: string;
-      tituloPublicacion: string;
-      intercambioId: string;
-    }>();
-  const { messages, loadMessages, initWebSocket, sendMessage } = useChat(); // ✅ usar el contexto
+  const { chatId } = useLocalSearchParams<{ chatId: string }>();
+
+  const {
+    messages,
+    chatInfo,
+    loadChatInfo,
+    loadMessages,
+    initWebSocket,
+    sendMessage,
+  } = useChat();
+
+  const { user } = useAuth();
   const { cancelarIntercambio, concretarIntercambio } = useIntercambio();
   const [text, setText] = useState("");
+
   const flatListRef = useRef<FlatList<any>>(null);
 
-  const abrirModal = () => {
-    setVisible(true);
-  };
-
-  const cerrarModal = () => {
-    setVisible(false);
-  };
-
-  // Cargar historial y conectar WebSocket
+  // Auto scroll abajo cuando llegan mensajes
   useEffect(() => {
-    loadMessages(Number(chatId)); // cargar historial
-    const disconnectWS = initWebSocket(Number(chatId)); // conectar socket
+    if (flatListRef.current && messages.length > 0) {
+      flatListRef.current.scrollToEnd({ animated: true });
+    }
+  }, [messages]);
 
-    return () => disconnectWS(); // limpiar conexión al salir
-  }, []);
+  // Cargar historial + datos del chat + conexion WS
+  useEffect(() => {
+    const id = Number(chatId);
+    loadChatInfo(id);
+    loadMessages(id);
+
+    const disconnect = initWebSocket(id);
+    return disconnect;
+  }, [chatId]);
+
+  // Loader si chatInfo es null
+  if (!chatInfo) {
+    return (
+      <View style={styles.loaderContainer}>
+        <Text style={{ fontSize: 16, color: Colors.text }}>Cargando chat...</Text>
+      </View>
+    );
+  }
 
   const handleSend = () => {
     if (!text.trim()) return;
-
-    sendMessage(Number(chatId), usuarioEmail, text);
-
+    sendMessage(Number(chatId), user!.email, text);
     setText("");
   };
 
-  const handleCancel = (intercambioId: number) => {
-    cancelarIntercambio(intercambioId);
-    setVisible(false);
+  const handleCancel = async (intercambioId: number) => {
+    try {
+      await cancelarIntercambio(intercambioId);
+      setVisible(false);
+    } catch (err: any) {
+      alert(err.message ?? "Error al cancelar el intercambio");
+    }
   };
 
-  const handleConcretar = (intercambioId: number) => {
-    concretarIntercambio(intercambioId);
-    setVisible(false);
+  const handleConcretar = async (intercambioId: number) => {
+    try {
+      await concretarIntercambio(intercambioId);
+      setVisible(false);
+    } catch (err: any) {
+      alert(err.message ?? "Error al concretar el intercambio");
+    }
   };
 
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-      keyboardVerticalOffset={90}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 70}
     >
+      {/* HEADER */}
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.headerButton}>
           <Ionicons name="arrow-back" size={24} color={Colors.text} />
         </Pressable>
 
         <View style={styles.headerCenter}>
-          <Avatar name={usuarioEmail} size={40} />
-
+          <Avatar name={chatInfo.usuario} size={40} />
           <View style={styles.headerInfo}>
-            <Text style={styles.headerTitle} numberOfLines={1} ellipsizeMode="tail">
-              {usuarioEmail}
+            <Text style={styles.headerTitle} numberOfLines={1}>
+              {chatInfo.usuario}
             </Text>
-            <Text style={styles.headerSubtitle} numberOfLines={1} ellipsizeMode="tail">
-              {tituloPublicacion}
+            <Text style={styles.headerSubtitle} numberOfLines={1}>
+              {chatInfo.titulo_publicacion}
             </Text>
           </View>
         </View>
-        <Pressable onPress={abrirModal} style={styles.headerButton}>
-          <Ionicons
-            name="checkmark-done-outline"
-            size={24}
-            color={Colors.primary}
-          />
+
+        <Pressable onPress={() => setVisible(true)} style={styles.headerButton}>
+          <Ionicons name="checkmark-done-outline" size={24} color={Colors.primary} />
         </Pressable>
       </View>
-      <FlatList
-        ref={flatListRef}
-        style={{ flex: 1, backgroundColor: "#FFF8ED" }}
-        data={messages}
-        keyExtractor={(item, index) => item.id?.toString() || index.toString()}
-        renderItem={({ item }) => (
-          <MessageCard
-            text={item.contenido}
-            time={new Date(item.fechaInicio).toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
-            isOwnMessage={item.usuarioEmail === usuarioEmail}
-          />
-        )}
-      />
 
-      <View style={styles.container2}>
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            value={text}
-            onChangeText={setText}
-            placeholder="Escribe un mensaje..."
-            placeholderTextColor="#8E8E93"
-            returnKeyType="send"
-            onSubmitEditing={handleSend}
-          />
+      {/* MENSAJES + INPUT */}
+      <View style={{ flex: 1 }}>
+        <FlatList
+          ref={flatListRef}
+          style={{ flex: 1, backgroundColor: "#FFF8ED" }}
+          data={messages}
+          keyExtractor={(item, index) => item.id?.toString() || index.toString()}
+          renderItem={({ item }) => (
+            <MessageCard
+              text={item.contenido}
+              time={new Date(item.fechaInicio).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+              isOwnMessage={item.usuarioEmail === user?.email}
+            />
+          )}
+          contentContainerStyle={{ padding: 10, paddingBottom: 20 }}
+        />
+
+        {/* INPUT */}
+        <View style={styles.inputBar}>
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.input}
+              value={text}
+              onChangeText={setText}
+              placeholder="Escribe un mensaje..."
+              placeholderTextColor="#8E8E93"
+              returnKeyType="send"
+              onSubmitEditing={handleSend}
+            />
+            <Pressable onPress={handleSend} style={styles.sendButton}>
+              <Ionicons name="send" size={20} color={Colors.primary} />
+            </Pressable>
+          </View>
         </View>
       </View>
-      <Modal
-        animationType="fade"
-        transparent
-        visible={visible}
-        onRequestClose={cerrarModal}
-      >
+
+      {/* MODAL */}
+      <Modal animationType="fade" transparent visible={visible}>
         <View style={styles.overlay}>
           <AlertCard
-            title={`Concretar intercambio de "${tituloPublicacion}"?`}
+            title={`Concretar intercambio de "${chatInfo.titulo_publicacion}"?`}
             description="¿Estás seguro de que deseas concretar este intercambio?"
-            onAccept={() => handleConcretar(Number(intercambioId))}
-            onCancel={() => handleCancel(Number(intercambioId))}
+            onAccept={() => handleConcretar(chatInfo.intercambio_id)}
+            onCancel={() => handleCancel(chatInfo.intercambio_id)}
             acceptLabel="Sí, concretar"
             cancelLabel="Cancelar"
           />
@@ -149,21 +174,20 @@ export default function Chat() {
   );
 }
 
+/* =================== ESTILOS =================== */
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
   },
-  container2: {
-    flexDirection: "row",
+  loaderContainer: {
+    flex: 1,
+    justifyContent: "center",
     alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: Colors.white,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
   },
+
+  /* HEADER */
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -173,7 +197,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     borderBottomWidth: 1,
     borderBottomColor: "#e0e0e0",
-    marginTop: 50,
   },
   headerButton: {
     padding: 8,
@@ -182,62 +205,63 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-headerTitle: {
-  fontSize: 16,
-  fontWeight: "600",
-  color: Colors.text,
-},
-  inputContainer: {
-    flex: 1,
-    marginHorizontal: 10,
-    backgroundColor: "#FFFFFF",
-    borderWidth: 0.5,
-    borderColor: "#8E8E93",
-    borderRadius: 16,
-    opacity: 0.9,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 10,
-    height: 40,
-    marginVertical: 8,
-  },
-  input: {
-    flex: 1,
-    fontSize: 15,
-    color: "#000",
-  },
-  inlineIcons: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginLeft: 8,
-  },
-  overlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
   headerCenter: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "flex-start",
-    gap: 10, // espacio entre el avatar y el texto
+    gap: 10,
   },
-
   headerInfo: {
     flexShrink: 1,
     marginLeft: 16,
-    alignItems: "flex-start",
-    justifyContent: "center",
   },
-
+  headerTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: Colors.text,
+  },
   headerSubtitle: {
     fontSize: 13,
     color: "#6e6e6e",
     marginTop: 2,
   },
 
+  /* INPUT BAR */
+  inputBar: {
+    backgroundColor: Colors.white,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+  },
+  inputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 16,
+    borderWidth: 0.5,
+    borderColor: "#8E8E93",
+    backgroundColor: "#FFFFFF",
+  },
+  input: {
+    flex: 1,
+    fontSize: 15,
+    color: "#000",
+    minHeight: 40,
+  },
+  sendButton: {
+    padding: 8,
+    marginLeft: 6,
+    justifyContent: "center",
+    alignItems: "center",
+  },
 
+  /* MODAL */
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
 });

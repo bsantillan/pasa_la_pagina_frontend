@@ -17,6 +17,7 @@ export const connectToChat = (chatId: number, onMessageReceived: (msg: any) => v
         const body = JSON.parse(message.body);
         onMessageReceived(body);
       });
+      
     },
     onStompError: (frame) => {
       console.error("STOMP Error:", frame.headers["message"]);

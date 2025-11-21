@@ -13,7 +13,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import ApuntesRecientes from "../home/homeApunte";
 import CercaTuyo from "../home/homeCercaTuyo";
 import LibrosRecientes from "../home/homeLibro";
@@ -44,12 +43,10 @@ export default function HomeScreen() {
   // 👇 Mostrar loading mientras se verifica la autenticación
   if (initialLoad) {
     return (
-      <SafeAreaView style={styles.container} edges={["top"]}>
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color={Colors.primary} />
-          <Text>Cargando...</Text>
-        </View>
-      </SafeAreaView>
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color={Colors.primary} />
+        <Text>Cargando...</Text>
+      </View>
     );
   }
 
@@ -60,61 +57,40 @@ export default function HomeScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={{ paddingBottom: 40 }}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing || loading}
-            onRefresh={onRefresh}
-          />
-        }
-      >
+    <ScrollView
+      contentContainerStyle={{ paddingBottom: 40 }}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing || loading}
+          onRefresh={onRefresh}
+        />
+      }
+    >
 
-        {/* Mostrar error si lo hay */}
-        {error ? (
-          <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>Error al cargar publicaciones</Text>
-            <TouchableOpacity onPress={() => fetchCercaTuyo()}>
-              <Text style={styles.retryText}>Reintentar</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <>
-            <CercaTuyo />
-            <LibrosRecientes />
-            <ApuntesRecientes />
-          </>
-        )}
-      </ScrollView>
-    </SafeAreaView>
+      {/* Mostrar error si lo hay */}
+      {error ? (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>Error al cargar publicaciones</Text>
+          <TouchableOpacity onPress={() => fetchCercaTuyo()}>
+            <Text style={styles.retryText}>Reintentar</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <>
+          <CercaTuyo />
+          <LibrosRecientes />
+          <ApuntesRecientes />
+        </>
+      )}
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background},
-  center: { 
-    flex: 1, 
-    justifyContent: 'center', 
-    alignItems: 'center' 
-  },
-  searchRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    backgroundColor: Colors.background,
-  },
-  logoutButton: { marginLeft: 12, padding: 8, borderRadius: 8 },
-  inputContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    height: 40,
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center'
   },
   errorContainer: {
     padding: 20,

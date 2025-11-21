@@ -290,9 +290,6 @@ export default function ApunteForm() {
 
 const styles = StyleSheet.create({
   scrollContent: {
-    paddingHorizontal: 16,
-    paddingVertical: 24,
-    backgroundColor: Colors.background,
     flexGrow: 1,
   },
   container: {
@@ -306,8 +303,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     height: 56,
-    marginTop: 30,
-    marginBottom: 0,
+    marginBottom: 10,
   },
   backButton: {
     width: 40,
