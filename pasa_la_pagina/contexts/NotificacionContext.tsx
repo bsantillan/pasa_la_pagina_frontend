@@ -30,7 +30,6 @@ type NotificationContextType = {
   notificaciones: Notificacion[];
   connect: () => void;
   disconnect: () => void;
-  fetchNotifications: (page: number, size: number) => Promise<any>;
   deleteNotification: (id: number) => Promise<void>;
 };
 
@@ -57,12 +56,9 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
 
         stompClient?.subscribe(`/topic/notificaciones/${user.id}`, async (msg) => {
           const noti: Notificacion = JSON.parse(msg.body);
-          console.log("🔔 Notificación recibida:", noti);
+          setNotificaciones(prev => [noti, ...prev]);
 
-          const mensaje = `${noti.titulo}: ${noti.mensaje}`;
-          console.log(mensaje)
-
-          Alert.alert(mensaje);
+          Alert.alert(noti.titulo + " " +noti.mensaje);
 
           try {
             await Notificacions.scheduleNotificationAsync({
@@ -97,32 +93,6 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
     }
   };
 
-  // 👉 Cargar notificaciones históricas y guardarlas en el estado
-  const fetchNotifications = async (page: number = 0, size: number = 10) => {
-    try {
-      const token = await getValidAccessToken();
-
-      const response = await fetch(
-        `${API_URL}notificaciones/paginado?page=${page}&size=${size}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (!response.ok) throw new Error("Error al obtener notificaciones");
-
-      const data = await response.json();
-
-      setNotificaciones(data.content);
-    } catch (error) {
-      console.error("❌ Error notificacione paginadas:", error);
-    }
-  };
-
   const deleteNotification = async (idNotificacion: number) => {
     try {
       const token = await getValidAccessToken();
@@ -152,7 +122,6 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
     }
   };
 
-
   useEffect(() => {
     if (user?.id) {
       connect();
@@ -165,7 +134,6 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
       notificaciones,
       connect,
       disconnect,
-      fetchNotifications,
       deleteNotification
     }}>
       {children}
