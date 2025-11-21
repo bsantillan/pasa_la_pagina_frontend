@@ -1,6 +1,5 @@
 import { Colors } from "@/constants/Colors";
-import { usePublicacion } from "@/contexts/PublicacionContext";
-import { Publicacion } from "@/types/Publicacion";
+import { Publicacion, usePublicacion } from "@/contexts/PublicacionContext";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useCallback, useEffect, useRef, useState } from "react";
@@ -139,11 +138,17 @@ const PublicacionCard = ({
     // Generar descripción corta
     const getDescripcion = () => {
         const partes: string[] = [];
-        partes.push(item.tipo_material);
+        if (item.tipo) {
+            partes.push(item.tipo === "apunte" ? "Apunte" : "Libro");
+        }
         if (item.nuevo) partes.push("nuevo");
         if (item.digital) partes.push("digital");
         else partes.push("en físico");
-        if (item.tipo_oferta) partes.push(`para ${item.tipo_oferta.toLowerCase()}`);
+        if (item.tipo) {
+            // Convertimos a formato legible
+            partes.push(`para ${item.tipo_oferta}`);
+        }
+        console.log(item)
         return partes.join(" ");
     };
 
@@ -192,11 +197,6 @@ export default function MapaPublicaciones() {
     const [selectedIndex, setSelectedIndex] = useState<number>(0);
     const [initialRegion, setInitialRegion] = useState<Region | null>(null);
 
-    // Filtrar publicaciones con coordenadas válidas
-    const publicacionesConUbicacion = publicaciones.filter(
-        (p) => p.latitud != null && p.longitud != null
-    );
-
     // Obtener ubicación inicial
     useEffect(() => {
         const getInitialRegion = async () => {
@@ -208,8 +208,8 @@ export default function MapaPublicaciones() {
                     latitudeDelta: 0.05,
                     longitudeDelta: 0.05,
                 });
-            } else if (publicacionesConUbicacion.length > 0) {
-                const first = publicacionesConUbicacion[0];
+            } else if (publicaciones.length > 0) {
+                const first = publicaciones[0];
                 setInitialRegion({
                     latitude: first.latitud!,
                     longitude: first.longitud!,
@@ -219,7 +219,7 @@ export default function MapaPublicaciones() {
             }
         };
         getInitialRegion();
-    }, [publicacionesConUbicacion]);
+    }, []);
 
     const goToUserLocation = useCallback(async () => {
         const loc = await getUserLocation();
@@ -238,8 +238,8 @@ export default function MapaPublicaciones() {
 
     const animateToMarker = useCallback(
         (index: number) => {
-            if (publicacionesConUbicacion[index]) {
-                const pub = publicacionesConUbicacion[index];
+            if (publicaciones[index]) {
+                const pub = publicaciones[index];
                 mapRef.current?.animateToRegion(
                     {
                         latitude: pub.latitud!,
@@ -251,7 +251,7 @@ export default function MapaPublicaciones() {
                 );
             }
         },
-        [publicacionesConUbicacion]
+        [publicaciones]
     );
 
     const onMarkerPress = useCallback(
@@ -271,12 +271,12 @@ export default function MapaPublicaciones() {
         (e: NativeSyntheticEvent<NativeScrollEvent>) => {
             const x = e.nativeEvent.contentOffset.x;
             const index = Math.round(x / (CARD_WIDTH + SPACING));
-            if (index !== selectedIndex && index >= 0 && index < publicacionesConUbicacion.length) {
+            if (index !== selectedIndex && index >= 0 && index < publicaciones.length) {
                 setSelectedIndex(index);
                 animateToMarker(index);
             }
         },
-        [selectedIndex, animateToMarker, publicacionesConUbicacion.length]
+        [selectedIndex, animateToMarker, publicaciones.length]
     );
 
     if (loading) {
@@ -297,7 +297,7 @@ export default function MapaPublicaciones() {
         );
     }
 
-    if (publicacionesConUbicacion.length === 0) {
+    if (publicaciones.length === 0) {
         return (
             <View style={styles.centerContainer}>
                 <Ionicons name="map-outline" size={48} color={Colors.disabled_primary} />
@@ -330,7 +330,7 @@ export default function MapaPublicaciones() {
                 showsTraffic={false}
                 showsIndoors={false}
             >
-                {publicacionesConUbicacion.map((pub, index) => (
+                {publicaciones.map((pub, index) => (
                     <Marker
                         key={pub.id}
                         coordinate={{ latitude: pub.latitud!, longitude: pub.longitud! }}
@@ -339,7 +339,7 @@ export default function MapaPublicaciones() {
                     >
                         <CustomMarker
                             isSelected={selectedIndex === index}
-                            tipo={pub.tipo_material === "Apunte" ? "apunte" : "libro"}
+                            tipo={pub.tipo === "apunte" ? "apunte" : "libro"}
                         />
                     </Marker>
                 ))}
@@ -357,7 +357,7 @@ export default function MapaPublicaciones() {
             <View style={styles.carouselContainer}>
                 <FlatList
                     ref={flatListRef}
-                    data={publicacionesConUbicacion}
+                    data={publicaciones}
                     renderItem={({ item, index }) => (
                         <PublicacionCard
                             item={item}
