@@ -12,7 +12,7 @@ export default function Mensajes() {
     intercambios,
     buscarIntercambios,
     aceptarIntercambio,
-    cancelarIntercambio,
+    rechazarIntercambio,
     intercambioSeleccionado,
     seleccionarIntercambio,
   } = useIntercambio();
@@ -22,10 +22,13 @@ export default function Mensajes() {
     try {
       if (mostrarSolicitudes) {
         console.log("entro");
-        await buscarIntercambios();
+        const response = await buscarIntercambios({
+          estadosIntercambio: ["PENDIENTE"],
+        });
+        console.log(response);
       } else {
         const response = await buscarIntercambios({
-          estadosIntercambio: ["PENDIENTE", "ACEPTADO"],
+          estadosIntercambio: ["ACEPTADO"],
         });
         console.log(response);
       }
@@ -61,11 +64,11 @@ export default function Mensajes() {
   const handleRechazar = async () => {
     if (!intercambioSeleccionado) return;
     try {
-      await cancelarIntercambio(intercambioSeleccionado.id);
+      await rechazarIntercambio(intercambioSeleccionado.id);
       handleCerrarModal();
       cargarIntercambios(true);
     } catch (err) {
-      Alert.alert("Error", "No se pudo cancelar el intercambio.");
+      Alert.alert("Error", "No se pudo rechazar el intercambio.");
     }
   };
 
@@ -133,10 +136,7 @@ export default function Mensajes() {
                   router.push({
                     pathname: "/(intercambios)/chat",
                     params: {
-                      chatId: item.chatId,
-                      usuarioEmail: item.usuarioEmail,
-                      tituloPublicacion: item.tituloPublicaicon,
-                      intercambioId: item.id,
+                      chatId: item.chatId
                     },
                   });
                 }}
@@ -191,7 +191,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginVertical: 16,
     gap: 10,
-    paddingTop: 60,
   },
   styleBtn: {
     flex: 1,

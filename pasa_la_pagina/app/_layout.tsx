@@ -11,11 +11,12 @@ import "react-native-reanimated";
 
 import BottomNavbar from "@/components/ui/BottomNavbar";
 import Header from "@/components/ui/Header";
+import { Colors } from "@/constants/Colors";
 import { IntercambioProvider } from "@/contexts/IntercambioContext";
+import { NotificationProvider } from "@/contexts/NotificacionContext";
 import { PublicacionProvider } from "@/contexts/PublicacionContext";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useEffect } from "react";
-import { View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function RootLayout() {
@@ -30,11 +31,13 @@ export default function RootLayout() {
     <AuthProvider>
       <IntercambioProvider>
         <PublicacionProvider>
-          <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-            <StatusBar style="auto" />
+          <NotificationProvider>
+            <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+              <StatusBar style="auto" />
 
-            <AuthGateLayout />
-          </ThemeProvider>
+              <AuthGateLayout />
+            </ThemeProvider>
+          </NotificationProvider>
         </PublicacionProvider>
       </IntercambioProvider>
     </AuthProvider>
@@ -45,11 +48,14 @@ function AuthGateLayout() {
   const { accessToken } = useAuth();
   const router = useRouter();
   const segments = useSegments();
-  const currentSegment = segments[0];
-  const hideHeaderInHeader = ["login", "register", "(publicacion)", "chat"];
-  const hideHeaderInNavBar = ["login", "register", "chat"];
-  const showHeader = !hideHeaderInHeader.includes(currentSegment ?? "");
-  const showNavBar = !hideHeaderInNavBar.includes(currentSegment ?? "");
+  const currentPath = segments.join("/");
+
+  const isRootIndex = currentPath === "";
+
+  const hideHeaderPaths = ["login", "register", "(publicacion)", "chat", "index"];
+  const hideNavbarPaths = ["login", "register", "chat"];
+  const showHeader = !isRootIndex && !hideHeaderPaths.some((path) => currentPath.includes(path));
+  const showNavBar = !isRootIndex && !hideNavbarPaths.some((path) => currentPath.includes(path));
 
   useEffect(() => {
     if (accessToken) {
@@ -62,11 +68,9 @@ function AuthGateLayout() {
 
 function MainLayout({ showHeader, showNavBar }: { showHeader: boolean, showNavBar: boolean }) {
   return (
-    <SafeAreaView style={{ flex: 1 }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.background }}>
       {showHeader && <Header />}
-      <View style={{ flex: 1 }}>
-        <Slot />
-      </View>
+      <Slot />
       {showNavBar && <BottomNavbar />}
     </SafeAreaView>
   );

@@ -1,3 +1,4 @@
+import { Colors } from "@/constants/Colors";
 import { useAuth } from "@/contexts/AuthContext";
 import { EnumsProvider } from "@/contexts/EnumsContext"; // 👈 importalo
 import { LibroProvider } from "@/contexts/LibroContext";
@@ -19,17 +20,15 @@ export default function PublicacionLayout() {
 
   return (
     <View style={styles.container}>
-      
-        <EnumsProvider>
-          <LibroProvider>
-            <Slot />
-          </LibroProvider>
-        </EnumsProvider>
-      
+      <EnumsProvider>
+        <LibroProvider>
+          <Slot />
+        </LibroProvider>
+      </EnumsProvider>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { flex: 1, backgroundColor: Colors.background, paddingHorizontal:16 },
 });

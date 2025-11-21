@@ -4,8 +4,6 @@ import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-type IoniconName = React.ComponentProps<typeof Ionicons>["name"];
-
 const TABS = [
     { name: "home", label: "Home", icon: "home-outline", activeIcon: "home", route: "/(tabs)/" },
     { name: "map", label: "Map", icon: "map-outline", activeIcon: "map", route: "/(mapa)/" },

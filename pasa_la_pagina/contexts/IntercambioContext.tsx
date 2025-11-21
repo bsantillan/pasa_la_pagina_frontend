@@ -33,6 +33,7 @@ type IntercambioContextType = {
     aceptarIntercambio: (id: number) => Promise<void>;
     concretarIntercambio: (id: number) => Promise<void>;
     cancelarIntercambio: (id: number) => Promise<void>;
+    rechazarIntercambio: (id: number) => Promise<void>;
     buscarIntercambios: (
         filtros?: BuscarIntercambioRequest,
         page?: number,
@@ -144,6 +145,21 @@ export const IntercambioProvider = ({
         }
     };
 
+    const rechazarIntercambio = async (id: number) => {
+        setLoading(true);
+        try {
+            const res = await fetchWithToken(`intercambio/rechazar/${id}`, "PATCH");
+            return res;
+        } catch (err: any) {
+            if (err.message.includes("409")) {
+                throw new Error("Ya existe un intercambio para esta publicación");
+            }
+            throw err;
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const buscarIntercambios = async (
         filtros?: BuscarIntercambioRequest,
         page?: number,
@@ -184,6 +200,7 @@ export const IntercambioProvider = ({
                 aceptarIntercambio,
                 concretarIntercambio,
                 cancelarIntercambio,
+                rechazarIntercambio,
                 buscarIntercambios,
                 seleccionarIntercambio
             }}

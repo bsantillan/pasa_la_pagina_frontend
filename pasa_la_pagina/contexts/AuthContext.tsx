@@ -4,6 +4,7 @@ import React, { createContext, useCallback, useContext, useEffect, useState } fr
 type AuthContextType = {
   accessToken: string | null;
   refreshToken: string | null;
+  user: { id: number; email: string; nombre: string; apellido: string } | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   loginWithGoogle: (idToken: string) => Promise<void>;
@@ -25,27 +26,28 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<AuthContextType["user"]>(null);
 
   let refreshPromise: Promise<string | null> | null = null;
 
   useEffect(() => {
     const loadTokens = async () => {
       try {
-      const storedAccess = await AsyncStorage.getItem("accessToken");
-      const storedRefresh = await AsyncStorage.getItem("refreshToken");
-      setAccessToken(storedAccess);
-      setRefreshToken(storedRefresh);
-      } catch (error){
+        const storedAccess = await AsyncStorage.getItem("accessToken");
+        const storedRefresh = await AsyncStorage.getItem("refreshToken");
+        setAccessToken(storedAccess);
+        setRefreshToken(storedRefresh);
+      } catch (error) {
         console.error('Error loading token:', error);
-      } finally{
-      setLoading(false);
+      } finally {
+        setLoading(false);
       }
     };
     loadTokens();
   }, []);
   const decodeJWT = (
     token: string
-  ): { exp?: number; [key: string]: any } | null => {
+  ): { exp?: number;[key: string]: any } | null => {
     try {
       const payload = token.split(".")[1];
       if (!payload) return null;
@@ -74,6 +76,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
     });
+    console.log(response)
 
     if (!response.ok) throw new Error("Credenciales invalidas");
     const data = await response.json();
@@ -83,6 +86,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     setAccessToken(data.accessToken);
     setRefreshToken(data.refreshToken);
+    setUser({
+      id: data.id,
+      nombre: data.nombre,
+      apellido: data.apellido,
+      email: data.email,
+    }); 
+    console.log("User id"+user?.id)
   };
 
   const loginWithGoogle = async (idToken: string) => {
@@ -132,13 +142,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setAccessToken(null);
       setRefreshToken(null);
       await fetch(`${API_URL}auth/logout`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refreshToken }),
-    });
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refreshToken }),
+      });
     } catch (error) {
       console.error("Error during logout:", error);
-    } 
+    }
   };
 
   const refreshAccessToken = async (): Promise<string | null> => {
@@ -171,7 +181,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return refreshPromise;
   };
 
-  const getValidAccessToken =  useCallback(async () => {
+  const getValidAccessToken = useCallback(async () => {
     if (!accessToken) return null;
 
 
@@ -196,6 +206,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         accessToken,
         refreshToken,
         loading,
+        user,
         login,
         loginWithGoogle,
         register,
