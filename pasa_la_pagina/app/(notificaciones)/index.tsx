@@ -2,7 +2,6 @@ import { Colors } from "@/constants/Colors";
 import { Notificacion, useNotifications } from "@/contexts/NotificacionContext";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useEffect } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -12,12 +11,8 @@ import {
 } from "react-native";
 
 export default function NotificacionesScreen() {
-  const { notificaciones, fetchNotifications, deleteNotification } = useNotifications();
+  const { notificaciones, deleteNotification } = useNotifications();
   const router = useRouter();
-
-  useEffect(() => {
-    fetchNotifications(0, 20);
-  }, []);
 
   const handleOpenNotification = async (noti: Notificacion) => {
     // 1. Guardamos el id antes de navegar
