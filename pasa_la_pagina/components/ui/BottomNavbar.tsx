@@ -4,11 +4,9 @@ import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-type IoniconName = React.ComponentProps<typeof Ionicons>["name"];
-
 const TABS = [
     { name: "home", label: "Home", icon: "home-outline", activeIcon: "home", route: "/(tabs)/" },
-    { name: "map", label: "Map", icon: "map-outline", activeIcon: "map", route: "/(notificaciones)/" },
+    { name: "map", label: "Map", icon: "map-outline", activeIcon: "map", route: "/(mapa)/" },
     { name: "add", label: "", icon: "add", isCenter: true, route: "/(publicacion)/" },
     { name: "messages", label: "Message", icon: "chatbubble-outline", activeIcon: "chatbubble", route: "/(intercambios)/" },
     { name: "profile", label: "Profile", icon: "person-outline", activeIcon: "person", route: "/(perfil)/" },
