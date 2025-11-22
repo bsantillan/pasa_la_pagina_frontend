@@ -16,7 +16,7 @@ export default function NotificacionesScreen() {
 
   const handleOpenNotification = async (noti: Notificacion) => {
     // 1. Guardamos el id antes de navegar
-    const id = noti.id;
+    deleteNotification(noti.id);
 
     // 2. Redirecciones
     if (noti.intercambio_id && !noti.chat_id) {
@@ -31,11 +31,6 @@ export default function NotificacionesScreen() {
     } else {
       console.log("Notificación sin destino");
     }
-
-    // 3. Eliminamos la notificación tras un pequeño delay
-    setTimeout(() => {
-      deleteNotification(id);
-    }, 300); // 300 ms → da tiempo a que la pantalla cambie sin romper nada
   };
 
   return (

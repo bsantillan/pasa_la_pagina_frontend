@@ -26,11 +26,17 @@ export type Notificacion = {
   tipo_notificacion: TipoNotificacion
 };
 
+type NotificacionUpdate = {
+  tipo: "ELIMINADA" | "ACTUALIZAR_TODO";
+  id?: number | null;
+};
+
 type NotificationContextType = {
   notificaciones: Notificacion[];
   connect: () => void;
   disconnect: () => void;
   deleteNotification: (id: number) => Promise<void>;
+  cargarNotificaciones: () => Promise<void>;
 };
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
@@ -55,23 +61,47 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
         console.log("👤 Suscribiendo a /topic/notificaciones/" + user.id);
 
         stompClient?.subscribe(`/topic/notificaciones/${user.id}`, async (msg) => {
-          const noti: Notificacion = JSON.parse(msg.body);
-          setNotificaciones(prev => [noti, ...prev]);
-
-          Alert.alert(noti.titulo + " " +noti.mensaje);
-
           try {
-            await Notificacions.scheduleNotificationAsync({
-              content: {
-                title: noti.titulo,
-                body: noti.mensaje
-              },
-              trigger: null
-            })
-          } catch (e) {
+            const raw = msg.body;
+            const parsed = JSON.parse(raw);
 
+            if (isNotificacion(parsed)) {
+              const noti = parsed as Notificacion;
+              setNotificaciones((prev) => [noti, ...prev]);
+
+              Alert.alert(noti.titulo + " " + noti.mensaje);
+
+              try {
+                await Notificacions.scheduleNotificationAsync({
+                  content: { title: noti.titulo, body: noti.mensaje },
+                  trigger: null,
+                });
+              } catch (e) {
+                console.warn("No se pudo programar notificación local:", e);
+              }
+              return;
+            }
+
+            if (isNotificacionUpdate(parsed)) {
+
+              const upd = parsed as NotificacionUpdate;
+
+              if (upd.tipo === "ELIMINADA" && typeof upd.id === "number") {
+                console.log("Eliminando notificacione");
+                setNotificaciones((prev) => prev.filter((n) => n.id !== upd.id));
+                return;
+              }
+
+              if (upd.tipo === "ACTUALIZAR_TODO") {
+                await cargarNotificaciones();
+                return;
+              }
+            }
+
+            console.warn("Mensaje WS recibido con formato desconocido:", parsed);
+          } catch (err) {
+            console.error("Error parseando mensaje WS:", err, "body:", msg.body);
           }
-
         });
       },
       onStompError: (frame) => {
@@ -111,30 +141,54 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
       if (!response.ok) {
         throw new Error("Error eliminando notificación");
       }
-
-      // 🧹 borrar del estado local
-      setNotificaciones((prev) =>
-        prev.filter((n) => n.id !== idNotificacion)
-      );
-
     } catch (error) {
       console.error("❌ Error eliminando notificación:", error);
+    }
+  };
+
+  const cargarNotificaciones = async () => {
+    try {
+      const token = await getValidAccessToken();
+
+      const res = await fetch(`${API_URL}notificaciones/`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (!res.ok) {
+        console.error("Error cargando notificaciones");
+        return;
+      }
+
+      const data: Notificacion[] = await res.json();
+      setNotificaciones(data);
+    } catch (err) {
+      console.error("Error backend notificaciones:", err);
     }
   };
 
   useEffect(() => {
     if (user?.id) {
       connect();
+      cargarNotificaciones();
       return () => disconnect();
     }
   }, [user?.id]);
+
+  const isNotificacion = (obj: any): obj is Notificacion => {
+    return obj && typeof obj === "object" && typeof obj.id === "number" && typeof obj.titulo === "string";
+  };
+
+  const isNotificacionUpdate = (obj: any): obj is NotificacionUpdate => {
+    return obj && typeof obj === "object" && typeof obj.tipo === "string" && (obj.tipo === "ELIMINADA" || obj.tipo === "ACTUALIZAR_TODO");
+  };
 
   return (
     <NotificationContext.Provider value={{
       notificaciones,
       connect,
       disconnect,
-      deleteNotification
+      deleteNotification,
+      cargarNotificaciones
     }}>
       {children}
     </NotificationContext.Provider>
