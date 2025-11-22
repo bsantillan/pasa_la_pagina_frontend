@@ -1,8 +1,8 @@
 // src/contexts/NotificationContext.tsx
 import { Client } from "@stomp/stompjs";
-import * as Notificacions from 'expo-notifications';
+import { useRouter } from "expo-router";
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { Alert } from "react-native";
+import Toast from "react-native-toast-message";
 import SockJS from "sockjs-client";
 import { useAuth } from "./AuthContext";
 
@@ -26,13 +26,19 @@ export type Notificacion = {
   tipo_notificacion: TipoNotificacion
 };
 
+type NotificacionUpdate = {
+  tipo: "ELIMINADA" | "ACTUALIZAR_TODO";
+  id?: number | null;
+};
+
 type NotificationContextType = {
   notificaciones: Notificacion[];
   connect: () => void;
   disconnect: () => void;
-  fetchNotifications: (page: number, size: number) => Promise<any>;
   deleteNotification: (id: number) => Promise<void>;
-};
+  cargarNotificaciones: () => Promise<void>;
+  handleNotificationNavigation: (noti: Notificacion) => Promise<void>;
+}; 
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
@@ -42,6 +48,7 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
   const { user, getValidAccessToken } = useAuth();
   const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "";
   const [notificaciones, setNotificaciones] = useState<Notificacion[]>([]);
+  const router = useRouter();
 
   const connect = () => {
     if (!user?.id) return;
@@ -56,26 +63,45 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
         console.log("👤 Suscribiendo a /topic/notificaciones/" + user.id);
 
         stompClient?.subscribe(`/topic/notificaciones/${user.id}`, async (msg) => {
-          const noti: Notificacion = JSON.parse(msg.body);
-          console.log("🔔 Notificación recibida:", noti);
-
-          const mensaje = `${noti.titulo}: ${noti.mensaje}`;
-          console.log(mensaje)
-
-          Alert.alert(mensaje);
-
           try {
-            await Notificacions.scheduleNotificationAsync({
-              content: {
-                title: noti.titulo,
-                body: noti.mensaje
-              },
-              trigger: null
-            })
-          } catch (e) {
+            const raw = msg.body;
+            const parsed = JSON.parse(raw);
 
+            if (isNotificacion(parsed)) {
+              const noti = parsed as Notificacion;
+              setNotificaciones((prev) => [noti, ...prev]);
+
+              Toast.show({
+                type: noti.tipo_notificacion,
+                text1: noti.titulo,
+                text2: noti.mensaje,
+                position: "top",
+                props: { notificacion: noti }
+              });
+
+              return;
+            }
+
+            if (isNotificacionUpdate(parsed)) {
+
+              const upd = parsed as NotificacionUpdate;
+
+              if (upd.tipo === "ELIMINADA" && typeof upd.id === "number") {
+                console.log("Eliminando notificacione");
+                setNotificaciones((prev) => prev.filter((n) => n.id !== upd.id));
+                return;
+              }
+
+              if (upd.tipo === "ACTUALIZAR_TODO") {
+                await cargarNotificaciones();
+                return;
+              }
+            }
+
+            console.warn("Mensaje WS recibido con formato desconocido:", parsed);
+          } catch (err) {
+            console.error("Error parseando mensaje WS:", err, "body:", msg.body);
           }
-
         });
       },
       onStompError: (frame) => {
@@ -97,32 +123,6 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
     }
   };
 
-  // 👉 Cargar notificaciones históricas y guardarlas en el estado
-  const fetchNotifications = async (page: number = 0, size: number = 10) => {
-    try {
-      const token = await getValidAccessToken();
-
-      const response = await fetch(
-        `${API_URL}notificaciones/paginado?page=${page}&size=${size}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (!response.ok) throw new Error("Error al obtener notificaciones");
-
-      const data = await response.json();
-
-      setNotificaciones(data.content);
-    } catch (error) {
-      console.error("❌ Error notificacione paginadas:", error);
-    }
-  };
-
   const deleteNotification = async (idNotificacion: number) => {
     try {
       const token = await getValidAccessToken();
@@ -141,32 +141,84 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
       if (!response.ok) {
         throw new Error("Error eliminando notificación");
       }
-
-      // 🧹 borrar del estado local
-      setNotificaciones((prev) =>
-        prev.filter((n) => n.id !== idNotificacion)
-      );
-
     } catch (error) {
       console.error("❌ Error eliminando notificación:", error);
     }
   };
 
+  const cargarNotificaciones = async () => {
+    try {
+      const token = await getValidAccessToken();
+
+      const res = await fetch(`${API_URL}notificaciones/`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (!res.ok) {
+        console.error("Error cargando notificaciones");
+        return;
+      }
+
+      const data: Notificacion[] = await res.json();
+      setNotificaciones(data);
+    } catch (err) {
+      console.error("Error backend notificaciones:", err);
+    }
+  };
+
+  const handleNotificationNavigation = async (noti: Notificacion) => {
+    deleteNotification(noti.id);
+
+    switch (noti.tipo_notificacion) {
+      case "INTERCAMBIO_ACEPTADO":
+      case "SOLICITUD_INTERCAMBIO":
+        router.push("/(intercambios)");
+        break;
+
+      case "NUEVO_MENSAJE":
+        if (noti.chat_id) {
+          router.push({
+            pathname: "/(intercambios)/chat",
+            params: { chatId: noti.chat_id },
+          });
+        }
+        break;
+
+      case "INTERCAMBIO_RECHAZADO":
+      case "INTERCAMBIO_CANCELADO":
+      case "INTERCAMBIO_CONCRETADO":
+        router.push("/(perfil)");
+        break;
+
+      default:
+        break;
+    }
+  };
 
   useEffect(() => {
     if (user?.id) {
       connect();
+      cargarNotificaciones();
       return () => disconnect();
     }
   }, [user?.id]);
+
+  const isNotificacion = (obj: any): obj is Notificacion => {
+    return obj && typeof obj === "object" && typeof obj.id === "number" && typeof obj.titulo === "string";
+  };
+
+  const isNotificacionUpdate = (obj: any): obj is NotificacionUpdate => {
+    return obj && typeof obj === "object" && typeof obj.tipo === "string" && (obj.tipo === "ELIMINADA" || obj.tipo === "ACTUALIZAR_TODO");
+  };
 
   return (
     <NotificationContext.Provider value={{
       notificaciones,
       connect,
       disconnect,
-      fetchNotifications,
-      deleteNotification
+      deleteNotification,
+      cargarNotificaciones,
+      handleNotificationNavigation
     }}>
       {children}
     </NotificationContext.Provider>

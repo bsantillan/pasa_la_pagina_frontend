@@ -190,7 +190,7 @@ export default function VisualizarPublicacion() {
         {/* Falta el listado de opiniones del usuario */}
       </ScrollView>
       {publicacion.usuario_id !== userid && (
-        <View>
+        <View style={{marginVertical:32}}>
           <PrimaryButton
             title="Contactar"
             onPress={() => setShowAlert(true)}

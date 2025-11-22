@@ -10,6 +10,8 @@ import {
   Alert,
   Dimensions,
   ImageBackground,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -66,67 +68,72 @@ export default function LoginScreen() {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <View style={styles.headerContainer}>
-        <ImageBackground
-          source={require("../assets/images/Fondo-Login.png")}
-          style={styles.headerImage}
-          resizeMode="cover"
-        >
-          <LinearGradient
-            colors={["transparent", Colors.background]} // de transparente a fondo
-            start={{ x: 0, y: 0.1 }} // empieza en 70% de la altura
-            end={{ x: 0, y: 1 }}
-            style={styles.gradient}
-          />
-        </ImageBackground>
-      </View>
-
-      <View style={styles.form}>
-        <View style={styles.title_div}>
-          <Text style={styles.title}>Log in</Text>
-          <Text style={styles.subtitle}>Bienvenido</Text>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
+      <ScrollView contentContainerStyle={styles.container}>
+        <View style={styles.headerContainer}>
+          <ImageBackground
+            source={require("../assets/images/Fondo-Login.png")}
+            style={styles.headerImage}
+            resizeMode="cover"
+          >
+            <LinearGradient
+              colors={["transparent", Colors.background]} // de transparente a fondo
+              start={{ x: 0, y: 0.1 }} // empieza en 70% de la altura
+              end={{ x: 0, y: 1 }}
+              style={styles.gradient}
+            />
+          </ImageBackground>
         </View>
-        <CustomInput
-          placeholder="Email"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-        />
-        <CustomInput
-          placeholder="Contraseña"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
 
-        {error ? <Text style={styles.error}>{error}</Text> : null}
+        <View style={styles.form}>
+          <View style={styles.title_div}>
+            <Text style={styles.title}>Log in</Text>
+            <Text style={styles.subtitle}>Bienvenido</Text>
+          </View>
+          <CustomInput
+            placeholder="Email"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+          />
+          <CustomInput
+            placeholder="Contraseña"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+          />
 
-        <PrimaryButton
-          title="Iniciar sesión"
-          onPress={handleLogin}
-          styleBtn={{ width: "100%", height: 45, marginTop: 38 }}
-          disabled={loading}
-        />
-        {loading ? <ActivityIndicator color="#fff" size="small" /> : null}
-        <Text style={styles.footerText}>
-          ¿No tienes cuenta?{" "}
-          <Text style={styles.link} onPress={() => router.push("/register")}>
-            Regístrate
+          {error ? <Text style={styles.error}>{error}</Text> : null}
+
+          <PrimaryButton
+            title="Iniciar sesión"
+            onPress={handleLogin}
+            styleBtn={{ width: "100%", height: 45, marginTop: 38 }}
+            disabled={loading}
+          />
+          {loading ? <ActivityIndicator color="#fff" size="small" /> : null}
+          <Text style={styles.footerText}>
+            ¿No tienes cuenta?{" "}
+            <Text style={styles.link} onPress={() => router.push("/register")}>
+              Regístrate
+            </Text>
           </Text>
-        </Text>
 
-        <Text style={styles.orText}>o</Text>
+          <Text style={styles.orText}>o</Text>
 
-        <TouchableOpacity
-          style={styles.googleButton}
-          disabled={!request || loading}
-          onPress={() => promptAsync()}
-        >
-          <Text style={styles.googleButtonText}>Login con Google</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+          <TouchableOpacity
+            style={styles.googleButton}
+            disabled={!request || loading}
+            onPress={() => promptAsync()}
+          >
+            <Text style={styles.googleButtonText}>Login con Google</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 

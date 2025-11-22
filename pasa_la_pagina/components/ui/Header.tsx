@@ -1,5 +1,6 @@
 import { Colors } from "@/constants/Colors";
 import { useAuth } from "@/contexts/AuthContext";
+import { useNotifications } from "@/contexts/NotificacionContext";
 import { usePublicacion } from "@/contexts/PublicacionContext";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter, useSegments } from "expo-router";
@@ -13,6 +14,8 @@ export default function Header() {
     const [openFilter, setOpenFilter] = useState(false);
     const { logout } = useAuth();
     const { filtros, cargarinicial, setFiltros } = usePublicacion();
+    const { notificaciones } = useNotifications();
+    const unreadCount = notificaciones.length;
 
     const isInTabsRoot = segments[0] === "(tabs)" && segments.length === 1;
     const isInNotificaciones = segments.includes("(notificaciones)");
@@ -71,10 +74,16 @@ export default function Header() {
                                 onPress={() => router.push("../(notificaciones)")}
                             >
                                 <Ionicons name="notifications-outline" size={22} color={Colors.primary} />
-                                <View style={styles.notificationDot} />
+                                {unreadCount > 0 && (
+                                    <View style={styles.notificationBadge}>
+                                        <Text style={styles.notificationBadgeText}>
+                                            {unreadCount}
+                                        </Text>
+                                    </View>
+                                )}
                             </TouchableOpacity>
                             {segments.includes("(perfil)") && (
-                                <TouchableOpacity onPress={() => logout()} style={styles.filterBtn}>
+                                <TouchableOpacity onPress={() => {logout();router.push("/login")}} style={styles.filterBtn}>
                                     <Ionicons name="log-out-outline" size={25} color={Colors.primary} />
                                 </TouchableOpacity>
                             )}
@@ -157,5 +166,21 @@ const styles = StyleSheet.create({
         paddingHorizontal: 6,
         justifyContent: "center",
         alignItems: "center",
+    },
+    notificationBadge: {
+        position: "absolute",
+        right: -2,
+        top: -2,
+        backgroundColor: Colors.primary,
+        width: 16,
+        height: 16,
+        borderRadius: 8,
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    notificationBadgeText: {
+        color: "white",
+        fontSize: 10,
+        fontWeight: "bold",
     },
 });

@@ -1,8 +1,6 @@
 import { Colors } from "@/constants/Colors";
-import { Notificacion, useNotifications } from "@/contexts/NotificacionContext";
+import { useNotifications } from "@/contexts/NotificacionContext";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import { useEffect } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -12,36 +10,7 @@ import {
 } from "react-native";
 
 export default function NotificacionesScreen() {
-  const { notificaciones, fetchNotifications, deleteNotification } = useNotifications();
-  const router = useRouter();
-
-  useEffect(() => {
-    fetchNotifications(0, 20);
-  }, []);
-
-  const handleOpenNotification = async (noti: Notificacion) => {
-    // 1. Guardamos el id antes de navegar
-    const id = noti.id;
-
-    // 2. Redirecciones
-    if (noti.intercambio_id && !noti.chat_id) {
-      router.push(`/(intercambios)`);
-    } else if (noti.chat_id) {
-      router.push({
-        pathname: "/(intercambios)/chat",
-        params: {
-          chatId: noti.chat_id,
-        },
-      });
-    } else {
-      console.log("Notificación sin destino");
-    }
-
-    // 3. Eliminamos la notificación tras un pequeño delay
-    setTimeout(() => {
-      deleteNotification(id);
-    }, 300); // 300 ms → da tiempo a que la pantalla cambie sin romper nada
-  };
+  const { notificaciones, deleteNotification, handleNotificationNavigation } = useNotifications();
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -57,7 +26,7 @@ export default function NotificacionesScreen() {
           key={index}
           style={styles.card}
           activeOpacity={0.7}
-          onPress={() => handleOpenNotification(noti)}
+          onPress={() => handleNotificationNavigation(noti)}
         >
 
           <TouchableOpacity style={styles.deleteBtn} onPress={() => deleteNotification(noti.id)}>
