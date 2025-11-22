@@ -1,8 +1,9 @@
 // src/contexts/NotificationContext.tsx
 import { Client } from "@stomp/stompjs";
-import * as Notificacions from 'expo-notifications';
+import * as Notifications from 'expo-notifications';
+import { useRouter } from "expo-router";
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { Alert } from "react-native";
+import Toast from "react-native-toast-message";
 import SockJS from "sockjs-client";
 import { useAuth } from "./AuthContext";
 
@@ -37,7 +38,16 @@ type NotificationContextType = {
   disconnect: () => void;
   deleteNotification: (id: number) => Promise<void>;
   cargarNotificaciones: () => Promise<void>;
-};
+  handleNotificationNavigation: (noti: Notificacion) => Promise<void>;
+}; Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
@@ -47,6 +57,7 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
   const { user, getValidAccessToken } = useAuth();
   const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "";
   const [notificaciones, setNotificaciones] = useState<Notificacion[]>([]);
+  const router = useRouter();
 
   const connect = () => {
     if (!user?.id) return;
@@ -69,16 +80,14 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
               const noti = parsed as Notificacion;
               setNotificaciones((prev) => [noti, ...prev]);
 
-              Alert.alert(noti.titulo + " " + noti.mensaje);
+              Toast.show({
+                type: noti.tipo_notificacion,
+                text1: noti.titulo,
+                text2: noti.mensaje,
+                position: "top",
+                props: { notificacion: noti }
+              });
 
-              try {
-                await Notificacions.scheduleNotificationAsync({
-                  content: { title: noti.titulo, body: noti.mensaje },
-                  trigger: null,
-                });
-              } catch (e) {
-                console.warn("No se pudo programar notificación local:", e);
-              }
               return;
             }
 
@@ -166,8 +175,45 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
     }
   };
 
+  const handleNotificationNavigation = async (noti: Notificacion) => {
+    deleteNotification(noti.id);
+
+    switch (noti.tipo_notificacion) {
+      case "INTERCAMBIO_ACEPTADO":
+      case "SOLICITUD_INTERCAMBIO":
+        router.push("/(intercambios)");
+        break;
+
+      case "NUEVO_MENSAJE":
+        if (noti.chat_id) {
+          router.push({
+            pathname: "/(intercambios)/chat",
+            params: { chatId: noti.chat_id },
+          });
+        }
+        break;
+
+      case "INTERCAMBIO_RECHAZADO":
+      case "INTERCAMBIO_CANCELADO":
+      case "INTERCAMBIO_CONCRETADO":
+        router.push("/(perfil)");
+        break;
+
+      default:
+        break;
+    }
+  };
+
   useEffect(() => {
     if (user?.id) {
+      const pedirPermisos = async () => {
+        const { status } = await Notifications.requestPermissionsAsync();
+        if (status !== "granted") {
+          console.log("Permiso de notificaciones no concedido");
+        }
+      };
+
+      pedirPermisos();
       connect();
       cargarNotificaciones();
       return () => disconnect();
@@ -188,7 +234,8 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
       connect,
       disconnect,
       deleteNotification,
-      cargarNotificaciones
+      cargarNotificaciones,
+      handleNotificationNavigation
     }}>
       {children}
     </NotificationContext.Provider>
