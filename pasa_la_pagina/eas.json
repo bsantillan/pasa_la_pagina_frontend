@@ -1,17 +1,37 @@
 {
   "cli": {
-    "version": ">= 16.18.1",
+    "version": ">= 16.28.0",
     "appVersionSource": "remote"
   },
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "channel": "development"
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "environment": "preview",
+      "channel": "preview",
+      "android": {
+        "buildType": "apk"
+      },
+      "env":{"EXPO_PUBLIC_API_URL":"https://pasa-la-pagina-backend-latest.onrender.com/",
+      "EXPO_PUBLIC_CLOUDINARY_NAME":"dbjqmf5cd",
+      "EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET":"pasa_la_pagina",
+      "EXPO_PUBLIC_GOOGLE_CLIENT_ID":"460915396644-ucofcqf4ofr41cju062npi692qbv3qf0.apps.googleusercontent.com"
+      }
     },
     "production": {
+      "channel": "production",
+      "android":{
+        "buildType": "app-bundle"
+      },
+      "env":{"EXPO_PUBLIC_API_URL":"https://pasa-la-pagina-backend-latest.onrender.com/",
+      "EXPO_PUBLIC_CLOUDINARY_NAME":"dbjqmf5cd",
+      "EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET":"pasa_la_pagina",
+      "EXPO_PUBLIC_GOOGLE_CLIENT_ID":"460915396644-ucofcqf4ofr41cju062npi692qbv3qf0.apps.googleusercontent.com"
+      },
       "autoIncrement": true
     }
   },

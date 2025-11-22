@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "pasa_la_pagina",
+    "name": "Pasa La Página",
     "slug": "pasa_la_pagina",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/images/logo.png",
     "scheme": "pasalapagina",
@@ -18,7 +18,8 @@
         "foregroundImage": "./assets/images/logo.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "usesCleartextTraffic": true
     },
     "web": {
       "bundler": "metro",
@@ -47,6 +48,12 @@
       "eas": {
         "projectId": "8f0a1b80-1ad2-4cb3-9b0b-6cd537ed16ae"
       }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/8f0a1b80-1ad2-4cb3-9b0b-6cd537ed16ae"
     }
   }
 }
