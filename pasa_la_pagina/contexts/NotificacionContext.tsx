@@ -1,6 +1,5 @@
 // src/contexts/NotificationContext.tsx
 import { Client } from "@stomp/stompjs";
-import * as Notifications from 'expo-notifications';
 import { useRouter } from "expo-router";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import Toast from "react-native-toast-message";
@@ -39,15 +38,7 @@ type NotificationContextType = {
   deleteNotification: (id: number) => Promise<void>;
   cargarNotificaciones: () => Promise<void>;
   handleNotificationNavigation: (noti: Notificacion) => Promise<void>;
-}; Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+}; 
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
@@ -206,14 +197,6 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
 
   useEffect(() => {
     if (user?.id) {
-      const pedirPermisos = async () => {
-        const { status } = await Notifications.requestPermissionsAsync();
-        if (status !== "granted") {
-          console.log("Permiso de notificaciones no concedido");
-        }
-      };
-
-      pedirPermisos();
       connect();
       cargarNotificaciones();
       return () => disconnect();
