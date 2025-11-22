@@ -5,11 +5,9 @@ import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
   ImageBackground,
-  ScrollView,
   StyleSheet,
   Text,
-  TextInput,
-  View,
+  View
 } from "react-native";
 import { useAuth } from "../contexts/AuthContext";
 
@@ -69,98 +67,93 @@ export default function RegisterScreen() {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <ImageBackground
-        source={require("../assets/images/Fondo-Registro.png")} // poné la imagen en assets/images
-        style={styles.headerImage}
-        resizeMode="cover"
-      >
-        <View style={styles.form}>
-          {step === 1 ? (
-            <>
-              <Text style={styles.title}>Crear cuenta</Text>
-              <Text style={styles.subtitle}>Primero lo primero</Text>
+    <ImageBackground
+      source={require("../assets/images/Fondo-Registro.png")} // poné la imagen en assets/images
+      style={styles.headerImage}
+      resizeMode="cover"
+    >
+      <View style={styles.form}>
+        {step === 1 ? (
+          <>
+            <Text style={styles.title}>Crear cuenta</Text>
+            <Text style={styles.subtitle}>Primero lo primero</Text>
 
-              <TextInput
-                style={styles.input}
-                placeholder="Nombre"
-                value={nombre}
-                onChangeText={setNombre}
+            <CustomInput
+              placeholder="Nombre"
+              value={nombre}
+              onChangeText={setNombre}
+              keyboardType="default"
+            />
+            <CustomInput
+              placeholder="Apellido"
+              value={apellido}
+              onChangeText={setApellido}
+              keyboardType="default"
+            />
+
+            {error ? <Text style={styles.error}>{error}</Text> : null}
+
+            <PrimaryButton
+              title="Siguiente"
+              onPress={handleNext}
+              styleBtn={{ height: 42, marginTop: 15, width: "100%" }}
+            />
+
+            <Text style={styles.footerText}>
+              ¿Ya tienes cuenta?{" "}
+              <Text style={styles.link} onPress={() => router.push("/login")}>
+                Inicia sesión
+              </Text>
+            </Text>
+          </>
+        ) : (
+          <>
+            <Text style={styles.title}>Casi terminamos, </Text>
+            <Text style={styles.title}>{nombre}</Text>
+            <View style={styles.secInput}>
+              <CustomInput
+                placeholder="Email"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
               />
-              <TextInput
-                style={styles.input}
-                placeholder="Apellido"
-                value={apellido}
-                onChangeText={setApellido}
+              <CustomInput
+                placeholder="Contraseña"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+              />
+              <CustomInput
+                placeholder="Repetir contraseña"
+                value={repeatPassword}
+                onChangeText={setRepeatPassword}
+                secureTextEntry
               />
 
               {error ? <Text style={styles.error}>{error}</Text> : null}
+            </View>
 
-              <PrimaryButton
-                title="Siguiente"
-                onPress={handleNext}
-                styleBtn={{ height: 42, marginTop: 38, width: "100%" }}
-              />
+            <PrimaryButton
+              title="Crear cuenta"
+              onPress={handleRegister}
+              styleBtn={{ height: 42, marginTop: 38, width: "100%" }}
+            />
 
-              <Text style={styles.footerText}>
-                ¿Ya tienes cuenta?{" "}
-                <Text style={styles.link} onPress={() => router.push("/login")}>
-                  Inicia sesión
-                </Text>
+            <Text style={styles.footerText}>
+              ¿Ya tienes cuenta?{" "}
+              <Text style={styles.link} onPress={() => router.push("/login")}>
+                Inicia sesión
               </Text>
-            </>
-          ) : (
-            <>
-              <Text style={styles.title}>Casi terminamos, </Text>
-              <Text style={styles.title}>{nombre}</Text>
-              <View style={styles.secInput}>
-                <CustomInput
-                  placeholder="Email"
-                  value={email}
-                  onChangeText={setEmail}
-                  keyboardType="email-address"
-                />
-                <CustomInput
-                  placeholder="Contraseña"
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry
-                />
-                <CustomInput
-                  placeholder="Repetir contraseña"
-                  value={repeatPassword}
-                  onChangeText={setRepeatPassword}
-                  secureTextEntry
-                />
-
-                {error ? <Text style={styles.error}>{error}</Text> : null}
-              </View>
-
-              <PrimaryButton
-                title="Crear cuenta"
-                onPress={handleRegister}
-                styleBtn={{ height: 42, marginTop: 38, width: "100%" }}
-              />
-
-              <Text style={styles.footerText}>
-                ¿Ya tienes cuenta?{" "}
-                <Text style={styles.link} onPress={() => router.push("/login")}>
-                  Inicia sesión
-                </Text>
-              </Text>
-            </>
-          )}
-        </View>
-      </ImageBackground>
-    </ScrollView>
+            </Text>
+          </>
+        )}
+      </View>
+    </ImageBackground>
   );
 
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-  },
   headerImage: {
     width: "100%",
     height: "100%",
@@ -187,19 +180,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "400",
     lineHeight: 17,
-    marginBottom: 38,
+    marginBottom: 30,
     color: "#838589",
     textAlign: "left",
-  },
-  input: {
-    width: "100%",
-    height: 50,
-    borderWidth: 1,
-    borderColor: "#000000",
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 15,
-    backgroundColor: Colors.background,
   },
   secInput: {
     marginTop: 38,

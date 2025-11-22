@@ -10,14 +10,12 @@ import {
   Alert,
   Dimensions,
   ImageBackground,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View
 } from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { useAuth } from "../contexts/AuthContext";
 const { height } = Dimensions.get("window");
 
@@ -68,86 +66,86 @@ export default function LoginScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    <KeyboardAwareScrollView
+      style={{ flex: 1}}
+      enableOnAndroid={true}
+      extraScrollHeight={100}  
+      keyboardShouldPersistTaps="handled"
     >
-      <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.headerContainer}>
-          <ImageBackground
-            source={require("../assets/images/Fondo-Login.png")}
-            style={styles.headerImage}
-            resizeMode="cover"
-          >
-            <LinearGradient
-              colors={["transparent", Colors.background]} // de transparente a fondo
-              start={{ x: 0, y: 0.1 }} // empieza en 70% de la altura
-              end={{ x: 0, y: 1 }}
-              style={styles.gradient}
-            />
-          </ImageBackground>
+      <View style={styles.headerContainer}>
+        <ImageBackground
+          source={require("../assets/images/Fondo-Login.png")}
+          style={styles.headerImage}
+          resizeMode="cover"
+        >
+          <LinearGradient
+            colors={["transparent", Colors.background]}
+            start={{ x: 0, y: 0.1 }}
+            end={{ x: 0, y: 1 }}
+            style={styles.gradient}
+          />
+        </ImageBackground>
+      </View>
+
+      <View style={styles.form}>
+        <View style={styles.title_div}>
+          <Text style={styles.title}>Log in</Text>
+          <Text style={styles.subtitle}>Bienvenido</Text>
         </View>
 
-        <View style={styles.form}>
-          <View style={styles.title_div}>
-            <Text style={styles.title}>Log in</Text>
-            <Text style={styles.subtitle}>Bienvenido</Text>
-          </View>
-          <CustomInput
-            placeholder="Email"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-          />
-          <CustomInput
-            placeholder="Contraseña"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-          />
+        <CustomInput
+          placeholder="Email"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+        />
 
-          {error ? <Text style={styles.error}>{error}</Text> : null}
+        <CustomInput
+          placeholder="Contraseña"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+        />
 
-          <PrimaryButton
-            title="Iniciar sesión"
-            onPress={handleLogin}
-            styleBtn={{ width: "100%", height: 45, marginTop: 38 }}
-            disabled={loading}
-          />
-          {loading ? <ActivityIndicator color="#fff" size="small" /> : null}
-          <Text style={styles.footerText}>
-            ¿No tienes cuenta?{" "}
-            <Text style={styles.link} onPress={() => router.push("/register")}>
-              Regístrate
-            </Text>
+        {error ? <Text style={styles.error}>{error}</Text> : null}
+
+        <PrimaryButton
+          title="Iniciar sesión"
+          onPress={handleLogin}
+          styleBtn={{ width: "100%", height: 45, marginTop: 15 }}
+          disabled={loading}
+        />
+
+        {loading ? <ActivityIndicator color="#fff" size="small" /> : null}
+
+        <Text style={styles.footerText}>
+          ¿No tienes cuenta?{" "}
+          <Text style={styles.link} onPress={() => router.push("/register")}>
+            Regístrate
           </Text>
+        </Text>
 
-          <Text style={styles.orText}>o</Text>
+        <Text style={styles.orText}>o</Text>
 
-          <TouchableOpacity
-            style={styles.googleButton}
-            disabled={!request || loading}
-            onPress={() => promptAsync()}
-          >
-            <Text style={styles.googleButtonText}>Login con Google</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        <TouchableOpacity
+          style={styles.googleButton}
+          disabled={!request || loading}
+          onPress={() => promptAsync()}
+        >
+          <Text style={styles.googleButtonText}>Login con Google</Text>
+        </TouchableOpacity>
+      </View>
+    </KeyboardAwareScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-    backgroundColor: Colors.background,
-  },
   headerImage: {
     width: "100%",
     height: "100%",
   },
   headerContainer: {
-    height: height * 0.55,
+    height: height * 0.45,
     width: "100%",
   },
   gradient: {
@@ -166,9 +164,8 @@ const styles = StyleSheet.create({
     marginRight: 39,
   },
   title_div: {
-    height: 60,
     width: "100%",
-    marginBottom: 38,
+    marginBottom: 30,
   },
   title: {
     fontSize: 24,
@@ -178,26 +175,13 @@ const styles = StyleSheet.create({
     color: Colors.primary,
     width: "100%",
     textAlign: "left",
-    height: 24,
   },
   subtitle: {
     fontSize: 14,
     fontWeight: 400,
-    marginBottom: 13,
     color: "#838589",
     width: "100%",
     textAlign: "left",
-    height: 17,
-  },
-  input: {
-    width: "100%",
-    borderWidth: 1,
-    borderColor: "#000000",
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 15,
-    backgroundColor: Colors.background,
-    height: 50,
   },
   footerText: {
     marginTop: 20,
