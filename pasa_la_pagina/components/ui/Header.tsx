@@ -83,7 +83,7 @@ export default function Header() {
                                 )}
                             </TouchableOpacity>
                             {segments.includes("(perfil)") && (
-                                <TouchableOpacity onPress={() => logout()} style={styles.filterBtn}>
+                                <TouchableOpacity onPress={() => {logout();router.push("/login")}} style={styles.filterBtn}>
                                     <Ionicons name="log-out-outline" size={25} color={Colors.primary} />
                                 </TouchableOpacity>
                             )}
