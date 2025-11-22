@@ -5,15 +5,18 @@ import { Colors } from "@/constants/Colors";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIntercambio } from "@/contexts/IntercambioContext";
 import { Publicacion } from "@/types/Publicacion";
+import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Linking,
   Modal,
   ScrollView,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View
 } from "react-native";
 
@@ -26,6 +29,13 @@ export default function VisualizarPublicacion() {
   const [verDetalles, setVerDetalles] = useState(false);
   const [userid, setUserid] = useState<number | null>(null);
   const { solicitarIntercambio } = useIntercambio();
+  const [modalVisible, setModalVisible] = useState(false);
+
+  const abrirLink = () => {
+    if (publicacion?.url) {
+      Linking.openURL(publicacion.url);
+    }
+  };
 
   useEffect(() => {
     const fetchPublicacion = async () => {
@@ -97,19 +107,34 @@ export default function VisualizarPublicacion() {
   }
 
   return (
-    <View style={{flex:1}}>
+    <View style={{ flex: 1 }}>
       <ScrollView
         style={styles.containerScroll}
         contentContainerStyle={{ paddingBottom: 40 }}
       >
-        <View style={styles.container}>
+        <View>
           <Text style={styles.titulo}>{publicacion.titulo}</Text>
           <FotoCarousel fotos={publicacion?.url_fotos || []} />
 
           <Text style={styles.descripcion}>{publicacion.descripcion}</Text>
+          <View style={styles.detallesRow}>
+            <Text style={styles.opiniones}>Detalles</Text>
+
+            <View style={styles.iconRow}>
+              {/* ICONO MAPA */}
+              <TouchableOpacity onPress={() => setModalVisible(true)}>
+                <Ionicons name="map-outline" size={24} color={Colors.primary} />
+              </TouchableOpacity>
+
+              {publicacion.tipo_oferta === "Donacion" && publicacion.digital && publicacion.url && (
+                <TouchableOpacity onPress={abrirLink} style={{ marginLeft: 12 }}>
+                  <Ionicons name="link-outline" size={24} color={Colors.primary} />
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
           <View style={styles.card}>
             <Text style={styles.textCard}>
-              {" "}
               Tipo de oferta: {publicacion.tipo_oferta}
             </Text>
             {publicacion.tipo_oferta === "Venta" && (
@@ -184,18 +209,17 @@ export default function VisualizarPublicacion() {
           </View>
         </View>
         <Text style={styles.opiniones}>
-          {" "}
-          Opiniones sobre el usuario {publicacion.usuario_nombre}
+          Opiniones de {publicacion.usuario_apellido + " " + publicacion.usuario_nombre}
         </Text>
         {/* Falta el listado de opiniones del usuario */}
       </ScrollView>
       {publicacion.usuario_id !== userid && (
-        <View style={{marginVertical:32}}>
+        <View>
           <PrimaryButton
             title="Contactar"
             onPress={() => setShowAlert(true)}
-            styleBtn={{ marginBottom: 4, height: 36 }}
-          ></PrimaryButton>
+            styleBtn={{ marginBottom: 30, height: 36 }}
+          />
           <Modal
             visible={showAlert}
             transparent
@@ -214,6 +238,21 @@ export default function VisualizarPublicacion() {
               />
             </View>
           </Modal>
+          <Modal
+            visible={modalVisible}
+            transparent
+            animationType="fade"
+            onRequestClose={() => setModalVisible(false)}
+          >
+            <TouchableOpacity
+              style={styles.modalContainer}
+              onPress={() => setModalVisible(false)}
+            >
+              <View style={styles.modalBox}>
+                <Text style={{ fontSize: 18 }}>Aquí va tu mapa 🗺️</Text>
+              </View>
+            </TouchableOpacity>
+          </Modal>
         </View>
       )}
     </View>
@@ -221,17 +260,6 @@ export default function VisualizarPublicacion() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  input: {
-    height: 40,
-    borderColor: "#ccc",
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    backgroundColor: Colors.white,
-  },
   containerScroll: {
     flex: 1,
   },
@@ -244,7 +272,7 @@ const styles = StyleSheet.create({
   descripcion: {
     fontSize: 20,
     color: "#5D5D5D",
-    marginTop: 20,
+    marginVertical: 10,
     fontWeight: "600",
   },
   card: {
@@ -252,12 +280,12 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     paddingHorizontal: 24,
     paddingVertical: 16,
-    marginTop: 12,
+    marginVertical: 12,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.24,
     shadowRadius: 10,
-    elevation: 10,
+    elevation: 4,
   },
   textCard: {
     fontSize: 14,
@@ -276,7 +304,28 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "600",
     color: "#000",
-    marginTop: 32,
-    marginBottom: 26,
+  },
+  detallesRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 15,
+  },
+  iconRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalBox: {
+    width: "80%",
+    padding: 20,
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    alignItems: "center",
   },
 });
