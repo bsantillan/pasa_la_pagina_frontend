@@ -1,4 +1,5 @@
 // PerfilScreen.tsx - versión corregida
+import { useAuth } from "@/contexts/AuthContext";
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Avatar } from "../../components/ui/Avatar";
@@ -11,15 +12,17 @@ import { useUser } from "../../contexts/UserContext";
 const filtros = ["Reseñas", "Publicaciones", "Historial"];
 
 export default function PerfilScreen() {
-  const { usuario, reseniasRecibidas, reseniasHechas, loading: userLoading } = useUser();
+  const { reseniasRecibidas, reseniasHechas, loading: userLoading } = useUser();
   const { pubsUser, fetchPublicacionesByUsuario, loading, error } = usePublicacion();
   const [selectedFiltro, setSelectedFiltro] = useState(filtros[0]);
+  const { user } = useAuth();
+
 
   useEffect(() => {
-    if (usuario?.id) {
-      fetchPublicacionesByUsuario(usuario.id);
+    if (user?.id) {
+      fetchPublicacionesByUsuario(user.id);
     }
-  }, [fetchPublicacionesByUsuario, usuario]);
+  }, [fetchPublicacionesByUsuario, user]);
 
   if (userLoading || loading) return <ActivityIndicator style={{ marginTop: 20 }} />;
   if (error) return <Text style={{ color: "red" }}>Error: {error}</Text>;
@@ -86,9 +89,9 @@ export default function PerfilScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Avatar name={usuario?.nombre || "U"} size={80} />
+        <Avatar name={user?.nombre || "U"} size={80} />
         <Text style={styles.nombre}>
-          {usuario?.nombre} {usuario?.apellido}
+          {user?.nombre} {user?.apellido}
         </Text>
 
         <View style={styles.filtrosContainer}>

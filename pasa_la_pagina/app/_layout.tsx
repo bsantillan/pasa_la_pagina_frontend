@@ -20,6 +20,7 @@ import { PublicacionProvider } from "@/contexts/PublicacionContext";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect } from "react";
+import { ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function RootLayout() {
@@ -32,17 +33,19 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
-      <IntercambioProvider>
-        <PublicacionProvider>
-          <NotificationProvider>
-            <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-              <StatusBar style="auto" />
+      <AuthGate>
+        <IntercambioProvider>
+          <PublicacionProvider>
+            <NotificationProvider>
+              <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+                <StatusBar style="auto" />
 
-              <AuthGateLayout />
-            </ThemeProvider>
-          </NotificationProvider>
-        </PublicacionProvider>
-      </IntercambioProvider>
+                <AuthGateLayout />
+              </ThemeProvider>
+            </NotificationProvider>
+          </PublicacionProvider>
+        </IntercambioProvider>
+      </AuthGate>
     </AuthProvider>
   );
 }
@@ -123,5 +126,13 @@ function MainLayout({ showHeader, showNavBar }: { showHeader: boolean, showNavBa
       />
     </SafeAreaView>
   );
+}
+
+function AuthGate({ children }: { children: React.ReactNode }) {
+  const { loading } = useAuth();
+
+  if (loading) return <ActivityIndicator size="large" style={{ flex: 1 }} />;
+
+  return <>{children}</>;
 }
 

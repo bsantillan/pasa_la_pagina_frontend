@@ -26,7 +26,7 @@ const SPACING = 16;
 /* ---------------------------
    MARKER MEMOIZADO
 --------------------------- */
-const CustomMarker = React.memo(
+export const CustomMarker = React.memo(
     ({ isSelected, tipo }: { isSelected: boolean; tipo: string }) => (
         <View style={styles.markerContainer}>
             <View

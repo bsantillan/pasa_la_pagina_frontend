@@ -38,7 +38,7 @@ type NotificationContextType = {
   deleteNotification: (id: number) => Promise<void>;
   cargarNotificaciones: () => Promise<void>;
   handleNotificationNavigation: (noti: Notificacion) => Promise<void>;
-}; 
+};
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
@@ -196,11 +196,12 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
   };
 
   useEffect(() => {
-    if (user?.id) {
-      connect();
-      cargarNotificaciones();
-      return () => disconnect();
-    }
+    if (!user?.id) return;
+
+    connect();
+    cargarNotificaciones();
+
+    return () => disconnect();
   }, [user?.id]);
 
   const isNotificacion = (obj: any): obj is Notificacion => {

@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { useAuth } from "./AuthContext";
-import { usePublicacion } from "./PublicacionContext";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
@@ -20,11 +19,9 @@ type Resenia = {
 };
 
 type UserContextType = {
-  usuario: Usuario | null;
   reseniasRecibidas: Resenia[];
   reseniasHechas: Resenia[];
   loading: boolean;
-  fetchUsuario: () => Promise<void>;
   fetchReseniasRecibidas: () => Promise<void>;
   fetchReseniasHechas: () => Promise<void>;
 };
@@ -32,92 +29,62 @@ type UserContextType = {
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [usuario, setUsuario] = useState<Usuario | null>(null);
   const [reseniasRecibidas, setReseniasRecibidas] = useState<Resenia[]>([]);
   const [reseniasHechas, setReseniasHechas] = useState<Resenia[]>([]);
   const [loading, setLoading] = useState(false);
-  const { getValidAccessToken } = useAuth();
-  const { fetchTodasPublicaciones } = usePublicacion();
+  const { getValidAccessToken, user } = useAuth();
 
-  const fetchUsuario = async () => {
+  const fetchReseniasRecibidas = async () => {
+    if (!user) return;
     try {
       setLoading(true);
       const token = await getValidAccessToken();
-      if (!token) return;
-
-      const res = await fetch(`${API_URL}user/me`, {
+      const res = await fetch(`${API_URL}resenia/usuario/${user.id}/recibidas`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) throw new Error("Error al obtener usuario");
+      if (!res.ok) throw new Error("Error al obtener reseñas recibidas");
       const data = await res.json();
-      setUsuario(data);
-
-      await fetchTodasPublicaciones();
+      setReseniasRecibidas(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error(err);
+      setReseniasRecibidas([]);
     } finally {
       setLoading(false);
     }
   };
 
-const fetchReseniasRecibidas = async () => {
-  if (!usuario) return;
-  try {
-    setLoading(true);
-    const token = await getValidAccessToken();
-    const res = await fetch(`${API_URL}resenia/usuario/${usuario.id}/recibidas`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!res.ok) throw new Error("Error al obtener reseñas recibidas");
-    const data = await res.json();
-    setReseniasRecibidas(Array.isArray(data) ? data : []);
-  } catch (err) {
-    console.error(err);
-    setReseniasRecibidas([]);
-  } finally {
-    setLoading(false);
-  }
-};
-
-const fetchReseniasHechas = async () => {
-  if (!usuario) return;
-  try {
-    setLoading(true);
-    const token = await getValidAccessToken();
-    const res = await fetch(`${API_URL}resenia/usuario/${usuario.id}/hechas`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!res.ok) throw new Error("Error al obtener reseñas hechas");
-    const data = await res.json();
-    setReseniasHechas(Array.isArray(data) ? data : []);
-  } catch (err) {
-    console.error(err);
-    setReseniasHechas([]);
-  } finally {
-    setLoading(false);
-  }
-};
-
+  const fetchReseniasHechas = async () => {
+    if (!user) return;
+    try {
+      setLoading(true);
+      const token = await getValidAccessToken();
+      const res = await fetch(`${API_URL}resenia/usuario/${user.id}/hechas`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Error al obtener reseñas hechas");
+      const data = await res.json();
+      setReseniasHechas(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error(err);
+      setReseniasHechas([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    fetchUsuario();
-  }, []);
-
-  useEffect(() => {
-    if (usuario) {
+    if (user) {
       fetchReseniasRecibidas();
       fetchReseniasHechas();
     }
-  }, [usuario]);
+  }, [user]);
 
   return (
     <UserContext.Provider
       value={{
-        usuario,
         reseniasRecibidas,
         reseniasHechas,
         loading,
-        fetchUsuario,
         fetchReseniasRecibidas,
         fetchReseniasHechas,
       }}

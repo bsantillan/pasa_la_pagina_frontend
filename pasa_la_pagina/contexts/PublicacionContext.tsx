@@ -138,7 +138,6 @@ type PublicacionContextType = {
     page?: number,
     size?: number
   ) => Promise<void>;
-  fetchTodasPublicaciones: (limit?: number) => Promise<void>;
   resultadosBusqueda: Publicacion[];
   fetchPublicacionesGeneric: (
     url: string,
@@ -555,25 +554,6 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [fetchPublicacionesGeneric, getUserLocation]);
 
-  const fetchTodasPublicaciones = useCallback(
-    async (limit = 50) => {
-
-      const loc = await getUserLocation();
-      if (!loc) {
-        // Si no hay ubicación, cargar publicaciones sin ordenar por distancia
-        //await fetchPublicacionesGeneric(`publicacion/paginado?size=50`, false);
-        return;
-      }
-
-      const { latitude, longitude } = loc;
-      await fetchPublicacionesGeneric(
-        `publicacion/paginado?usuario_latitud=${latitude}&usuario_longitud=${longitude}&size=50`,
-        true
-      );
-    },
-    [fetchPublicacionesGeneric, getUserLocation]
-  );
-
   const fetchPublicacionesByUsuario = useCallback(
     async (usuario_id: number, page = 0, size = 10) => {
       setLoading(true);
@@ -684,7 +664,6 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
         fetchCercaTuyo,
         buscarPublicaciones,
         resultadosBusqueda,
-        fetchTodasPublicaciones,
         fetchPublicacionesGeneric,
         getUserLocation,
         filtros,

@@ -4,10 +4,11 @@ import { FotoCarousel } from "@/components/ui/FotosCarousel";
 import { Colors } from "@/constants/Colors";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIntercambio } from "@/contexts/IntercambioContext";
+import { usePublicacion } from "@/contexts/PublicacionContext";
 import { Publicacion } from "@/types/Publicacion";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -19,6 +20,8 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
+import MapView, { Marker, PROVIDER_GOOGLE, Region } from "react-native-maps";
+import { CustomMarker } from "../(mapa)";
 
 export default function VisualizarPublicacion() {
   const { id } = useLocalSearchParams();
@@ -30,6 +33,9 @@ export default function VisualizarPublicacion() {
   const [userid, setUserid] = useState<number | null>(null);
   const { solicitarIntercambio } = useIntercambio();
   const [modalVisible, setModalVisible] = useState(false);
+  const { getUserLocation } = usePublicacion();
+  const [modalRegion, setModalRegion] = useState<Region | null>(null);
+  const mapRef = useRef<MapView>(null);
 
   const abrirLink = () => {
     if (publicacion?.url) {
@@ -76,6 +82,28 @@ export default function VisualizarPublicacion() {
 
     fetchPublicacion();
   }, [id, getValidAccessToken]);
+
+  useEffect(() => {
+    if (modalVisible) {
+      (async () => {
+        const userLoc = await getUserLocation();
+        if (userLoc && publicacion?.latitud && publicacion?.longitud) {
+
+          // Región centrada entre usuario y publicación
+          const midLat = (userLoc.latitude + publicacion.latitud) / 2;
+          const midLng = (userLoc.longitude + publicacion.longitud) / 2;
+
+
+          setModalRegion({
+            latitude: publicacion.latitud,
+            longitude: publicacion.longitud,
+            latitudeDelta: 0.05,
+            longitudeDelta: 0.05,
+          });
+        }
+      })();
+    }
+  }, [modalVisible, publicacion]);
 
   const handleContactar = async () => {
     try {
@@ -246,13 +274,45 @@ export default function VisualizarPublicacion() {
           >
             <TouchableOpacity
               style={styles.modalContainer}
+              activeOpacity={1}
               onPress={() => setModalVisible(false)}
             >
               <View style={styles.modalBox}>
-                <Text style={{ fontSize: 18 }}>Aquí va tu mapa 🗺️</Text>
+                {modalRegion ? (
+                  <MapView
+                    ref={mapRef}
+                    style={{ width: "100%", height: 500, borderRadius: 10 }}
+                    provider={PROVIDER_GOOGLE}
+                    initialRegion={modalRegion}
+                    showsUserLocation
+                    showsMyLocationButton={false}
+                    showsCompass={false}
+                  >
+                    {/* Marcador de la publicación */}
+                    {publicacion?.latitud && publicacion?.longitud && (
+                      <Marker
+                        coordinate={{
+                          latitude: publicacion.latitud,
+                          longitude: publicacion.longitud,
+                        }}
+                        anchor={{ x: 0.5, y: 1 }}
+                      >
+                        <CustomMarker
+                          isSelected={true}
+                          tipo={publicacion.tipo_material || "apunte"}
+                        />
+                      </Marker>
+                    )}
+
+
+                  </MapView>
+                ) : (
+                  <ActivityIndicator size="large" color={Colors.primary} />
+                )}
               </View>
             </TouchableOpacity>
           </Modal>
+
         </View>
       )}
     </View>
@@ -322,10 +382,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   modalBox: {
-    width: "80%",
+    width: "100%",
     padding: 20,
-    backgroundColor: "#fff",
     borderRadius: 10,
     alignItems: "center",
   },
+  map: { ...StyleSheet.absoluteFillObject },
 });
