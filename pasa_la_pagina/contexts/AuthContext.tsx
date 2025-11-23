@@ -1,9 +1,17 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
 
+type Usuario = {
+  id: number;
+  nombre: string;
+  apellido: string;
+  email: string;
+};
+
 type AuthContextType = {
   accessToken: string | null;
   refreshToken: string | null;
+  user: Usuario | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   loginWithGoogle: (idToken: string) => Promise<void>;
@@ -25,27 +33,34 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<AuthContextType["user"]>(null);
 
   let refreshPromise: Promise<string | null> | null = null;
 
   useEffect(() => {
     const loadTokens = async () => {
       try {
-      const storedAccess = await AsyncStorage.getItem("accessToken");
-      const storedRefresh = await AsyncStorage.getItem("refreshToken");
-      setAccessToken(storedAccess);
-      setRefreshToken(storedRefresh);
-      } catch (error){
+        const storedAccess = await AsyncStorage.getItem("accessToken");
+        const storedRefresh = await AsyncStorage.getItem("refreshToken");
+        setAccessToken(storedAccess);
+        setRefreshToken(storedRefresh);
+
+        if (storedAccess) {
+          await fetchUsuario(storedAccess); // <-- carga los datos del usuario desde el backend
+        }
+
+      } catch (error) {
         console.error('Error loading token:', error);
-      } finally{
-      setLoading(false);
+      } finally {
+        setLoading(false);
       }
     };
     loadTokens();
   }, []);
+
   const decodeJWT = (
     token: string
-  ): { exp?: number; [key: string]: any } | null => {
+  ): { exp?: number;[key: string]: any } | null => {
     try {
       const payload = token.split(".")[1];
       if (!payload) return null;
@@ -74,6 +89,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
     });
+    console.log(response)
 
     if (!response.ok) throw new Error("Credenciales invalidas");
     const data = await response.json();
@@ -83,6 +99,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     setAccessToken(data.accessToken);
     setRefreshToken(data.refreshToken);
+    setUser({
+      id: data.id,
+      nombre: data.nombre,
+      apellido: data.apellido,
+      email: data.email,
+    });
+    console.log("User id" + user?.id)
   };
 
   const loginWithGoogle = async (idToken: string) => {
@@ -132,13 +155,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setAccessToken(null);
       setRefreshToken(null);
       await fetch(`${API_URL}auth/logout`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refreshToken }),
-    });
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refreshToken }),
+      });
     } catch (error) {
       console.error("Error during logout:", error);
-    } 
+    }
   };
 
   const refreshAccessToken = async (): Promise<string | null> => {
@@ -152,8 +175,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ refreshToken }),
       });
-
-      console.log("Refresh token response status:", response);
 
       if (!response.ok) {
         await logout(); // <--- esto es Promise<void>
@@ -171,10 +192,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return refreshPromise;
   };
 
-  const getValidAccessToken =  useCallback(async () => {
+  const getValidAccessToken = useCallback(async () => {
     if (!accessToken) return null;
-
-
 
     try {
       const decoded = decodeJWT(accessToken);
@@ -190,12 +209,31 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, [accessToken]);
 
+  const fetchUsuario = async (token : string) => {
+    try {
+      if (!token) return;
+
+      const res = await fetch(`${API_URL}user/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Error al obtener usuario");
+      const data = await res.json();
+      setUser(data);
+
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
         accessToken,
         refreshToken,
         loading,
+        user,
         login,
         loginWithGoogle,
         register,

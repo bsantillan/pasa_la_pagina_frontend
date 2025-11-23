@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { useAuth } from "./AuthContext";
-import { usePublicacion } from "./PublicacionContext";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
@@ -20,11 +19,10 @@ type Resenia = {
 };
 
 type UserContextType = {
-  usuario: Usuario | null;
   reseniasRecibidas: Resenia[];
   reseniasHechas: Resenia[];
   loading: boolean;
-  fetchUsuario: () => Promise<void>;
+  usuario: Usuario | null;
   fetchByEmail: (email: string) => Promise<void>;
   fetchReseniasRecibidas: () => Promise<void>;
   fetchReseniasHechas: () => Promise<void>;
@@ -37,29 +35,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [reseniasRecibidas, setReseniasRecibidas] = useState<Resenia[]>([]);
   const [reseniasHechas, setReseniasHechas] = useState<Resenia[]>([]);
   const [loading, setLoading] = useState(false);
-  const { getValidAccessToken } = useAuth();
-  const { fetchTodasPublicaciones } = usePublicacion();
+  const { getValidAccessToken, user } = useAuth();
 
-  const fetchUsuario = async () => {
-    try {
-      setLoading(true);
-      const token = await getValidAccessToken();
-      if (!token) return;
-
-      const res = await fetch(`${API_URL}user/me`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error("Error al obtener usuario");
-      const data = await res.json();
-      setUsuario(data);
-
-      await fetchTodasPublicaciones();
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const fetchByEmail = async (email: string) => {
     try {
@@ -119,24 +96,19 @@ const fetchReseniasHechas = async () => {
 
 
   useEffect(() => {
-    fetchUsuario();
-  }, []);
-
-  useEffect(() => {
-    if (usuario) {
+    if (user) {
       fetchReseniasRecibidas();
       fetchReseniasHechas();
     }
-  }, [usuario]);
+  }, [user]);
 
   return (
     <UserContext.Provider
       value={{
-        usuario,
         reseniasRecibidas,
         reseniasHechas,
         loading,
-        fetchUsuario,
+        usuario,
         fetchByEmail,
         fetchReseniasRecibidas,
         fetchReseniasHechas,

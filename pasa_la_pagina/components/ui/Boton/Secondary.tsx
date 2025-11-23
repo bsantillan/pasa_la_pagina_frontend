@@ -27,6 +27,7 @@ const styles = StyleSheet.create({
         borderWidth: 2,
         borderColor: Colors.secondary,
         alignItems: "center",
+        justifyContent: "center",
     },
     buttonText: {
         color: Colors.secondary,

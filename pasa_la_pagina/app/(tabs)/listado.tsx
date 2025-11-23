@@ -1,6 +1,5 @@
 // ListadoScreen.tsx
 import { ProductCard } from "@/components/ui/ProductCard";
-import { Colors } from "@/constants/Colors";
 import { usePublicacion } from "@/contexts/PublicacionContext";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -65,62 +64,56 @@ export default function ListadoScreen() {
   }
 
   return (
-    <SafeAreaView
-      style={{ flex: 1, backgroundColor: Colors.background }}
-      edges={["top"]}
-    >
-      <View style={{ flex: 1, padding: 8, paddingTop: 8 }}>
-
-        {publicaciones.length === 0 ? (
-          <Text style={{ textAlign: "center", marginTop: 20 }}>
-            No se encontraron publicaciones.
-          </Text>
-        ) : (
-          <FlatList
-            data={publicaciones}
-            keyExtractor={(item) => item.id.toString()}
-            numColumns={columns}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingRight: 12 }}
-            renderItem={({ item, index }) => {
-              const isLeft = index % columns === 0;
-              const isRight = index % columns === 1;
-              return (
-                <Pressable
-                  onPress={() =>
-                    router.push(`/(tabs)/visualizarPublicacion?id=${item.id}`)
-                  }
-                  style={{
-                    width: cardWidth,
-                    marginLeft: isLeft ? 0 : cardMargin / 2,
-                    marginRight: isRight ? 0 : cardMargin / 2,
-                    marginBottom: cardMargin,
-                  }}
-                >
-                  <ProductCard
-                    imageUrl={item.fotos_url?.[0] ?? ""}
-                    title={item.titulo}
-                    description={item.descripcion}
-                    width={cardWidth}
-                  />
-                </Pressable>
-              );
-            }}
-            onEndReached={() => {
-              if (hasMore && !loading) loadMore();
-            }}
-            onEndReachedThreshold={0.5}
-            ListFooterComponent={() =>
-              hasMore && loading ? (
-                <View style={{ padding: 20 }}>
-                  <ActivityIndicator size="small" color="#007AFF" />
-                </View>
-              ) : null
-            }
-          />
-        )}
-      </View>
-    </SafeAreaView>
+    <View style={{ flex: 1}}>
+      {publicaciones.length === 0 ? (
+        <Text style={{ textAlign: "center", marginTop: 20 }}>
+          No se encontraron publicaciones.
+        </Text>
+      ) : (
+        <FlatList
+          data={publicaciones}
+          keyExtractor={(item) => item.id.toString()}
+          numColumns={columns}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingRight: 16 }}
+          renderItem={({ item, index }) => {
+            const isLeft = index % columns === 0;
+            const isRight = index % columns === 1;
+            return (
+              <Pressable
+                onPress={() =>
+                  router.push(`/(tabs)/visualizarPublicacion?id=${item.id}`)
+                }
+                style={{
+                  width: cardWidth,
+                  marginLeft: isLeft ? 0 : cardMargin / 2,
+                  marginRight: isRight ? 0 : cardMargin / 2,
+                  marginBottom: cardMargin,
+                }}
+              >
+                <ProductCard
+                  imageUrl={item.fotos_url?.[0] ?? ""}
+                  title={item.titulo}
+                  description={item.descripcion}
+                  width={cardWidth}
+                />
+              </Pressable>
+            );
+          }}
+          onEndReached={() => {
+            if (hasMore && !loading) loadMore();
+          }}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={() =>
+            hasMore && loading ? (
+              <View style={{ padding: 20 }}>
+                <ActivityIndicator size="small" color="#007AFF" />
+              </View>
+            ) : null
+          }
+        />
+      )}
+    </View>
   );
 }
 

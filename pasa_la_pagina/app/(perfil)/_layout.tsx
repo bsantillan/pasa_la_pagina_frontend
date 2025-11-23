@@ -1,3 +1,4 @@
+import { Colors } from "@/constants/Colors";
 import { useAuth } from "@/contexts/AuthContext";
 import { UserProvider } from "@/contexts/UserContext";
 import { Slot, useRouter } from "expo-router";
@@ -16,16 +17,19 @@ export default function PerfilLayout() {
   
       if (!accessToken) return null;
   return (
-    
-      <UserProvider>
-        <View style={styles.container}>
-          <Slot />
-        </View>
-      </UserProvider>
-    
+
+    <UserProvider>
+      <View style={styles.container}>
+        <Slot />
+      </View>
+    </UserProvider>
+
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: {
+    flex: 1,
+    backgroundColor: Colors.background
+  },
 });

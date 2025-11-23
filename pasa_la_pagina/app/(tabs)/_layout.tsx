@@ -4,7 +4,6 @@ import { UserProvider } from '@/contexts/UserContext';
 import { Slot, useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 
 export default function TabLayout() {
@@ -20,22 +19,18 @@ export default function TabLayout() {
   if (!accessToken) return null;
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: Colors.background }]} edges={['top', 'bottom']}>
-      
-        <UserProvider>
-          <View style={{ flex: 1 }}>
-            <Slot />
-          </View>
-        </UserProvider>
-      
-    </SafeAreaView>
+    <View style={styles.container}>
+      <UserProvider>
+        <Slot />
+      </UserProvider>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.background,
+    padding: 8,
   },
-
 });

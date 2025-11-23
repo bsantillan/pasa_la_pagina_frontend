@@ -7,4 +7,5 @@ export const Colors = {
   disabled_secondary: "#FFD77F",
   white: "#FFFFFF",
   cta: "#D96C06",
+  disabled_text: "#666666CC"
 };

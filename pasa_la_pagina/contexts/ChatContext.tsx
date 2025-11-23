@@ -9,8 +9,19 @@ export type Mensaje = {
     fechaInicio: string;
 };
 
+export type ChatInfo = {
+    id: number;
+    titulo_publicacion: string;
+    intercambio_id: number;
+    usuario: string;
+    usuario_email: string;
+};
+
 type ChatContextType = {
     messages: Mensaje[];
+    chatInfo: ChatInfo | null;
+
+    loadChatInfo: (chatId: number) => Promise<void>;
     loadMessages: (chatId: number) => Promise<void>;
     initWebSocket: (chatId: number) => () => void;
     sendMessage: (chatId: number, userName: string, content: string) => void;
@@ -21,7 +32,27 @@ const ChatContext = createContext<ChatContextType | undefined>(undefined);
 export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
     const { getValidAccessToken } = useAuth();
     const [messages, setMessages] = useState<Mensaje[]>([]);
+    const [chatInfo, setChatInfo] = useState<ChatInfo | null>(null);
     const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "";
+
+    const loadChatInfo = async (chatId: number) => {
+        try {
+            const token = await getValidAccessToken();
+            if (!token) throw new Error("Token no válido");
+
+            const res = await fetch(`${API_URL}api/chats/${chatId}`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+
+            if (!res.ok) throw new Error(`Error HTTP ${res.status}`);
+
+            const data: ChatInfo = await res.json();
+            setChatInfo(data);
+
+        } catch (err) {
+            console.error("Error cargando información del chat:", err);
+        }
+    };
 
     const loadMessages = async (chatId: number) => {
         try {
@@ -51,7 +82,7 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
     };
 
     return (
-        <ChatContext.Provider value={{ messages, loadMessages, initWebSocket, sendMessage }}>
+        <ChatContext.Provider value={{ messages, chatInfo, loadChatInfo, loadMessages, initWebSocket, sendMessage }}>
             {children}
         </ChatContext.Provider>
     );

@@ -52,6 +52,7 @@ type ApunteData = {
 // ---- Publicaciones del backend ----
 export type Publicacion = {
   id: number;
+  favorito: boolean;
   titulo: string;
   descripcion: string;
   fotos_url: string[];
@@ -61,6 +62,32 @@ export type Publicacion = {
   latitud?: number;
   longitud?: number;
   distancia?: number;
+
+  tipo_oferta: string;
+  cantidad: number | null;
+  digital: boolean;
+  nuevo: boolean;
+  disponible: boolean;
+  url?: string | null;
+
+  // Campos de libro
+  autor?: string | null;
+  editorial?: string | null;
+  genero?: string | null;
+  isbn?: string | null;
+  cantidad_paginas?: number | null;
+  idioma?: string | null;
+
+  // Campos de apunte
+  anio_elaboracion?: number | null;
+  materia?: string | null;
+  carrera?: string | null;
+  institucion?: string | null;
+  nivel_educativo?: string | null;
+  seccion?: string | null;
+
+  usuario_nombre: string;
+  usuario_apellido: string;
 };
 
 export type Filtros = {
@@ -99,6 +126,7 @@ type PublicacionContextType = {
   // Publicaciones del backend
   publicaciones: Publicacion[];
   pubsUser: Publicacion[];
+  pubFavoritas: Publicacion[];
   loading: boolean;
   error: string | null;
   currentPage: number;
@@ -112,7 +140,6 @@ type PublicacionContextType = {
     page?: number,
     size?: number
   ) => Promise<void>;
-  fetchTodasPublicaciones: (limit?: number) => Promise<void>;
   resultadosBusqueda: Publicacion[];
   fetchPublicacionesGeneric: (
     url: string,
@@ -128,6 +155,9 @@ type PublicacionContextType = {
     page?: number,
     size?: number
   ) => Promise<void>;
+  agregarFavorito: (id: number) => Promise<void>;
+  eliminarFavorito: (id: number) => Promise<void>;
+  recuperarFavoritos: (page?: number, size?: number) => Promise<void>;
 };
 
 export const PublicacionContext = createContext<
@@ -174,6 +204,7 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
     []
   );
   const [pubsUser, setPubsUser] = useState<Publicacion[]>([]);
+  const [pubFavoritas, setPubFavoritas] = useState<Publicacion[]>([]);
 
   // 👇 Paginación
   const [currentPage, setCurrentPage] = useState(0);
@@ -332,7 +363,6 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
     [API_URL, getValidAccessToken, getUserLocation]
   );
 
-  // 👇 Funciones públicas
   const aplicarFiltros = useCallback(
     async (page: number = 0) => {
       await fetchPublicacionesConFiltros(page);
@@ -467,6 +497,27 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
           usuario_id: p.usuario_id,
           latitud: p.latitud,
           longitud: p.longitud,
+          distancia: p.distancia,
+          tipo_oferta: p.tipo_oferta,
+          cantidad: p.cantidad,
+          digital: p.digital,
+          nuevo: p.nuevo,
+          disponible: p.disponible,
+          url: p.url,
+          autor: p.autor,
+          editorial: p.editorial,
+          genero: p.genero,
+          isbn: p.isbn,
+          cantidad_paginas: p.cantidad_paginas,
+          idioma: p.idioma,
+          anio_elaboracion: p.anio_elaboracion,
+          materia: p.materia,
+          carrera: p.carrera,
+          institucion: p.institucion,
+          nivel_educativo: p.nivel_educativo,
+          seccion: p.seccion,
+          usuario_nombre: p.usuario_nombre,
+          usuario_apellido: p.usuario_apellido
         }));
 
         if (sortByLocation) {
@@ -507,25 +558,6 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false);
     }
   }, [fetchPublicacionesGeneric, getUserLocation]);
-
-  const fetchTodasPublicaciones = useCallback(
-    async (limit = 50) => {
-
-      const loc = await getUserLocation();
-      if (!loc) {
-        // Si no hay ubicación, cargar publicaciones sin ordenar por distancia
-        //await fetchPublicacionesGeneric(`publicacion/paginado?size=50`, false);
-        return;
-      }
-
-      const { latitude, longitude } = loc;
-      await fetchPublicacionesGeneric(
-        `publicacion/paginado?usuario_latitud=${latitude}&usuario_longitud=${longitude}&size=50`,
-        true
-      );
-    },
-    [fetchPublicacionesGeneric, getUserLocation]
-  );
 
   const fetchPublicacionesByUsuario = useCallback(
     async (usuario_id: number, page = 0, size = 10) => {
@@ -619,6 +651,120 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
     [API_URL, getValidAccessToken]
   );
 
+  const agregarFavorito = async (id: number) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const token = await getValidAccessToken();
+      if (!token) throw new Error("No hay token válido");
+
+      const res = await fetch(
+        `${API_URL}favoritos/nuevo/${id}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(
+          `Error al buscar publicaciones: ${res.status} - ${text}`
+        );
+      }
+
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const eliminarFavorito = async (id: number) => {
+    setLoading(true);
+    try {
+      const token = await getValidAccessToken();
+      if (!token) throw new Error("No hay token válido");
+
+      const res = await fetch(
+        `${API_URL}favoritos/eliminar/${id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(
+          `Error al buscar publicaciones: ${res.status} - ${text}`
+        );
+      }
+
+      const data = await res.json();
+      setResultadosBusqueda(data.content ?? []);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const recuperarFavoritos = async (page: number = 0, size: number = 10) => {
+    try {
+      const token = await getValidAccessToken();
+      if (!token) throw new Error("No hay token válido");
+
+      const res = await fetch(
+        `${API_URL}favoritos/paginado?page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(
+          `Error al buscar publicaciones: ${res.status} - ${text}`
+        );
+      }
+
+      const data = await res.json();
+      let pubs: Publicacion[] = (data.content ?? []).map((p: any) => ({
+        id: p.id,
+        titulo: p.titulo,
+        descripcion: p.descripcion,
+        fotos_url: p.url_fotos,
+        precio: p.precio,
+        tipo:
+          p.tipo_material === "Apunte"
+            ? "apunte"
+            : p.tipo_material === "Libro"
+              ? "libro"
+              : null,
+        usuario_id: p.usuario_id,
+        latitud: p.latitud,
+        longitud: p.longitud,
+      }));
+
+      setPubFavoritas(pubs);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <PublicacionContext.Provider
       value={{
@@ -637,7 +783,6 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
         fetchCercaTuyo,
         buscarPublicaciones,
         resultadosBusqueda,
-        fetchTodasPublicaciones,
         fetchPublicacionesGeneric,
         getUserLocation,
         filtros,
@@ -653,6 +798,10 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
         loadMore,
         fetchPublicacionesByUsuario,
         pubsUser,
+        pubFavoritas,
+        agregarFavorito,
+        eliminarFavorito,
+        recuperarFavoritos,
       }}
     >
       {children}

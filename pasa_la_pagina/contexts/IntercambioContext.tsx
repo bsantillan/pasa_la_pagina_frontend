@@ -72,6 +72,7 @@ type IntercambioContextType = {
     puedeDejarResena: boolean;
     mensaje: string;
   }>;
+    rechazarIntercambio: (id: number) => Promise<void>;
 };
 
 const IntercambioContext = createContext<IntercambioContextType | undefined>(
@@ -319,6 +320,20 @@ export const IntercambioProvider = ({
       setLoading(false);
     }
   };
+  const rechazarIntercambio = async (id: number) => {
+        setLoading(true);
+        try {
+            const res = await fetchWithToken(`intercambio/rechazar/${id}`, "PATCH");
+            return res;
+        } catch (err: any) {
+            if (err.message.includes("409")) {
+                throw new Error("Ya existe un intercambio para esta publicación");
+            }
+            throw err;
+        } finally {
+            setLoading(false);
+        }
+    };
 
   return (
     <IntercambioContext.Provider
@@ -337,11 +352,13 @@ export const IntercambioProvider = ({
         generarCodigoValidacion,
         validarIntercambioConCodigo,
         getEstadoActualizado,
+        rechazarIntercambio,
       }}
     >
       {children}
     </IntercambioContext.Provider>
   );
+    
 };
 
 export const useIntercambio = () => {
