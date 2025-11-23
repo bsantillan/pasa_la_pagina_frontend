@@ -1,4 +1,4 @@
-import PrimaryButton from "@/components/ui/Boton/Primary";
+﻿import PrimaryButton from "@/components/ui/Boton/Primary";
 import CameraModal from "@/components/ui/CameraModal";
 import { Colors } from "@/constants/Colors";
 import { useAuth } from "@/contexts/AuthContext";
@@ -10,8 +10,8 @@ import * as Location from "expo-location";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-  Alert,
   Image,
+  Modal,
   ScrollView,
   StyleSheet,
   Text,
@@ -33,16 +33,35 @@ export default function FinalizarPublicacionScreen() {
   const [images, setImages] = useState<string[]>([]);
   const [mapVisible, setMapVisible] = useState(true);
   const [cameraVisible, setCameraVisible] = useState(false);
+  const [customAlert, setCustomAlert] = useState<{
+    title: string;
+    description: string;
+    onAccept?: () => void;
+  } | null>(null);
 
   useEffect(() => {
     if (!tiposOferta) fetchTiposOferta();
   }, []);
 
-  // 📍 Obtener ubicación actual
+  const showCustomAlert = (
+    title: string,
+    description: string,
+    onAccept?: () => void
+  ) => {
+    setCustomAlert({ title, description, onAccept });
+  };
+
+  const handleCloseAlert = () => {
+    const action = customAlert?.onAccept;
+    setCustomAlert(null);
+    action?.();
+  };
+
+  //  Obtener Ubicacion actual
   const getCurrentLocation = async () => {
     const { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== "granted") {
-      Alert.alert("Permiso denegado", "No se pudo acceder a la ubicación.");
+      showCustomAlert("Permiso denegado", "No se pudo acceder a la ubicacion.");
       return;
     }
 
@@ -52,7 +71,7 @@ export default function FinalizarPublicacionScreen() {
     setManualLocation(null);
   };
 
-  // 📤 Subir imágenes a Cloudinary
+  //  Subir imgenes a Cloudinary
   const uploadImages = async (): Promise<string[]> => {
     const preset = process.env.EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET ?? "";
     const cloudName = process.env.EXPO_PUBLIC_CLOUDINARY_NAME ?? "";
@@ -86,7 +105,7 @@ export default function FinalizarPublicacionScreen() {
     return uploads;
   };
 
-  // ✅ Payloads
+  //  Payloads
   const buildLibroPayload = (uploadedUrls: string[], usuarioId: number) => {
     const payload: any = {
       titulo: libro?.titulo ?? "",
@@ -137,13 +156,14 @@ export default function FinalizarPublicacionScreen() {
     return payload;
   };
 
-  // ✅ Publicar
+  //  Publicar
   const handleSubmit = async () => {
     try {
       const accessToken = await getValidAccessToken();
       if (!accessToken) {
-        Alert.alert("Error", "No estás autenticado.");
-        router.replace("/login");
+        showCustomAlert("Error", "No estas autenticado.", () => {
+          router.replace("/login");
+        });
         return;
       }
 
@@ -151,8 +171,9 @@ export default function FinalizarPublicacionScreen() {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
       if (!mers.ok) {
-        Alert.alert("Error", "No se pudo obtener el usuario actual.");
-        router.replace("/login");
+        showCustomAlert("Error", "No se pudo obtener el usuario actual.", () => {
+          router.replace("/login");
+        });
         return;
       }
       const me = await mers.json();
@@ -169,7 +190,7 @@ export default function FinalizarPublicacionScreen() {
         payload = buildApuntePayload(uploadedUrls, me.id);
         endpoint = `${process.env.EXPO_PUBLIC_API_URL}publicacion/nuevo/apunte`;
       } else {
-        throw new Error("Tipo de publicación inválido");
+        throw new Error("Tipo de publicacion invalido");
       }
 
       const response = await fetch(endpoint, {
@@ -186,13 +207,13 @@ export default function FinalizarPublicacionScreen() {
         throw new Error(`Error ${response.status}: ${body}`);
       }
 
-      Alert.alert("Éxito", "La publicación fue creada correctamente");
-      reset();
-      const publicacion = await response.json();
-      router.replace("/(tabs)");
+      showCustomAlert("Exito", "La publicacion fue creada correctamente", () => {
+        reset();
+        router.replace("/(tabs)");
+      });
     } catch (err) {
       console.error(err);
-      Alert.alert("Error", "Ocurrió un error al crear la publicación.");
+      showCustomAlert("Error", "Ocurri un error al crear la publicacion.");
     }
   };
 
@@ -200,27 +221,27 @@ export default function FinalizarPublicacionScreen() {
     // Validaciones
 
     if (!comunes.tipo_oferta) {
-      Alert.alert("Error", "Debes seleccionar un tipo de oferta.");
+      showCustomAlert("Error", "Debes seleccionar un tipo de oferta.");
       return;
     }
 
     if (comunes.tipo_oferta === "Venta" && (!comunes.precio || comunes.precio <= 0)) {
-      Alert.alert("Error", "El precio es obligatorio para ventas.");
+      showCustomAlert("Error", "El precio es obligatorio para ventas.");
       return;
     }
 
     if ((!comunes.cantidad || comunes.cantidad <= 0) && !comunes.digital) {
-      Alert.alert("Error", "Debes ingresar la cantidad ya que el material es de formato fisico.");
+      showCustomAlert("Error", "Debes ingresar la cantidad ya que el material es de formato fisico.");
       return;
     }
 
     if (!images.length) {
-      Alert.alert("Error", "Debes seleccionar al menos una imagen.");
+      showCustomAlert("Error", "Debes seleccionar al menos una imagen.");
       return;
     }
 
     if (!location && !manualLocation) {
-      Alert.alert("Error", "Debes seleccionar una ubicación.");
+      showCustomAlert("Error", "Debes seleccionar una ubicacion.");
       return;
     }
 
@@ -230,27 +251,28 @@ export default function FinalizarPublicacionScreen() {
 
 
   return (
-    <KeyboardAwareScrollView
-      style={styles.scrollContent}
-      contentContainerStyle={{ flexGrow: 1, paddingBottom: 50 }}
-      keyboardShouldPersistTaps="handled"
-      enableOnAndroid
-      showsVerticalScrollIndicator={false}
-      extraScrollHeight={100}
-      enableAutomaticScroll
-    >
+    <>
+      <KeyboardAwareScrollView
+        style={styles.scrollContent}
+        contentContainerStyle={{ flexGrow: 1, paddingBottom: 50 }}
+        keyboardShouldPersistTaps="handled"
+        enableOnAndroid
+        showsVerticalScrollIndicator={false}
+        extraScrollHeight={100}
+        enableAutomaticScroll
+      >
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={Colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Crear publicación</Text>
+        <Text style={styles.headerTitle}>Crear publicacion</Text>
         <View style={{ width: 40 }} />
       </View>
 
       {step === 1 && (
         <View style={styles.container}>
-          <Text style={styles.title}>Agregar detalles de la publicación</Text>
-          <Text style={styles.subtitle}>Sumá información específica sobre tu publicación.</Text>
+          <Text style={styles.title}>Agregar detalles de la publicacion</Text>
+          <Text style={styles.subtitle}>Suma informacion especifica sobre tu publicacion.</Text>
 
           {/* Tipo oferta */}
           <Text style={styles.label}>Tipo de Oferta:</Text>
@@ -323,14 +345,14 @@ export default function FinalizarPublicacionScreen() {
             ))}
           </ScrollView>
 
-          {/* Ubicación */}
+          {/* ubicacion */}
           <View style={styles.buttonContainer}>
             <PrimaryButton
               styleBtn={styles.styleBtn}
               title={mapVisible ? "Ocultar Mapa" : "Mostrar Mapa"}
               onPress={() => setMapVisible((prev) => !prev)}
             />
-            <PrimaryButton styleBtn={styles.styleBtn} title="Ubicación actual" onPress={getCurrentLocation} />
+            <PrimaryButton styleBtn={styles.styleBtn} title="Ubicacion actual" onPress={getCurrentLocation} />
           </View>
           {mapVisible && (
             <MapView
@@ -375,8 +397,8 @@ export default function FinalizarPublicacionScreen() {
             ))}
           </ScrollView>
 
-          {/* --- Comunes --- */}
-          <Text style={styles.label}>Descripción: {comunes.descripcion}</Text>
+          {/* --- comunes --- */}
+          <Text style={styles.label}>Descripcion: {comunes.descripcion}</Text>
 
           <Text style={styles.label}>Tipo de Oferta: {comunes.tipo_oferta}</Text>
 
@@ -390,9 +412,9 @@ export default function FinalizarPublicacionScreen() {
 
           <Text style={styles.label}>Idioma: {tipo === "libro" ? libro?.idioma : apunte?.idioma}</Text>
 
-          <Text style={styles.label}>Formato: {comunes?.digital ? "Digital" : "Físico"}</Text>
+          <Text style={styles.label}>Formato: {comunes?.digital ? "Digital" : "fisico"}</Text>
 
-          {/* --- Tipo específico --- */}
+          {/* --- Tipo especifico --- */}
           {tipo === "libro" ? (
             <>
 
@@ -402,27 +424,27 @@ export default function FinalizarPublicacionScreen() {
 
               <Text style={styles.label}>ISBN: {libro?.isbn}</Text>
 
-              <Text style={styles.label}>Género: {libro?.genero}</Text>
+              <Text style={styles.label}>Genero: {libro?.genero}</Text>
             </>
           ) : (
             <>
               <Text style={styles.label}>Materia: {apunte?.materia}</Text>
 
-              <Text style={styles.label}>Institución: {apunte?.institucion}</Text>
+              <Text style={styles.label}>Institucion: {apunte?.institucion}</Text>
 
               <Text style={styles.label}>Nivel educativo: {apunte?.nivel_educativo}</Text>
 
-              <Text style={styles.label}>Sección: {apunte?.seccion}</Text>
+              <Text style={styles.label}>Seccion: {apunte?.seccion}</Text>
 
               <Text style={styles.label}>Carrera: {apunte?.carrera}</Text>
 
-              <Text style={styles.label}>Año de elaboración: {apunte?.anio_elaboracion}</Text>
+              <Text style={styles.label}>Ano de elaboracion: {apunte?.anio_elaboracion}</Text>
 
-              <Text style={styles.label}>Cantidad de páginas: {apunte?.paginas}</Text>
+              <Text style={styles.label}>Cantidad de paginas: {apunte?.paginas}</Text>
             </>
           )}
 
-          {/* --- Ubicación --- */}
+          {/* --- ubicacion --- */}
           {(location || manualLocation) && (
             <MapView
               style={styles.map}
@@ -447,7 +469,33 @@ export default function FinalizarPublicacionScreen() {
           </View>
         </View>
       )}
-    </KeyboardAwareScrollView>
+      </KeyboardAwareScrollView>
+
+      <Modal
+        visible={!!customAlert}
+        transparent
+        animationType="fade"
+        onRequestClose={handleCloseAlert}
+      >
+        <TouchableOpacity
+          style={styles.customAlertOverlay}
+          activeOpacity={1}
+          onPress={handleCloseAlert}
+        >
+          <View style={styles.customAlertCard}>
+            <Text style={styles.customAlertTitle}>{customAlert?.title}</Text>
+            <Text style={styles.customAlertDescription}>
+              {customAlert?.description}
+            </Text>
+            <PrimaryButton
+              title="Aceptar"
+              onPress={handleCloseAlert}
+              styleBtn={styles.customAlertButton}
+            />
+          </View>
+        </TouchableOpacity>
+      </Modal>
+    </>
   );
 }
 
@@ -563,6 +611,44 @@ const styles = StyleSheet.create({
     height: 250,          // alto fijo
     borderRadius: 10,
     marginRight: 12,
+  },
+  customAlertOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.35)",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 24,
+  },
+  customAlertCard: {
+    width: "100%",
+    maxWidth: 360,
+    backgroundColor: Colors.white,
+    borderRadius: 18,
+    paddingVertical: 20,
+    paddingHorizontal: 18,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.18,
+    shadowRadius: 18,
+    elevation: 10,
+    alignItems: "center",
+  },
+  customAlertTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: Colors.text,
+    marginBottom: 10,
+    textAlign: "center",
+  },
+  customAlertDescription: {
+    fontSize: 14,
+    color: "#4A4A4A",
+    textAlign: "center",
+    marginBottom: 16,
+  },
+  customAlertButton: {
+    minWidth: 180,
+    height: 38,
   }
 
 });
