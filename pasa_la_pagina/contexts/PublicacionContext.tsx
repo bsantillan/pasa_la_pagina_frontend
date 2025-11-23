@@ -52,6 +52,7 @@ type ApunteData = {
 // ---- Publicaciones del backend ----
 export type Publicacion = {
   id: number;
+  favorito: boolean;
   titulo: string;
   descripcion: string;
   fotos_url: string[];
@@ -125,6 +126,7 @@ type PublicacionContextType = {
   // Publicaciones del backend
   publicaciones: Publicacion[];
   pubsUser: Publicacion[];
+  pubFavoritas: Publicacion[];
   loading: boolean;
   error: string | null;
   currentPage: number;
@@ -153,6 +155,9 @@ type PublicacionContextType = {
     page?: number,
     size?: number
   ) => Promise<void>;
+  agregarFavorito: (id: number) => Promise<void>;
+  eliminarFavorito: (id: number) => Promise<void>;
+  recuperarFavoritos: (page?: number, size?: number) => Promise<void>;
 };
 
 export const PublicacionContext = createContext<
@@ -199,6 +204,7 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
     []
   );
   const [pubsUser, setPubsUser] = useState<Publicacion[]>([]);
+  const [pubFavoritas, setPubFavoritas] = useState<Publicacion[]>([]);
 
   // 👇 Paginación
   const [currentPage, setCurrentPage] = useState(0);
@@ -357,7 +363,6 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
     [API_URL, getValidAccessToken, getUserLocation]
   );
 
-  // 👇 Funciones públicas
   const aplicarFiltros = useCallback(
     async (page: number = 0) => {
       await fetchPublicacionesConFiltros(page);
@@ -646,6 +651,120 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
     [API_URL, getValidAccessToken]
   );
 
+  const agregarFavorito = async (id: number) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const token = await getValidAccessToken();
+      if (!token) throw new Error("No hay token válido");
+
+      const res = await fetch(
+        `${API_URL}favoritos/nuevo/${id}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(
+          `Error al buscar publicaciones: ${res.status} - ${text}`
+        );
+      }
+
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const eliminarFavorito = async (id: number) => {
+    setLoading(true);
+    try {
+      const token = await getValidAccessToken();
+      if (!token) throw new Error("No hay token válido");
+
+      const res = await fetch(
+        `${API_URL}favoritos/eliminar/${id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(
+          `Error al buscar publicaciones: ${res.status} - ${text}`
+        );
+      }
+
+      const data = await res.json();
+      setResultadosBusqueda(data.content ?? []);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const recuperarFavoritos = async (page: number = 0, size: number = 10) => {
+    try {
+      const token = await getValidAccessToken();
+      if (!token) throw new Error("No hay token válido");
+
+      const res = await fetch(
+        `${API_URL}favoritos/paginado?page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(
+          `Error al buscar publicaciones: ${res.status} - ${text}`
+        );
+      }
+
+      const data = await res.json();
+      let pubs: Publicacion[] = (data.content ?? []).map((p: any) => ({
+        id: p.id,
+        titulo: p.titulo,
+        descripcion: p.descripcion,
+        fotos_url: p.url_fotos,
+        precio: p.precio,
+        tipo:
+          p.tipo_material === "Apunte"
+            ? "apunte"
+            : p.tipo_material === "Libro"
+              ? "libro"
+              : null,
+        usuario_id: p.usuario_id,
+        latitud: p.latitud,
+        longitud: p.longitud,
+      }));
+
+      setPubFavoritas(pubs);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <PublicacionContext.Provider
       value={{
@@ -679,6 +798,10 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
         loadMore,
         fetchPublicacionesByUsuario,
         pubsUser,
+        pubFavoritas,
+        agregarFavorito,
+        eliminarFavorito,
+        recuperarFavoritos,
       }}
     >
       {children}
