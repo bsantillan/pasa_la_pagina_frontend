@@ -1,4 +1,5 @@
 import { Colors } from "@/constants/Colors";
+import { usePublicacion } from "@/contexts/PublicacionContext";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
 import {
@@ -15,15 +16,20 @@ import {
 
 type Props = {
   fotos: string[];
+  favorito?: boolean;
+  mostrarFavorito: boolean;
+  idPublicacion?: number
 };
 
 const screenWidth = Dimensions.get("window").width;
 
-export const FotoCarousel: React.FC<Props> = ({ fotos }) => {
+export const FotoCarousel: React.FC<Props> = ({ fotos, favorito, mostrarFavorito, idPublicacion }) => {
   const [indexActivo, setIndexActivo] = useState(0);
   const [modalVisible, setModalVisible] = useState(false);
+  const { agregarFavorito, eliminarFavorito } = usePublicacion();
+
   const [fotoSeleccionada, setFotoSeleccionada] = useState<string | null>(null);
-  const [liked, setLiked] = useState(false);
+  const [liked, setLiked] = useState(favorito ?? false);
 
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const offsetX = e.nativeEvent.contentOffset.x;
@@ -39,6 +45,22 @@ export const FotoCarousel: React.FC<Props> = ({ fotos }) => {
   const cerrarModal = () => {
     setModalVisible(false);
     setFotoSeleccionada(null);
+  };
+
+  const toggleFavorito = async () => {
+    if (!idPublicacion) return;
+
+    try {
+      if (!liked) {
+        await agregarFavorito(idPublicacion);
+        setLiked(true);
+      } else {
+        await eliminarFavorito(idPublicacion);
+        setLiked(false);
+      }
+    } catch (err) {
+      console.error("Error al cambiar favorito:", err);
+    }
   };
 
   return (
@@ -60,7 +82,7 @@ export const FotoCarousel: React.FC<Props> = ({ fotos }) => {
 
               <TouchableOpacity
                 style={styles.likeWrapper}
-                onPress={() => setLiked(!liked)}
+                onPress={toggleFavorito}
                 activeOpacity={0.8}
               >
                 <View style={styles.likeCircle} />
@@ -123,12 +145,12 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   imageContainer: {
-    width: "80%",               
-    alignSelf: "center",       
+    width: "80%",
+    alignSelf: "center",
     height: screenWidth * 0.80,
     borderRadius: 12,
     overflow: "hidden",
-    position: "relative",      
+    position: "relative",
   },
   image: {
     width: "100%",
@@ -136,7 +158,7 @@ const styles = StyleSheet.create({
   },
   likeWrapper: {
     position: "absolute",
-    right: 10,                 
+    right: 10,
     top: 10,
     zIndex: 30,
     width: 38,
