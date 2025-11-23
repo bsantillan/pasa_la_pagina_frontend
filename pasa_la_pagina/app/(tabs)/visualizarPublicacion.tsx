@@ -104,7 +104,7 @@ export default function VisualizarPublicacion() {
       >
         <View style={styles.container}>
           <Text style={styles.titulo}>{publicacion.titulo}</Text>
-          <FotoCarousel fotos={publicacion?.url_fotos || []} />
+          <FotoCarousel fotos={publicacion?.url_fotos || []} showFavorite/>
 
           <Text style={styles.descripcion}>{publicacion.descripcion}</Text>
           <View style={styles.card}>
