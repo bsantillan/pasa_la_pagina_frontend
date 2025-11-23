@@ -63,7 +63,8 @@ export default function Mensajes() {
     try {
       await aceptarIntercambio(intercambioSeleccionado.id);
       handleCerrarModal();
-      cargarIntercambios(true);
+      setSolicitudesVisible(false);
+      cargarIntercambios(false);
     } catch (err) {
       Alert.alert("Error", "No se pudo aceptar el intercambio.");
     }
