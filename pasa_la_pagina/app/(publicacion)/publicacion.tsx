@@ -76,7 +76,7 @@ const ProgressBar = ({ currentStep, totalSteps }: { currentStep: number; totalSt
 
 export default function FinalizarPublicacionScreen() {
   const { tiposOferta, fetchTiposOferta } = useEnums();
-  const { comunes, updateComunes, libro, apunte, tipo, reset } = usePublicacion();
+  const { tipo, libro, apunte, comunes, updateLibro, updateApunte, updateComunes, reset } = usePublicacion();
   const { getValidAccessToken } = useAuth();
 
   const [step, setStep] = useState<1 | 2>(1);
@@ -97,6 +97,38 @@ export default function FinalizarPublicacionScreen() {
     if (!tiposOferta) fetchTiposOferta();
   }, []);
 
+  // 📍 Obtener ubicación actual - versión corregida
+const getCurrentLocation = async () => {
+  const { status } = await Location.requestForegroundPermissionsAsync();
+  if (status !== "granted") {
+    Alert.alert("Permiso denegado", "No se pudo acceder a la ubicación.");
+    return;
+  }
+
+  try {
+    const loc = await Location.getCurrentPositionAsync({});
+    
+    // 👇 Actualizar estado de ubicación actual
+    setLocation({ 
+      latitude: loc.coords.latitude, 
+      longitude: loc.coords.longitude 
+    });
+    
+    // 👇 Actualizar contexto
+    updateComunes({ 
+      latitud: loc.coords.latitude, 
+      longitud: loc.coords.longitude 
+    });
+    
+    // 👇 Limpiar ubicación manual para que no interfiera
+    setManualLocation(null);
+    
+    Alert.alert("Éxito", "Ubicación actual obtenida correctamente");
+  } catch (error) {
+    console.error("Error al obtener ubicación actual:", error);
+    Alert.alert("Error", "No se pudo obtener la ubicación actual. Inténtalo de nuevo.");
+  }
+};
   const handleBack = () => {
     if (step === 2) {
       setStep(1);
@@ -150,7 +182,7 @@ export default function FinalizarPublicacionScreen() {
       return;
     }
     const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ["images"],
       quality: 0.8,
     });
     if (!result.canceled && result.assets) {
@@ -165,7 +197,7 @@ export default function FinalizarPublicacionScreen() {
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ["images"],
       allowsMultipleSelection: true,
       quality: 0.8,
     });
@@ -182,7 +214,7 @@ export default function FinalizarPublicacionScreen() {
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ["images"],
       allowsMultipleSelection: true,
       quality: 0.8,
     });
@@ -194,26 +226,6 @@ export default function FinalizarPublicacionScreen() {
 
   const removeImage = (index: number) => {
     setImages((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const getCurrentLocation = async () => {
-    const { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== "granted") {
-      Alert.alert("Permiso denegado", "No se pudo acceder a la ubicación.");
-      return;
-    }
-    const loc = await Location.getCurrentPositionAsync({});
-    const coords = { latitude: loc.coords.latitude, longitude: loc.coords.longitude };
-    setLocation(coords);
-    setMapRegion({
-      latitude: coords.latitude,
-      longitude: coords.longitude,
-      latitudeDelta: 0.01,
-      longitudeDelta: 0.01,
-    });
-    updateComunes({ latitud: coords.latitude, longitud: coords.longitude });
-    setManualLocation(null);
-    getAddressFromCoords(coords.latitude, coords.longitude);
   };
 
   const uploadImages = async (): Promise<string[]> => {
@@ -250,7 +262,7 @@ export default function FinalizarPublicacionScreen() {
       idioma: libro?.idioma ?? "",
       cantidad: comunes?.cantidad ?? 1,
       tipo_oferta: comunes?.tipo_oferta ?? "Venta",
-      usuarioId: usuarioId ?? 1,
+      usuarioId: usuarioId,
       fotos_url: uploadedUrls,
       isbn: String(libro?.isbn ?? ""),
       genero: (libro?.genero ?? "").trim(),
@@ -276,7 +288,7 @@ export default function FinalizarPublicacionScreen() {
       anio_elaboracion: apunte?.anio_elaboracion ?? new Date().getFullYear(),
       tipo_oferta: comunes?.tipo_oferta ?? "Venta",
       fotos_url: uploadedUrls,
-      usuarioId: usuarioId ?? 1,
+      usuarioId: usuarioId,
       cantidad_paginas: apunte?.paginas ?? 1,
       materia: apunte?.materia ?? "",
       institucion: apunte?.institucion ?? "",
@@ -334,7 +346,7 @@ export default function FinalizarPublicacionScreen() {
       Alert.alert("Éxito", "La publicación fue creada correctamente");
       reset();
       router.replace("/(tabs)");
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
       Alert.alert("Error", "Ocurrió un error al crear la publicación.");
     }
@@ -558,7 +570,7 @@ export default function FinalizarPublicacionScreen() {
               </Text>
 
               {/* CARRUSEL DE FOTOS */}
-              <FotoCarousel fotos={images} />
+              <FotoCarousel fotos={images} mostrarFavorito={false} />
 
               {/* DESCRIPCIÓN */}
               <Text

@@ -79,21 +79,21 @@ export const FotoCarousel: React.FC<Props> = ({ fotos, favorito, mostrarFavorito
           <View style={{ width: screenWidth }}>
 
             <View style={styles.imageContainer}>
-
-              <TouchableOpacity
-                style={styles.likeWrapper}
-                onPress={toggleFavorito}
-                activeOpacity={0.8}
-              >
-                <View style={styles.likeCircle} />
-                <Ionicons
-                  name={liked ? "heart" : "heart-outline"}
-                  size={28}
-                  color={liked ? Colors.primary : Colors.primary}
-                  style={styles.heartIcon}
-                />
-              </TouchableOpacity>
-
+              {mostrarFavorito && (
+                <TouchableOpacity
+                  style={styles.likeWrapper}
+                  onPress={toggleFavorito}
+                  activeOpacity={0.8}
+                >
+                  <View style={styles.likeCircle} />
+                  <Ionicons
+                    name={liked ? "heart" : "heart-outline"}
+                    size={28}
+                    color={liked ? Colors.primary : Colors.primary}
+                    style={styles.heartIcon}
+                  />
+                </TouchableOpacity>
+              )}
               <TouchableOpacity activeOpacity={0.9} onPress={() => abrirModal(item)}>
                 <Image source={{ uri: item }} style={styles.image} />
               </TouchableOpacity>

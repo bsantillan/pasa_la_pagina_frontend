@@ -14,7 +14,9 @@ export type ChatInfo = {
     titulo_publicacion: string;
     intercambio_id: number;
     usuario: string;
+    usuario_id: number;
     usuario_email: string;
+    fecha_inicio: string;
 };
 
 type ChatContextType = {
