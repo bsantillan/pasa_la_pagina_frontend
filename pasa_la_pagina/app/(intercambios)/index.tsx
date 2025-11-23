@@ -118,11 +118,7 @@ export default function Mensajes() {
       ) : (
         <>
           <FlatList
-            data={intercambios?.filter(
-              (item) =>
-                item.estadoIntercambio === "PENDIENTE" ||
-                item.estadoIntercambio === "ACEPTADO"
-            )}
+            data={intercambios}
             keyExtractor={(item) => item.id.toString()}
             contentContainerStyle={{ gap: 16 }}
             renderItem={({ item }) => (
@@ -137,9 +133,6 @@ export default function Mensajes() {
                     pathname: "/(intercambios)/chat",
                     params: {
                       chatId: item.chatId,
-                      usuarioEmail: item.usuarioEmail,
-                      tituloPublicacion: item.tituloPublicaicon,
-                      intercambioId: item.id,
                       fechaInicio: item.fechaInicio,
                     },
                   });

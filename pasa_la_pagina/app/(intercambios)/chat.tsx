@@ -23,14 +23,7 @@ import {
 
 export default function Chat() {
   const [visible, setVisible] = useState(false);
-  const { chatId, usuarioEmail, tituloPublicacion, intercambioId, fechaInicio } =
-    useLocalSearchParams<{
-      chatId: string;
-      usuarioEmail: string;
-      tituloPublicacion: string;
-      intercambioId: string;
-      fechaInicio: string;
-    }>();
+  const { chatId, fechaInicio } = useLocalSearchParams<{ chatId: string; fechaInicio: string}>();
   const {
     messages,
     chatInfo,
@@ -111,31 +104,17 @@ export default function Chat() {
         <TouchableOpacity
           style={styles.headerCenter}
           onPress={() =>
-            router.push({
-              pathname: "/(intercambios)/usuarioDetail",
-              params: {
-                intercambioId: intercambioId,
-                fechaInicio: fechaInicio,
-                tituloPublicacion: tituloPublicacion,
-                email: usuarioEmail,
-              },
-            })
+            router.push("/(intercambios)/usuarioDetail")
           }
         >
-          <Avatar name={usuarioEmail} size={40} />
+          <Avatar name={chatInfo.usuario_email} size={40} />
           <View style={styles.headerInfo}>
             <Text style={styles.headerTitle} numberOfLines={1}>
               {chatInfo.usuario}
             </Text>
-            <Text style={styles.headerSubtitle} numberOfLines={1}>
-              {chatInfo.titulo_publicacion}
-            </Text>
+            
           </View>
         </TouchableOpacity>
-
-        <Pressable onPress={() => setVisible(true)} style={styles.headerButton}>
-          <Ionicons name="checkmark-done-outline" size={24} color={Colors.primary} />
-        </Pressable>
       </View>
 
       {/* MENSAJES + INPUT */}

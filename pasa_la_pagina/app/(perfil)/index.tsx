@@ -12,7 +12,7 @@ import { useUser } from "../../contexts/UserContext";
 const filtros = ["Reseñas", "Publicaciones", "Historial", "Favoritos"];
 
 export default function PerfilScreen() {
-  const { reseniasRecibidas, reseniasHechas, loading: userLoading } = useUser();
+  const { reseniasRecibidas, reseniasHechas, fetchReseniasHechas, fetchReseniasRecibidas, loading: userLoading } = useUser();
   const { pubsUser, pubFavoritas, fetchPublicacionesByUsuario, recuperarFavoritos, loading, error } = usePublicacion();
   const [selectedFiltro, setSelectedFiltro] = useState(filtros[0]);
   const { user } = useAuth();
@@ -21,6 +21,8 @@ export default function PerfilScreen() {
     if (user?.id) {
       fetchPublicacionesByUsuario(user.id);
       recuperarFavoritos();
+      fetchReseniasHechas();
+      fetchReseniasRecibidas();
     }
   }, [fetchPublicacionesByUsuario, user]);
 
@@ -75,10 +77,10 @@ export default function PerfilScreen() {
     return reseniasRecibidas.map((r) => (
       <ReviewCard
         key={r.id}
-        username={r.autorNombre}
+        username={r.usuarioNombre}
         headline={`Valoración: ${r.valoracion}`}
         description={r.descripcion}
-        date=""
+        date={r.fecha}
       />
     ));
   };
@@ -90,7 +92,7 @@ export default function PerfilScreen() {
         reseniasHechas.map((r) => (
           <ReviewCard
             key={r.id}
-            username={r.autorNombre}
+            username={r.usuarioNombre}
             headline={`Valoración: ${r.valoracion}`}
             description={r.descripcion}
             date=""

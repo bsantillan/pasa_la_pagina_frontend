@@ -5,23 +5,23 @@ import PrimaryButton from "@/components/ui/Boton/Primary";
 import SecondaryButton from "@/components/ui/Boton/Secondary";
 import { Colors } from "@/constants/Colors";
 import { useAuth } from "@/contexts/AuthContext";
+import { useChat } from "@/contexts/ChatContext";
 import { EstadoIntercambio, useIntercambio } from "@/contexts/IntercambioContext";
-import { useUser } from "@/contexts/UserContext";
 import Ionicons from "@expo/vector-icons/build/Ionicons";
 import { Client } from "@stomp/stompjs";
-import { router, useLocalSearchParams } from "expo-router";
+import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Modal,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import SockJS from "sockjs-client";
 
@@ -37,13 +37,8 @@ const formatDate = (dateString: string) => {
 };
 
 export default function UsuarioDetail() {
-  const { intercambioId, fechaInicio, tituloPublicacion, email } =
-    useLocalSearchParams<{
-      intercambioId: string;
-      fechaInicio: string;
-      tituloPublicacion: string;
-      email: string;
-    }>();
+
+  const { chatInfo } = useChat();
 
   const {
     intercambios,
@@ -57,8 +52,7 @@ export default function UsuarioDetail() {
     cancelarIntercambio,
     generarCodigoValidacion,
   } = useIntercambio();
-  const { fetchByEmail, usuario } = useUser();
-  const { getValidAccessToken } = useAuth();
+  const { getValidAccessToken, user } = useAuth();
 
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showCodeModal, setShowCodeModal] = useState(false);
@@ -100,7 +94,7 @@ export default function UsuarioDetail() {
   const pollingIntervalRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (intercambioId && !isConnectedRef.current) {
+    if (chatInfo?.intercambio_id && !isConnectedRef.current) {
       const connectWebSocket = async () => {
         try {
           const token = await getValidAccessToken();
@@ -162,7 +156,7 @@ export default function UsuarioDetail() {
 
       connectWebSocket();
     }
-  }, [intercambioId, getValidAccessToken]);
+  }, [chatInfo?.intercambio_id, getValidAccessToken]);
 
   // 👇 Limpiar WebSocket cuando se desmonta
   useEffect(() => {
@@ -182,10 +176,10 @@ export default function UsuarioDetail() {
         "🆔 Comparando ID:",
         ultimoEstadoIntercambio.intercambioId,
         "con",
-        Number(intercambioId)
+        Number(chatInfo?.intercambio_id)
       );
 
-      if (ultimoEstadoIntercambio.intercambioId === Number(intercambioId)) {
+      if (ultimoEstadoIntercambio.intercambioId === Number(chatInfo?.intercambio_id)) {
         console.log("✅ ID coincide, estado:", ultimoEstadoIntercambio.estado);
 
         if (ultimoEstadoIntercambio.estado === "CONCRETADO") {
@@ -201,10 +195,10 @@ export default function UsuarioDetail() {
         }
       }
     }
-  }, [ultimoEstadoIntercambio, intercambioId]);
+  }, [ultimoEstadoIntercambio, chatInfo?.intercambio_id]);
 
   // 👇 Polling como respaldo (si WebSocket falla o no se conecta)
- useEffect(() => {
+  useEffect(() => {
     if (showCodeModal && isOwner) {
       // Iniciar polling cada 3 segundos como respaldo
       pollingIntervalRef.current = setInterval(async () => {
@@ -213,7 +207,7 @@ export default function UsuarioDetail() {
           if (!token) throw new Error("No hay token válido");
 
           const res = await fetch(
-            `${process.env.EXPO_PUBLIC_API_URL}intercambio/${intercambioId}/estado-actualizado`,
+            `${process.env.EXPO_PUBLIC_API_URL}intercambio/${chatInfo?.intercambio_id}/estado-actualizado`,
             {
               headers: {
                 Authorization: `Bearer ${token}`,
@@ -261,16 +255,15 @@ export default function UsuarioDetail() {
         pollingIntervalRef.current = null;
       }
     };
-  }, [showCodeModal, isOwner, intercambioId, getValidAccessToken]);
+  }, [showCodeModal, isOwner, chatInfo?.intercambio_id, getValidAccessToken]);
 
   useEffect(() => {
     const cargarDatos = async () => {
       try {
         const intercambio = intercambios?.find(
-          (i) => i.id === Number(intercambioId)
+          (i) => i.id === Number(chatInfo?.intercambio_id)
         );
         if (intercambio) {
-          await fetchByEmail(email);
           const esPropietario = intercambio.rolUsuario === "Propietario";
           setIsOwner(esPropietario);
         }
@@ -279,7 +272,7 @@ export default function UsuarioDetail() {
       }
     };
     cargarDatos();
-  }, [intercambioId, intercambios, usuario?.email]);
+  }, [chatInfo?.intercambio_id, intercambios, chatInfo?.usuario_email]);
 
   // 👇 Generar código cuando se abre el modal de código (solo para dueños)
   useEffect(() => {
@@ -314,7 +307,7 @@ export default function UsuarioDetail() {
       if (!token) throw new Error("No hay token válido");
 
       const codigo = await generarCodigoValidacion(
-        Number(intercambioId),
+        Number(chatInfo?.intercambio_id),
         token
       );
       setCodigoGenerado(codigo);
@@ -340,7 +333,7 @@ export default function UsuarioDetail() {
 
   const handleCancelar = async () => {
     try {
-      await cancelarIntercambio(Number(intercambioId));
+      await cancelarIntercambio(Number(chatInfo?.intercambio_id));
       setShowConfirmModal(false);
       router.replace("/(intercambios)");
     } catch (error: any) {
@@ -360,7 +353,7 @@ export default function UsuarioDetail() {
       if (!token) throw new Error("No hay token válido");
 
       await validarIntercambioConCodigo(
-        Number(intercambioId),
+        Number(chatInfo?.intercambio_id),
         codigoInput,
         token
       );
@@ -411,18 +404,17 @@ export default function UsuarioDetail() {
         body: JSON.stringify({
           descripcion: feedback.trim() || "Sin comentarios",
           valoracion: rating,
-          intercambioId: Number(intercambioId),
-          autorId: usuario?.id,
+          intercambioId: Number(chatInfo?.intercambio_id),
+          reseniadoId: chatInfo?.usuario_id
         }),
       });
 
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(`Error al enviar reseña: ${res.status} - ${text}`);
-      }
+      // Si el backend responde solo texto, no intentes leer JSON
+      const responseText = await res.text();
 
-      const data = await res.json();
-      console.log("Reseña creada:", data);
+      if (!res.ok) {
+        throw new Error(responseText || "Error al crear reseña");
+      }
 
       // Cerrar modal y redirigir
       setShowReviewModal(false);
@@ -437,7 +429,7 @@ export default function UsuarioDetail() {
     }
   };
 
-  if (intercambioLoading || !usuario || loading) {
+  if (intercambioLoading || !chatInfo?.usuario || loading) {
     return (
       <View style={styles.center}>
         <ActivityIndicator size="large" color="#000" />
@@ -452,14 +444,14 @@ export default function UsuarioDetail() {
       contentContainerStyle={{ alignItems: "center" }}
     >
       <View style={styles.principal}>
-        <Avatar name={usuario?.nombre} size={104} />
+        <Avatar name={chatInfo?.usuario || ""} size={104} />
         <Text style={styles.tittle}>
-          {usuario?.nombre} {usuario?.apellido}
+          {chatInfo?.usuario}
         </Text>
       </View>
       <View style={styles.sub}>
         <Pressable
-          onPress={() => router.replace(`/(perfil)/publico${usuario.id}`)}
+          onPress={() => router.replace(`/(perfil)/publico${chatInfo?.usuario_id}`)}
         >
           <Ionicons
             name="person-circle-outline"
@@ -475,9 +467,9 @@ export default function UsuarioDetail() {
       </View>
       <View style={styles.info}>
         <Text style={styles.subtittle}>Información del Intercambio</Text>
-        <Text style={styles.text}>Publicación: {tituloPublicacion}</Text>
+        <Text style={styles.text}>Publicación: {chatInfo?.titulo_publicacion}</Text>
         <Text style={styles.text}>
-          Fecha de Inicio: {formatDate(fechaInicio)}
+          Fecha de Inicio: {formatDate(chatInfo.fecha_inicio)}
         </Text>
       </View>
 
@@ -490,7 +482,7 @@ export default function UsuarioDetail() {
       >
         <View style={styles.modalOverlay}>
           <AlertCard
-            title={`Finalizar intercambio de "${tituloPublicacion}"?`}
+            title={`Finalizar intercambio de "${chatInfo?.titulo_publicacion}"?`}
             description="¿Estás seguro de que deseas concretar este intercambio?"
             onAccept={handleConcretar}
             onCancel={handleCancelar}
@@ -556,19 +548,19 @@ export default function UsuarioDetail() {
               {isOwner ? (
                 <PrimaryButton
                   title="Cerrar"
-                  styleBtn={{width : "80%", alignSelf: "center"}}
+                  styleBtn={{ width: "80%", alignSelf: "center" }}
                   onPress={handleCerrarCodigoModal}
                 />
               ) : (
                 <>
                   <PrimaryButton
-                  styleBtn={{width: "50%"}}
+                    styleBtn={{ width: "50%" }}
                     title="Validar"
                     onPress={handleValidarCodigo}
                     disabled={codigoInput.length !== 6 || loading}
                   />
                   <SecondaryButton
-                  styleBtn={{width: "50%"}}
+                    styleBtn={{ width: "50%" }}
                     title="Cerrar"
                     onPress={handleCerrarCodigoModal}
                   />
@@ -598,15 +590,15 @@ export default function UsuarioDetail() {
                 </Text>
                 <View style={styles.reviewButtons}>
                   <SecondaryButton
-                  styleBtn={{width: "50%"}}
+                    styleBtn={{ width: "50%" }}
                     title="Cancelar"
                     onPress={() => {
-                    setShowReviewModal(false);
-                    router.push("/(perfil)"); // 👈 REDIRECCIÓN A PERFIL
-                  }}
+                      setShowReviewModal(false);
+                      router.push("/(perfil)"); // 👈 REDIRECCIÓN A PERFIL
+                    }}
                   />
                   <PrimaryButton
-                    styleBtn={{width: "50%"}}
+                    styleBtn={{ width: "50%" }}
                     title="Aceptar"
                     onPress={() => setReviewStep(2)}
                   />
@@ -625,15 +617,15 @@ export default function UsuarioDetail() {
                 </Text>
                 <View style={styles.reviewButtons}>
                   <SecondaryButton
-                  styleBtn={{width: "50%"}}
+                    styleBtn={{ width: "50%" }}
                     title="Cancelar"
                     onPress={() => {
-                    setShowReviewModal(false);
-                    router.push("/(perfil)"); // 👈 REDIRECCIÓN A PERFIL
-                  }}
+                      setShowReviewModal(false);
+                      router.push("/(perfil)"); // 👈 REDIRECCIÓN A PERFIL
+                    }}
                   />
                   <PrimaryButton
-                  styleBtn={{width: "50%"}}
+                    styleBtn={{ width: "50%" }}
                     title="Aceptar"
                     onPress={() => setReviewStep(3)}
                   />
@@ -663,13 +655,13 @@ export default function UsuarioDetail() {
                 </View>
                 <View style={styles.reviewButtons}>
                   <SecondaryButton
-                  styleBtn={{width: "50%"}}
+                    styleBtn={{ width: "50%" }}
                     title="Atras"
                     onPress={() => setReviewStep(2)}
                   />
                   <PrimaryButton
                     title="Aceptar"
-                    styleBtn={{width: "50%"}}
+                    styleBtn={{ width: "50%" }}
                     onPress={() => setReviewStep(4)}
                     disabled={rating === 0}
                   />
@@ -695,12 +687,12 @@ export default function UsuarioDetail() {
                 />
                 <View style={styles.reviewButtons}>
                   <SecondaryButton
-                  styleBtn={{width: "50%"}}
+                    styleBtn={{ width: "50%" }}
                     title="Atras"
                     onPress={() => setReviewStep(3)}
                   />
                   <PrimaryButton
-                  styleBtn={{width: "50%"}}
+                    styleBtn={{ width: "50%" }}
                     title="Enviar reseña"
                     onPress={() => setReviewStep(5)}
                   />
@@ -717,15 +709,15 @@ export default function UsuarioDetail() {
                 </Text>
                 <View style={styles.reviewButtons}>
                   <SecondaryButton
-                  styleBtn={{width: "50%"}}
+                    styleBtn={{ width: "50%" }}
                     title="Cerrar"
                     onPress={() => {
-                    setShowReviewModal(false);
-                    router.push("/(perfil)"); // 👈 REDIRECCIÓN A PERFIL
-                  }}
+                      setShowReviewModal(false);
+                      router.push("/(perfil)"); // 👈 REDIRECCIÓN A PERFIL
+                    }}
                   />
                   <PrimaryButton
-                  styleBtn={{width: "50%"}}
+                    styleBtn={{ width: "50%" }}
                     title="Aceptar"
                     onPress={enviarReseña}
                     disabled={reviewLoading}
