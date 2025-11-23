@@ -137,6 +137,7 @@ export default function Mensajes() {
                       usuarioEmail: item.usuarioEmail,
                       tituloPublicacion: item.tituloPublicaicon,
                       intercambioId: item.id,
+                      fechaInicio: item.fechaInicio,
                     },
                   });
                 }}
@@ -191,7 +192,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginVertical: 16,
     gap: 10,
-    paddingTop: 60,
+    paddingTop: 30,
   },
   styleBtn: {
     flex: 1,

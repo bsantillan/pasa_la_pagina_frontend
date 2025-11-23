@@ -1,3 +1,4 @@
+// FinalizarPublicacionScreen.tsx - versión corregida
 import PrimaryButton from "@/components/ui/Boton/Primary";
 import CameraModal from "@/components/ui/CameraModal";
 import { Colors } from "@/constants/Colors";
@@ -21,10 +22,11 @@ import {
 } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import MapView, { Marker } from "react-native-maps";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function FinalizarPublicacionScreen() {
   const { tiposOferta, fetchTiposOferta } = useEnums();
-  const { comunes, updateComunes, libro, apunte, tipo, reset } = usePublicacion();
+  const { tipo, libro, apunte, comunes, updateLibro, updateApunte, updateComunes, reset } = usePublicacion();
   const { getValidAccessToken } = useAuth();
 
   const [step, setStep] = useState<1 | 2>(1);
@@ -38,19 +40,38 @@ export default function FinalizarPublicacionScreen() {
     if (!tiposOferta) fetchTiposOferta();
   }, []);
 
-  // 📍 Obtener ubicación actual
-  const getCurrentLocation = async () => {
-    const { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== "granted") {
-      Alert.alert("Permiso denegado", "No se pudo acceder a la ubicación.");
-      return;
-    }
+  // 📍 Obtener ubicación actual - versión corregida
+const getCurrentLocation = async () => {
+  const { status } = await Location.requestForegroundPermissionsAsync();
+  if (status !== "granted") {
+    Alert.alert("Permiso denegado", "No se pudo acceder a la ubicación.");
+    return;
+  }
 
+  try {
     const loc = await Location.getCurrentPositionAsync({});
-    setLocation({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
-    updateComunes({ latitud: loc.coords.latitude, longitud: loc.coords.longitude });
+    
+    // 👇 Actualizar estado de ubicación actual
+    setLocation({ 
+      latitude: loc.coords.latitude, 
+      longitude: loc.coords.longitude 
+    });
+    
+    // 👇 Actualizar contexto
+    updateComunes({ 
+      latitud: loc.coords.latitude, 
+      longitud: loc.coords.longitude 
+    });
+    
+    // 👇 Limpiar ubicación manual para que no interfiera
     setManualLocation(null);
-  };
+    
+    Alert.alert("Éxito", "Ubicación actual obtenida correctamente");
+  } catch (error) {
+    console.error("Error al obtener ubicación actual:", error);
+    Alert.alert("Error", "No se pudo obtener la ubicación actual. Inténtalo de nuevo.");
+  }
+};
 
   // 📤 Subir imágenes a Cloudinary
   const uploadImages = async (): Promise<string[]> => {
@@ -99,7 +120,7 @@ export default function FinalizarPublicacionScreen() {
       idioma: libro?.idioma ?? "",
       cantidad: comunes?.cantidad ?? 1,
       tipo_oferta: comunes?.tipo_oferta ?? "Venta",
-      usuarioId: usuarioId ?? 1,
+      usuarioId: usuarioId,
       fotos_url: uploadedUrls,
       isbn: String(libro?.isbn ?? ""),
       genero: (libro?.genero ?? "").trim(),
@@ -125,7 +146,7 @@ export default function FinalizarPublicacionScreen() {
       anio_elaboracion: apunte?.anio_elaboracion ?? new Date().getFullYear(),
       tipo_oferta: comunes?.tipo_oferta ?? "Venta",
       fotos_url: uploadedUrls,
-      usuarioId: usuarioId ?? 1,
+      usuarioId: usuarioId,
       cantidad_paginas: apunte?.paginas ?? 1,
       materia: apunte?.materia ?? "",
       institucion: apunte?.institucion ?? "",
@@ -190,7 +211,7 @@ export default function FinalizarPublicacionScreen() {
       reset();
       const publicacion = await response.json();
       router.replace("/(tabs)");
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
       Alert.alert("Error", "Ocurrió un error al crear la publicación.");
     }
@@ -228,7 +249,6 @@ export default function FinalizarPublicacionScreen() {
     setStep(2);
   };
 
-
   return (
     <KeyboardAwareScrollView
       style={styles.scrollContent}
@@ -238,215 +258,206 @@ export default function FinalizarPublicacionScreen() {
       extraScrollHeight={100}
       enableAutomaticScroll
     >
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={Colors.text} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Crear publicación</Text>
-        <View style={{ width: 40 }} />
-      </View>
+      <SafeAreaView style={{ flex: 1, backgroundColor: Colors.background }} edges={["top"]}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={24} color={Colors.text} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Crear publicación</Text>
+          <View style={{ width: 40 }} />
+        </View>
 
-      {step === 1 && (
-        <View style={styles.container}>
-          <Text style={styles.title}>Agregar detalles de la publicación</Text>
-          <Text style={styles.subtitle}>Sumá información específica sobre tu publicación.</Text>
+        {step === 1 && (
+          <View style={styles.container}>
+            <Text style={styles.title}>Agregar detalles de la publicación</Text>
+            <Text style={styles.subtitle}>Sumá información específica sobre tu publicación.</Text>
 
-          {/* Tipo oferta */}
-          <Text style={styles.label}>Tipo de Oferta:</Text>
-          <View style={styles.pickerWrapper}>
-            <Picker
-              style={styles.picker}
-              selectedValue={comunes.tipo_oferta || ""}
-              onValueChange={(itemValue) => updateComunes({ tipo_oferta: itemValue })}
-            >
-              <Picker.Item label="Seleccione un tipo de oferta" value="" />
-              {tiposOferta?.map((tipo) => (
-                <Picker.Item key={tipo} label={tipo} value={tipo} />
+            {/* Tipo oferta */}
+            <Text style={styles.label}>Tipo de Oferta:</Text>
+            <View style={styles.pickerWrapper}>
+              <Picker
+                style={styles.picker}
+                selectedValue={comunes.tipo_oferta || ""}
+                onValueChange={(itemValue) => updateComunes({ tipo_oferta: itemValue })}
+              >
+                <Picker.Item label="Seleccione un tipo de oferta" value="" />
+                {tiposOferta?.map((tipo) => (
+                  <Picker.Item key={tipo} label={tipo} value={tipo} />
+                ))}
+              </Picker>
+            </View>
+
+            {/* Precio */}
+            {comunes.tipo_oferta === "Venta" && (
+              <>
+                <Text style={styles.label}>Precio:</Text>
+                <TextInput
+                  keyboardType="numeric"
+                  style={styles.input}
+                  placeholder="Precio"
+                  value={comunes.precio?.toString() || ""}
+                  onChangeText={(text) => {
+                    const val = parseFloat(text);
+                    updateComunes({ precio: isNaN(val) ? undefined : val });
+                  }}
+                />
+              </>
+            )}
+
+            {/* Cantidad */}
+            {!comunes.digital && (
+              <>
+                <Text style={styles.label}>Cantidad:</Text>
+                <TextInput
+                  keyboardType="numeric"
+                  style={styles.input}
+                  placeholder="Cantidad"
+                  value={comunes.cantidad?.toString() || ""}
+                  onChangeText={(text) => {
+                    const val = parseInt(text, 10);
+                    updateComunes({ cantidad: isNaN(val) ? undefined : val });
+                  }}
+                />
+              </>
+            )}
+
+            {/* Subir fotos */}
+            <PrimaryButton
+              styleBtn={styles.styleBtn}
+              title="Sacar foto"
+              onPress={() => setCameraVisible(true)}
+            />
+            <CameraModal
+              visible={cameraVisible}
+              onClose={() => setCameraVisible(false)}
+              onPhotoTaken={(uri) => setImages((prev) => [...prev, uri])}
+            />
+
+            <ScrollView horizontal style={{ marginVertical: 10 }}>
+              {images.map((uri, idx) => (
+                <Image key={idx} source={{ uri }} style={{ width: 100, height: 100, marginRight: 10 }} />
               ))}
-            </Picker>
-          </View>
+            </ScrollView>
 
-          {/* Precio */}
-          {comunes.tipo_oferta === "Venta" && (
-            <>
-              <Text style={styles.label}>Precio:</Text>
-              <TextInput
-                keyboardType="numeric"
-                style={styles.input}
-                placeholder="Precio"
-                value={comunes.precio?.toString() || ""}
-                onChangeText={(text) => {
-                  const val = parseFloat(text);
-                  updateComunes({ precio: isNaN(val) ? undefined : val });
+            {/* Ubicación */}
+            <View style={styles.buttonContainer}>
+              <PrimaryButton
+                styleBtn={styles.styleBtn}
+                title={mapVisible ? "Ocultar Mapa" : "Mostrar Mapa"}
+                onPress={() => setMapVisible((prev) => !prev)}
+              />
+              <PrimaryButton styleBtn={styles.styleBtn} title="Ubicación actual" onPress={getCurrentLocation} />
+            </View>
+            {mapVisible && (
+              <MapView
+                style={styles.map}
+                initialRegion={{
+                  latitude: -34.9214,
+                  longitude: -57.9544,
+                  latitudeDelta: 0.05,
+                  longitudeDelta: 0.05,
                 }}
-              />
-            </>
-          )}
-
-          {/* Cantidad */}
-          {!comunes.digital && (
-            <>
-              <Text style={styles.label}>Cantidad:</Text>
-              <TextInput
-                keyboardType="numeric"
-                style={styles.input}
-                placeholder="Cantidad"
-                value={comunes.cantidad?.toString() || ""}
-                onChangeText={(text) => {
-                  const val = parseInt(text, 10);
-                  updateComunes({ cantidad: isNaN(val) ? undefined : val });
+                onPress={(e) => {
+                  const { latitude, longitude } = e.nativeEvent.coordinate;
+                  setManualLocation({ latitude, longitude });
+                  updateComunes({ latitud: latitude, longitud: longitude });
+                  setLocation(null);
                 }}
-              />
-            </>
-          )}
+              >
+                {location && <Marker coordinate={location} />}
+                {manualLocation && <Marker coordinate={manualLocation} />}
+              </MapView>
+            )}
 
-          {/* Subir fotos */}
-          <PrimaryButton
-            styleBtn={styles.styleBtn}
-            title="Sacar foto"
-            onPress={() => setCameraVisible(true)}
-          />
-          <CameraModal
-            visible={cameraVisible}
-            onClose={() => setCameraVisible(false)}
-            onPhotoTaken={(uri) => setImages((prev) => [...prev, uri])}
-          />
-
-          <ScrollView horizontal style={{ marginVertical: 10 }}>
-            {images.map((uri, idx) => (
-              <Image key={idx} source={{ uri }} style={{ width: 100, height: 100, marginRight: 10 }} />
-            ))}
-          </ScrollView>
-
-          {/* Ubicación */}
-          <View style={styles.buttonContainer}>
-            <PrimaryButton
-              styleBtn={styles.styleBtn}
-              title={mapVisible ? "Ocultar Mapa" : "Mostrar Mapa"}
-              onPress={() => setMapVisible((prev) => !prev)}
-            />
-            <PrimaryButton styleBtn={styles.styleBtn} title="Ubicación actual" onPress={getCurrentLocation} />
+            {/* CONTINUAR */}
+            <PrimaryButton styleBtn={styles.styleBtn} title="Continuar" onPress={handleNextStep} />
           </View>
-          {mapVisible && (
-            <MapView
-              style={styles.map}
-              initialRegion={{
-                latitude: -34.9214,
-                longitude: -57.9544,
-                latitudeDelta: 0.05,
-                longitudeDelta: 0.05,
-              }}
-              onPress={(e) => {
-                const { latitude, longitude } = e.nativeEvent.coordinate;
-                setManualLocation({ latitude, longitude });
-                updateComunes({ latitud: latitude, longitud: longitude });
-                setLocation(null);
-              }}
-            >
-              {location && <Marker coordinate={location} />}
-              {manualLocation && <Marker coordinate={manualLocation} />}
-            </MapView>
-          )}
+        )}
 
-          {/* CONTINUAR */}
-          <PrimaryButton styleBtn={styles.styleBtn} title="Continuar" onPress={handleNextStep} />
-        </View>
-      )}
+        {step === 2 && (
+          <View style={styles.container}>
+            <Text style={styles.title_material}>{tipo === "libro" ? libro?.titulo : apunte?.titulo}</Text>
 
-      {step === 2 && (
-        <View style={styles.container}>
-          <Text style={styles.title_material}>{tipo === "libro" ? libro?.titulo : apunte?.titulo}</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingLeft: 0, marginBottom: 20 }}>
+              {images.map((uri, idx) => (
+                <Image
+                  key={idx}
+                  source={{ uri }}
+                  style={styles.imagePreview}
+                />
+              ))}
+            </ScrollView>
 
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingLeft: 0, marginBottom: 20 }}>
-            {images.map((uri, idx) => (
-              <Image
-                key={idx}
-                source={{ uri }}
-                style={styles.imagePreview}
+            {/* --- Comunes --- */}
+            <Text style={styles.label}>Descripción: {comunes.descripcion}</Text>
+
+            <Text style={styles.label}>Tipo de Oferta: {comunes.tipo_oferta}</Text>
+
+            {comunes.tipo_oferta === "Venta" && (
+              <>
+                <Text style={styles.label}>Precio: ${comunes.precio}</Text>
+              </>
+            )}
+
+            <Text style={styles.label}>Cantidad: {comunes.cantidad}</Text>
+
+            <Text style={styles.label}>Idioma: {tipo === "libro" ? libro?.idioma : apunte?.idioma}</Text>
+
+            <Text style={styles.label}>Formato: {comunes?.digital ? "Digital" : "Físico"}</Text>
+
+            {/* --- Tipo específico --- */}
+            {tipo === "libro" ? (
+              <>
+                <Text style={styles.label}>Autor: {libro?.autor}</Text>
+                <Text style={styles.label}>Editorial: {libro?.editorial}</Text>
+                <Text style={styles.label}>ISBN: {libro?.isbn}</Text>
+                <Text style={styles.label}>Género: {libro?.genero}</Text>
+              </>
+            ) : (
+              <>
+                <Text style={styles.label}>Materia: {apunte?.materia}</Text>
+                <Text style={styles.label}>Institución: {apunte?.institucion}</Text>
+                <Text style={styles.label}>Nivel educativo: {apunte?.nivel_educativo}</Text>
+                <Text style={styles.label}>Sección: {apunte?.seccion}</Text>
+                <Text style={styles.label}>Carrera: {apunte?.carrera}</Text>
+                <Text style={styles.label}>Año de elaboración: {apunte?.anio_elaboracion}</Text>
+                <Text style={styles.label}>Cantidad de páginas: {apunte?.paginas}</Text>
+              </>
+            )}
+
+            {/* --- Ubicación --- */}
+            {(location || manualLocation) && (
+              <MapView
+                style={styles.map}
+                initialRegion={{
+                  latitude: location?.latitude ?? manualLocation?.latitude!,
+                  longitude: location?.longitude ?? manualLocation?.longitude!,
+                  latitudeDelta: 0.05,
+                  longitudeDelta: 0.05,
+                }}
+              >
+                <Marker coordinate={location ?? manualLocation!} />
+              </MapView>
+            )}
+
+            {/* --- Botones --- */}
+            <View style={styles.buttonContainer}>
+              <PrimaryButton
+                styleBtn={styles.styleBtn}
+                title="Publicar"
+                onPress={handleSubmit}
               />
-            ))}
-          </ScrollView>
-
-          {/* --- Comunes --- */}
-          <Text style={styles.label}>Descripción: {comunes.descripcion}</Text>
-
-          <Text style={styles.label}>Tipo de Oferta: {comunes.tipo_oferta}</Text>
-
-          {comunes.tipo_oferta === "Venta" && (
-            <>
-              <Text style={styles.label}>Precio: ${comunes.precio}</Text>
-            </>
-          )}
-
-          <Text style={styles.label}>Cantidad: {comunes.cantidad}</Text>
-
-          <Text style={styles.label}>Idioma: {tipo === "libro" ? libro?.idioma : apunte?.idioma}</Text>
-
-          <Text style={styles.label}>Formato: {comunes?.digital ? "Digital" : "Físico"}</Text>
-
-          {/* --- Tipo específico --- */}
-          {tipo === "libro" ? (
-            <>
-
-              <Text style={styles.label}>Autor: {libro?.autor}</Text>
-
-              <Text style={styles.label}>Editorial: {libro?.editorial}</Text>
-
-              <Text style={styles.label}>ISBN: {libro?.isbn}</Text>
-
-              <Text style={styles.label}>Género: {libro?.genero}</Text>
-            </>
-          ) : (
-            <>
-              <Text style={styles.label}>Materia: {apunte?.materia}</Text>
-
-              <Text style={styles.label}>Institución: {apunte?.institucion}</Text>
-
-              <Text style={styles.label}>Nivel educativo: {apunte?.nivel_educativo}</Text>
-
-              <Text style={styles.label}>Sección: {apunte?.seccion}</Text>
-
-              <Text style={styles.label}>Carrera: {apunte?.carrera}</Text>
-
-              <Text style={styles.label}>Año de elaboración: {apunte?.anio_elaboracion}</Text>
-
-              <Text style={styles.label}>Cantidad de páginas: {apunte?.paginas}</Text>
-            </>
-          )}
-
-          {/* --- Ubicación --- */}
-          {(location || manualLocation) && (
-            <MapView
-              style={styles.map}
-              initialRegion={{
-                latitude: location?.latitude ?? manualLocation?.latitude!,
-                longitude: location?.longitude ?? manualLocation?.longitude!,
-                latitudeDelta: 0.05,
-                longitudeDelta: 0.05,
-              }}
-            >
-              <Marker coordinate={location ?? manualLocation!} />
-            </MapView>
-          )}
-
-          {/* --- Botones --- */}
-          <View style={styles.buttonContainer}>
-            <PrimaryButton
-              styleBtn={styles.styleBtn}
-              title="Publicar"
-              onPress={handleSubmit}
-            />
+            </View>
           </View>
-        </View>
-      )}
+        )}
+      </SafeAreaView>
     </KeyboardAwareScrollView>
   );
 }
 
-// ----------------- STYLES -----------------
 const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 16,
@@ -554,10 +565,9 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start",
   },
   imagePreview: {
-    width: 250,           // ancho fijo para el carrusel
-    height: 250,          // alto fijo
+    width: 250,
+    height: 250,
     borderRadius: 10,
     marginRight: 12,
-  }
-
+  },
 });

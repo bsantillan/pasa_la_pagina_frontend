@@ -25,6 +25,7 @@ type UserContextType = {
   reseniasHechas: Resenia[];
   loading: boolean;
   fetchUsuario: () => Promise<void>;
+  fetchByEmail: (email: string) => Promise<void>;
   fetchReseniasRecibidas: () => Promise<void>;
   fetchReseniasHechas: () => Promise<void>;
 };
@@ -53,6 +54,24 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUsuario(data);
 
       await fetchTodasPublicaciones();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchByEmail = async (email: string) => {
+    try {
+      setLoading(true);
+      const token = await getValidAccessToken();
+      if (!token) return;
+      const res = await fetch(`${API_URL}user/email?email=${encodeURIComponent(email)}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Error al obtener usuario por email");
+      const data = await res.json();
+      setUsuario(data);
     } catch (err) {
       console.error(err);
     } finally {
@@ -118,6 +137,7 @@ const fetchReseniasHechas = async () => {
         reseniasHechas,
         loading,
         fetchUsuario,
+        fetchByEmail,
         fetchReseniasRecibidas,
         fetchReseniasHechas,
       }}

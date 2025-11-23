@@ -16,17 +16,19 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  TouchableOpacity,
   View,
 } from "react-native";
 
 export default function Chat() {
   const [visible, setVisible] = useState(false);
-  const { chatId, usuarioEmail, tituloPublicacion, intercambioId } =
+  const { chatId, usuarioEmail, tituloPublicacion, intercambioId, fechaInicio } =
     useLocalSearchParams<{
       chatId: string;
       usuarioEmail: string;
       tituloPublicacion: string;
       intercambioId: string;
+      fechaInicio: string;
     }>();
   const { messages, loadMessages, initWebSocket, sendMessage } = useChat(); // ✅ usar el contexto
   const { cancelarIntercambio, concretarIntercambio } = useIntercambio();
@@ -78,18 +80,39 @@ export default function Chat() {
           <Ionicons name="arrow-back" size={24} color={Colors.text} />
         </Pressable>
 
-        <View style={styles.headerCenter}>
+        <TouchableOpacity
+          style={styles.headerCenter}
+          onPress={() =>
+            router.push({
+              pathname: "/(intercambios)/usuarioDetail",
+              params: {
+                intercambioId: intercambioId,
+                fechaInicio: fechaInicio,
+                tituloPublicacion: tituloPublicacion,
+                email: usuarioEmail,
+              },
+            })
+          }
+        >
           <Avatar name={usuarioEmail} size={40} />
 
           <View style={styles.headerInfo}>
-            <Text style={styles.headerTitle} numberOfLines={1} ellipsizeMode="tail">
+            <Text
+              style={styles.headerTitle}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
               {usuarioEmail}
             </Text>
-            <Text style={styles.headerSubtitle} numberOfLines={1} ellipsizeMode="tail">
+            <Text
+              style={styles.headerSubtitle}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
               {tituloPublicacion}
             </Text>
           </View>
-        </View>
+        </TouchableOpacity>
         <Pressable onPress={abrirModal} style={styles.headerButton}>
           <Ionicons
             name="checkmark-done-outline"
@@ -173,7 +196,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     borderBottomWidth: 1,
     borderBottomColor: "#e0e0e0",
-    marginTop: 50,
+    marginTop: 0,
   },
   headerButton: {
     padding: 8,
@@ -182,11 +205,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-headerTitle: {
-  fontSize: 16,
-  fontWeight: "600",
-  color: Colors.text,
-},
+  headerTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: Colors.text,
+  },
   inputContainer: {
     flex: 1,
     marginHorizontal: 10,
@@ -238,6 +261,4 @@ headerTitle: {
     color: "#6e6e6e",
     marginTop: 2,
   },
-
-
 });
