@@ -1,5 +1,6 @@
+import { Colors } from "@/constants/Colors";
 import { Ionicons } from "@expo/vector-icons";
-import React, { useRef, useState } from "react";
+import React, { useState } from "react";
 import {
   Dimensions,
   FlatList,
@@ -7,44 +8,27 @@ import {
   Modal,
   NativeScrollEvent,
   NativeSyntheticEvent,
-  Pressable,
   StyleSheet,
   TouchableOpacity,
   View,
 } from "react-native";
 
-import { Colors } from "@/constants/Colors"; // ajustá el path según tu proyecto
-
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const ITEM_WIDTH = SCREEN_WIDTH - 32;
-const ITEM_SPACING = 12;
-
 type Props = {
   fotos: string[];
-  showFavorite?: boolean;
-  initialFavorite?: boolean;
-  onFavoriteChange?: (isFavorite: boolean) => void;
 };
 
-const ITEM_HEIGHT = ITEM_WIDTH * 1.33;
+const screenWidth = Dimensions.get("window").width;
 
-
-export const FotoCarousel: React.FC<Props> = ({
-  fotos,
-  showFavorite = false,
-  initialFavorite = false,
-  onFavoriteChange,
-}) => {
-  const [activeIndex, setActiveIndex] = useState(0);
+export const FotoCarousel: React.FC<Props> = ({ fotos }) => {
+  const [indexActivo, setIndexActivo] = useState(0);
   const [modalVisible, setModalVisible] = useState(false);
   const [fotoSeleccionada, setFotoSeleccionada] = useState<string | null>(null);
-  const [isFavorite, setIsFavorite] = useState(initialFavorite);
-  const flatListRef = useRef<FlatList>(null);
+  const [liked, setLiked] = useState(false);
 
-  const handleFavoritePress = () => {
-    const newValue = !isFavorite;
-    setIsFavorite(newValue);
-    onFavoriteChange?.(newValue);
+  const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const offsetX = e.nativeEvent.contentOffset.x;
+    const index = Math.round(offsetX / screenWidth);
+    setIndexActivo(index);
   };
 
   const abrirModal = (foto: string) => {
@@ -57,66 +41,57 @@ export const FotoCarousel: React.FC<Props> = ({
     setFotoSeleccionada(null);
   };
 
-  const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const index = Math.round(e.nativeEvent.contentOffset.x / (ITEM_WIDTH + ITEM_SPACING));
-    setActiveIndex(index);
-  };
-
-  const goToSlide = (index: number) => {
-    flatListRef.current?.scrollToIndex({ index, animated: true });
-    setActiveIndex(index);
-  };
-
   return (
-    <View style={styles.carouselContainer}>
+    <View style={styles.wrapper}>
       <FlatList
-        ref={flatListRef}
         data={fotos}
-        keyExtractor={(_, index) => index.toString()}
+        keyExtractor={(_, i) => i.toString()}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
-        snapToInterval={ITEM_WIDTH + ITEM_SPACING}
-        decelerationRate="fast"
-        contentContainerStyle={styles.container}
         onScroll={onScroll}
         scrollEventThrottle={16}
+        style={{ width: screenWidth }}
+        contentContainerStyle={{ width: screenWidth * fotos.length }}
         renderItem={({ item }) => (
-          <Pressable
-            style={({ pressed }) => [
-              styles.cardWrapper,
-              pressed && { transform: [{ scale: 0.97 }], opacity: 0.9 },
-            ]}
-            onPress={() => abrirModal(item)}
-          >
-            <Image source={{ uri: item }} style={styles.image} resizeMode="cover" />
-          </Pressable>
+          <View style={{ width: screenWidth }}>
+
+            <View style={styles.imageContainer}>
+
+              <TouchableOpacity
+                style={styles.likeWrapper}
+                onPress={() => setLiked(!liked)}
+                activeOpacity={0.8}
+              >
+                <View style={styles.likeCircle} />
+                <Ionicons
+                  name={liked ? "heart" : "heart-outline"}
+                  size={28}
+                  color={liked ? Colors.primary : Colors.primary}
+                  style={styles.heartIcon}
+                />
+              </TouchableOpacity>
+
+              <TouchableOpacity activeOpacity={0.9} onPress={() => abrirModal(item)}>
+                <Image source={{ uri: item }} style={styles.image} />
+              </TouchableOpacity>
+            </View>
+
+          </View>
         )}
       />
 
-      {showFavorite && (
-        <TouchableOpacity
-          style={styles.favoriteButton}
-          onPress={handleFavoritePress}
-        >
-          <Ionicons
-            name={isFavorite ? "heart" : "heart-outline"}
-            size={20}
-            color={Colors.primary}
-          />
-        </TouchableOpacity>
-      )}
-
-
-      {/* Dot Indicators */}
       <View style={styles.dotsContainer}>
-        {fotos.map((_, index) => (
-          <TouchableOpacity
-            key={index}
-            onPress={() => goToSlide(index)}
+        {fotos.map((_, i) => (
+          <View
+            key={i}
             style={[
               styles.dot,
-              index === activeIndex && styles.dotActive,
+              {
+                backgroundColor: indexActivo === i
+                  ? Colors.primary
+                  : Colors.disabled_primary
+              }
             ]}
           />
         ))}
@@ -124,7 +99,7 @@ export const FotoCarousel: React.FC<Props> = ({
 
       <Modal
         visible={modalVisible}
-        transparent
+        transparent={true}
         animationType="fade"
         onRequestClose={cerrarModal}
       >
@@ -136,50 +111,58 @@ export const FotoCarousel: React.FC<Props> = ({
           />
         </TouchableOpacity>
       </Modal>
+
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  carouselContainer: {
-    position: "relative",
-  },
-  container: { paddingHorizontal: 16 },
-  cardWrapper: {
-    width: ITEM_WIDTH,
-    height: ITEM_HEIGHT,
-    marginRight: ITEM_SPACING,
-    borderRadius: 8,
+  wrapper: {
+    width: "100%",
+    alignItems: "center",
     overflow: "hidden",
   },
-  image: { width: "100%", height: "100%" },
-  favoriteButton: {
+  imageContainer: {
+    width: "80%",               
+    alignSelf: "center",       
+    height: screenWidth * 0.80,
+    borderRadius: 12,
+    overflow: "hidden",
+    position: "relative",      
+  },
+  image: {
+    width: "100%",
+    height: "100%",
+  },
+  likeWrapper: {
     position: "absolute",
-    top: 12,
-    right: 28,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: Colors.background,
+    right: 10,                 
+    top: 10,
+    zIndex: 30,
+    width: 38,
+    height: 38,
     justifyContent: "center",
     alignItems: "center",
-    zIndex: 10,
+  },
+  likeCircle: {
+    width: 38,
+    height: 38,
+    backgroundColor: Colors.white,
+    borderRadius: 19,
+    position: "absolute",
+  },
+  heartIcon: {
+    position: "absolute",
   },
   dotsContainer: {
+    marginTop: 10,
     flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: 12,
-    gap: 8,
+    gap: 10,
   },
   dot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: "#D1D5DB",
-  },
-  dotActive: {
-    backgroundColor: Colors.primary,
   },
   modalContainer: {
     flex: 1,
@@ -187,9 +170,5 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  modalImage: {
-    width: "100%",
-    height: "100%",
-  }
-
+  modalImage: { width: "90%", height: "70%" },
 });

@@ -61,6 +61,32 @@ export type Publicacion = {
   latitud?: number;
   longitud?: number;
   distancia?: number;
+
+  tipo_oferta: string;
+  cantidad: number | null;
+  digital: boolean;
+  nuevo: boolean;
+  disponible: boolean;
+  url?: string | null;
+
+  // Campos de libro
+  autor?: string | null;
+  editorial?: string | null;
+  genero?: string | null;
+  isbn?: string | null;
+  cantidad_paginas?: number | null;
+  idioma?: string | null;
+
+  // Campos de apunte
+  anio_elaboracion?: number | null;
+  materia?: string | null;
+  carrera?: string | null;
+  institucion?: string | null;
+  nivel_educativo?: string | null;
+  seccion?: string | null;
+
+  usuario_nombre: string;
+  usuario_apellido: string;
 };
 
 export type Filtros = {
@@ -112,7 +138,6 @@ type PublicacionContextType = {
     page?: number,
     size?: number
   ) => Promise<void>;
-  fetchTodasPublicaciones: (limit?: number) => Promise<void>;
   resultadosBusqueda: Publicacion[];
   fetchPublicacionesGeneric: (
     url: string,
@@ -467,6 +492,27 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
           usuario_id: p.usuario_id,
           latitud: p.latitud,
           longitud: p.longitud,
+          distancia: p.distancia,
+          tipo_oferta: p.tipo_oferta,
+          cantidad: p.cantidad,
+          digital: p.digital,
+          nuevo: p.nuevo,
+          disponible: p.disponible,
+          url: p.url,
+          autor: p.autor,
+          editorial: p.editorial,
+          genero: p.genero,
+          isbn: p.isbn,
+          cantidad_paginas: p.cantidad_paginas,
+          idioma: p.idioma,
+          anio_elaboracion: p.anio_elaboracion,
+          materia: p.materia,
+          carrera: p.carrera,
+          institucion: p.institucion,
+          nivel_educativo: p.nivel_educativo,
+          seccion: p.seccion,
+          usuario_nombre: p.usuario_nombre,
+          usuario_apellido: p.usuario_apellido
         }));
 
         if (sortByLocation) {
@@ -507,25 +553,6 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false);
     }
   }, [fetchPublicacionesGeneric, getUserLocation]);
-
-  const fetchTodasPublicaciones = useCallback(
-    async (limit = 50) => {
-
-      const loc = await getUserLocation();
-      if (!loc) {
-        // Si no hay ubicación, cargar publicaciones sin ordenar por distancia
-        //await fetchPublicacionesGeneric(`publicacion/paginado?size=50`, false);
-        return;
-      }
-
-      const { latitude, longitude } = loc;
-      await fetchPublicacionesGeneric(
-        `publicacion/paginado?usuario_latitud=${latitude}&usuario_longitud=${longitude}&size=50`,
-        true
-      );
-    },
-    [fetchPublicacionesGeneric, getUserLocation]
-  );
 
   const fetchPublicacionesByUsuario = useCallback(
     async (usuario_id: number, page = 0, size = 10) => {
@@ -637,7 +664,6 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
         fetchCercaTuyo,
         buscarPublicaciones,
         resultadosBusqueda,
-        fetchTodasPublicaciones,
         fetchPublicacionesGeneric,
         getUserLocation,
         filtros,

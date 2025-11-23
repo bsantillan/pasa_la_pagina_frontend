@@ -10,12 +10,12 @@ import {
   Alert,
   Dimensions,
   ImageBackground,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View
 } from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { useAuth } from "../contexts/AuthContext";
 const { height } = Dimensions.get("window");
 
@@ -66,7 +66,13 @@ export default function LoginScreen() {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <KeyboardAwareScrollView
+      style={{ flex: 1 }}
+      showsVerticalScrollIndicator={false} // oculta la barra de scroll vertical
+      enableOnAndroid={true}
+      extraScrollHeight={100}
+      keyboardShouldPersistTaps="handled"
+    >
       <View style={styles.headerContainer}>
         <ImageBackground
           source={require("../assets/images/Fondo-Login.png")}
@@ -74,8 +80,8 @@ export default function LoginScreen() {
           resizeMode="cover"
         >
           <LinearGradient
-            colors={["transparent", Colors.background]} // de transparente a fondo
-            start={{ x: 0, y: 0.1 }} // empieza en 70% de la altura
+            colors={["transparent", Colors.background]}
+            start={{ x: 0, y: 0.1 }}
             end={{ x: 0, y: 1 }}
             style={styles.gradient}
           />
@@ -87,12 +93,14 @@ export default function LoginScreen() {
           <Text style={styles.title}>Log in</Text>
           <Text style={styles.subtitle}>Bienvenido</Text>
         </View>
+
         <CustomInput
           placeholder="Email"
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
         />
+
         <CustomInput
           placeholder="Contraseña"
           value={password}
@@ -105,10 +113,12 @@ export default function LoginScreen() {
         <PrimaryButton
           title="Iniciar sesión"
           onPress={handleLogin}
-          styleBtn={{ width: "100%", height: 45, marginTop: 38 }}
+          styleBtn={{ width: "100%", height: 45, marginTop: 15 }}
           disabled={loading}
         />
+
         {loading ? <ActivityIndicator color="#fff" size="small" /> : null}
+
         <Text style={styles.footerText}>
           ¿No tienes cuenta?{" "}
           <Text style={styles.link} onPress={() => router.push("/register")}>
@@ -126,21 +136,17 @@ export default function LoginScreen() {
           <Text style={styles.googleButtonText}>Login con Google</Text>
         </TouchableOpacity>
       </View>
-    </ScrollView>
+    </KeyboardAwareScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-    backgroundColor: Colors.background,
-  },
   headerImage: {
     width: "100%",
     height: "100%",
   },
   headerContainer: {
-    height: height * 0.55,
+    height: height * 0.45,
     width: "100%",
   },
   gradient: {
@@ -159,9 +165,8 @@ const styles = StyleSheet.create({
     marginRight: 39,
   },
   title_div: {
-    height: 60,
     width: "100%",
-    marginBottom: 38,
+    marginBottom: 30,
   },
   title: {
     fontSize: 24,
@@ -171,26 +176,13 @@ const styles = StyleSheet.create({
     color: Colors.primary,
     width: "100%",
     textAlign: "left",
-    height: 24,
   },
   subtitle: {
     fontSize: 14,
     fontWeight: 400,
-    marginBottom: 13,
     color: "#838589",
     width: "100%",
     textAlign: "left",
-    height: 17,
-  },
-  input: {
-    width: "100%",
-    borderWidth: 1,
-    borderColor: "#000000",
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 15,
-    backgroundColor: Colors.background,
-    height: 50,
   },
   footerText: {
     marginTop: 20,

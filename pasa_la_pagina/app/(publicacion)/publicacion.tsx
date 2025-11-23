@@ -385,6 +385,7 @@ export default function FinalizarPublicacionScreen() {
       contentContainerStyle={styles.scrollContent}
       keyboardShouldPersistTaps="handled"
       enableOnAndroid
+      showsVerticalScrollIndicator={false}
       extraScrollHeight={100}
       enableAutomaticScroll
     >
