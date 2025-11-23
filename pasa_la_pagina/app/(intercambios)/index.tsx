@@ -3,9 +3,17 @@ import { SolicitudCard } from "@/components/ui/SolicitudCard";
 import { UsuarioContactoCard } from "@/components/ui/UsuarioContactoCard"; // 👈 importa el nuevo componente
 import { Colors } from "@/constants/Colors";
 import { Intercambio, useIntercambio } from "@/contexts/IntercambioContext";
+import { BlurView } from "expo-blur";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { Alert, FlatList, Modal, StyleSheet, View } from "react-native";
+import {
+  Alert,
+  FlatList,
+  Modal,
+  Pressable,
+  StyleSheet,
+  View,
+} from "react-native";
 
 export default function Mensajes() {
   const {
@@ -158,6 +166,16 @@ export default function Mensajes() {
         onRequestClose={handleCerrarModal}
       >
         <View style={styles.modalOverlay}>
+          <BlurView
+            intensity={60}
+            tint="default"
+            style={StyleSheet.absoluteFillObject}
+          />
+          <Pressable
+            style={styles.backdrop}
+            onPress={handleCerrarModal}
+            accessibilityLabel="Cerrar detalle de intercambio"
+          />
           <View style={styles.modalContent}>
             {intercambioSeleccionado && (
               <UsuarioContactoCard
@@ -171,6 +189,7 @@ export default function Mensajes() {
                 onRechazar={handleRechazar}
                 tituloAceptar={"Aceptar intercambio"}
                 tituloRechazar={"Rechazar intercambio"}
+                onClose={handleCerrarModal}
               />
             )}
           </View>
@@ -203,11 +222,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0, 0, 0, 0.06)",
+  },
   modalContent: {
-    borderRadius: 12,
-    padding: 16,
+    width: "100%",
     alignItems: "center",
-    justifyContent: "center",
+    paddingHorizontal: 24,
   },
   cerrarBtn: {
     marginTop: 20,
