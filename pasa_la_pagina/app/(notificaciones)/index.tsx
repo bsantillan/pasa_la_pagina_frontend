@@ -13,7 +13,9 @@ export default function NotificacionesScreen() {
   const { notificaciones, deleteNotification, handleNotificationNavigation } = useNotifications();
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView
+      showsVerticalScrollIndicator={false} // oculta la barra de scroll vertical
+      contentContainerStyle={styles.container}>
 
       {/* --- No hay notificaciones --- */}
       {notificaciones.length === 0 && (

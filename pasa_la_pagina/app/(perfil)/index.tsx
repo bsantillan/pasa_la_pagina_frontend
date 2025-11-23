@@ -117,7 +117,10 @@ export default function PerfilScreen() {
         </View>
       </View>
 
-      <ScrollView style={styles.contenido} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.contenido}
+        showsVerticalScrollIndicator={false}
+      >
         {selectedFiltro === "Publicaciones"
           ? renderPublicaciones()
           : selectedFiltro === "Reseñas"

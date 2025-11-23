@@ -67,9 +67,10 @@ export default function LoginScreen() {
 
   return (
     <KeyboardAwareScrollView
-      style={{ flex: 1}}
+      style={{ flex: 1 }}
+      showsVerticalScrollIndicator={false} // oculta la barra de scroll vertical
       enableOnAndroid={true}
-      extraScrollHeight={100}  
+      extraScrollHeight={100}
       keyboardShouldPersistTaps="handled"
     >
       <View style={styles.headerContainer}>

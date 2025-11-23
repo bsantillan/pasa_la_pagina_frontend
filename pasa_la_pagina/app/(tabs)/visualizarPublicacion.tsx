@@ -139,6 +139,7 @@ export default function VisualizarPublicacion() {
       <ScrollView
         style={styles.containerScroll}
         contentContainerStyle={{ paddingBottom: 40 }}
+        showsVerticalScrollIndicator={false} 
       >
         <View>
           <Text style={styles.titulo}>{publicacion.titulo}</Text>

@@ -369,6 +369,7 @@ export default function LibroScreen() {
       contentContainerStyle={{ flex: 1, paddingBottom: 50 }}
       keyboardShouldPersistTaps="handled"
       enableOnAndroid
+      showsVerticalScrollIndicator={false}
       extraScrollHeight={100}
       enableAutomaticScroll
     >
