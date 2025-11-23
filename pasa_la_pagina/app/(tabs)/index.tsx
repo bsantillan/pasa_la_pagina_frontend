@@ -65,6 +65,7 @@ export default function HomeScreen() {
           onRefresh={onRefresh}
         />
       }
+      showsVerticalScrollIndicator={false}
     >
 
       {/* Mostrar error si lo hay */}

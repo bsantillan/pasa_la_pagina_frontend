@@ -4,18 +4,24 @@ import { FotoCarousel } from "@/components/ui/FotosCarousel";
 import { Colors } from "@/constants/Colors";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIntercambio } from "@/contexts/IntercambioContext";
+import { usePublicacion } from "@/contexts/PublicacionContext";
 import { Publicacion } from "@/types/Publicacion";
+import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Linking,
   Modal,
   ScrollView,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View
 } from "react-native";
+import MapView, { Marker, PROVIDER_GOOGLE, Region } from "react-native-maps";
+import { CustomMarker } from "../(mapa)";
 
 export default function VisualizarPublicacion() {
   const { id } = useLocalSearchParams();
@@ -26,6 +32,16 @@ export default function VisualizarPublicacion() {
   const [verDetalles, setVerDetalles] = useState(false);
   const [userid, setUserid] = useState<number | null>(null);
   const { solicitarIntercambio } = useIntercambio();
+  const [modalVisible, setModalVisible] = useState(false);
+  const { getUserLocation } = usePublicacion();
+  const [modalRegion, setModalRegion] = useState<Region | null>(null);
+  const mapRef = useRef<MapView>(null);
+
+  const abrirLink = () => {
+    if (publicacion?.url) {
+      Linking.openURL(publicacion.url);
+    }
+  };
 
   useEffect(() => {
     const fetchPublicacion = async () => {
@@ -67,6 +83,28 @@ export default function VisualizarPublicacion() {
     fetchPublicacion();
   }, [id, getValidAccessToken]);
 
+  useEffect(() => {
+    if (modalVisible) {
+      (async () => {
+        const userLoc = await getUserLocation();
+        if (userLoc && publicacion?.latitud && publicacion?.longitud) {
+
+          // Región centrada entre usuario y publicación
+          const midLat = (userLoc.latitude + publicacion.latitud) / 2;
+          const midLng = (userLoc.longitude + publicacion.longitud) / 2;
+
+
+          setModalRegion({
+            latitude: publicacion.latitud,
+            longitude: publicacion.longitud,
+            latitudeDelta: 0.05,
+            longitudeDelta: 0.05,
+          });
+        }
+      })();
+    }
+  }, [modalVisible, publicacion]);
+
   const handleContactar = async () => {
     try {
       if (!publicacion?.id) {
@@ -97,19 +135,35 @@ export default function VisualizarPublicacion() {
   }
 
   return (
-    <View style={{flex:1}}>
+    <View style={{ flex: 1 }}>
       <ScrollView
         style={styles.containerScroll}
         contentContainerStyle={{ paddingBottom: 40 }}
+        showsVerticalScrollIndicator={false} 
       >
-        <View style={styles.container}>
+        <View>
           <Text style={styles.titulo}>{publicacion.titulo}</Text>
-          <FotoCarousel fotos={publicacion?.url_fotos || []} />
+          <FotoCarousel fotos={publicacion?.url_fotos || []} favorito={publicacion.favorito} idPublicacion={publicacion.id} mostrarFavorito={true} />
 
           <Text style={styles.descripcion}>{publicacion.descripcion}</Text>
+          <View style={styles.detallesRow}>
+            <Text style={styles.opiniones}>Detalles</Text>
+
+            <View style={styles.iconRow}>
+              {/* ICONO MAPA */}
+              <TouchableOpacity onPress={() => setModalVisible(true)}>
+                <Ionicons name="map-outline" size={24} color={Colors.primary} />
+              </TouchableOpacity>
+
+              {publicacion.tipo_oferta === "Donacion" && publicacion.digital && publicacion.url && (
+                <TouchableOpacity onPress={abrirLink} style={{ marginLeft: 12 }}>
+                  <Ionicons name="link-outline" size={24} color={Colors.primary} />
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
           <View style={styles.card}>
             <Text style={styles.textCard}>
-              {" "}
               Tipo de oferta: {publicacion.tipo_oferta}
             </Text>
             {publicacion.tipo_oferta === "Venta" && (
@@ -184,8 +238,7 @@ export default function VisualizarPublicacion() {
           </View>
         </View>
         <Text style={styles.opiniones}>
-          {" "}
-          Opiniones sobre el usuario {publicacion.usuario_nombre}
+          Opiniones de {publicacion.usuario_apellido + " " + publicacion.usuario_nombre}
         </Text>
         {/* Falta el listado de opiniones del usuario */}
       </ScrollView>
@@ -194,8 +247,8 @@ export default function VisualizarPublicacion() {
           <PrimaryButton
             title="Contactar"
             onPress={() => setShowAlert(true)}
-            styleBtn={{ marginBottom: 4, height: 36 }}
-          ></PrimaryButton>
+            styleBtn={{ marginBottom: 30, height: 36 }}
+          />
           <Modal
             visible={showAlert}
             transparent
@@ -214,6 +267,53 @@ export default function VisualizarPublicacion() {
               />
             </View>
           </Modal>
+          <Modal
+            visible={modalVisible}
+            transparent
+            animationType="fade"
+            onRequestClose={() => setModalVisible(false)}
+          >
+            <TouchableOpacity
+              style={styles.modalContainer}
+              activeOpacity={1}
+              onPress={() => setModalVisible(false)}
+            >
+              <View style={styles.modalBox}>
+                {modalRegion ? (
+                  <MapView
+                    ref={mapRef}
+                    style={{ width: "100%", height: 500, borderRadius: 10 }}
+                    provider={PROVIDER_GOOGLE}
+                    initialRegion={modalRegion}
+                    showsUserLocation
+                    showsMyLocationButton={false}
+                    showsCompass={false}
+                  >
+                    {/* Marcador de la publicación */}
+                    {publicacion?.latitud && publicacion?.longitud && (
+                      <Marker
+                        coordinate={{
+                          latitude: publicacion.latitud,
+                          longitude: publicacion.longitud,
+                        }}
+                        anchor={{ x: 0.5, y: 1 }}
+                      >
+                        <CustomMarker
+                          isSelected={true}
+                          tipo={publicacion.tipo_material || "apunte"}
+                        />
+                      </Marker>
+                    )}
+
+
+                  </MapView>
+                ) : (
+                  <ActivityIndicator size="large" color={Colors.primary} />
+                )}
+              </View>
+            </TouchableOpacity>
+          </Modal>
+
         </View>
       )}
     </View>
@@ -221,17 +321,6 @@ export default function VisualizarPublicacion() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  input: {
-    height: 40,
-    borderColor: "#ccc",
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    backgroundColor: Colors.white,
-  },
   containerScroll: {
     flex: 1,
   },
@@ -244,7 +333,7 @@ const styles = StyleSheet.create({
   descripcion: {
     fontSize: 20,
     color: "#5D5D5D",
-    marginTop: 20,
+    marginVertical: 10,
     fontWeight: "600",
   },
   card: {
@@ -252,12 +341,12 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     paddingHorizontal: 24,
     paddingVertical: 16,
-    marginTop: 12,
+    marginVertical: 12,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.24,
     shadowRadius: 10,
-    elevation: 10,
+    elevation: 4,
   },
   textCard: {
     fontSize: 14,
@@ -276,7 +365,28 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "600",
     color: "#000",
-    marginTop: 32,
-    marginBottom: 26,
   },
+  detallesRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 15,
+  },
+  iconRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalBox: {
+    width: "100%",
+    padding: 20,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  map: { ...StyleSheet.absoluteFillObject },
 });

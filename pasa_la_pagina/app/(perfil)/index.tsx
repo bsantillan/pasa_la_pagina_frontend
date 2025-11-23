@@ -1,4 +1,5 @@
 // PerfilScreen.tsx - versión corregida
+import { useAuth } from "@/contexts/AuthContext";
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Avatar } from "../../components/ui/Avatar";
@@ -8,18 +9,22 @@ import { Colors } from "../../constants/Colors";
 import { usePublicacion } from "../../contexts/PublicacionContext"; // 👈 Solo el hook
 import { useUser } from "../../contexts/UserContext";
 
-const filtros = ["Reseñas", "Publicaciones", "Historial"];
+const filtros = ["Reseñas", "Publicaciones", "Historial", "Favoritos"];
 
 export default function PerfilScreen() {
-  const { usuario, reseniasRecibidas, reseniasHechas, loading: userLoading } = useUser();
-  const { pubsUser, fetchPublicacionesByUsuario, loading, error } = usePublicacion();
+  const { reseniasRecibidas, reseniasHechas, fetchReseniasHechas, fetchReseniasRecibidas, loading: userLoading } = useUser();
+  const { pubsUser, pubFavoritas, fetchPublicacionesByUsuario, recuperarFavoritos, loading, error } = usePublicacion();
   const [selectedFiltro, setSelectedFiltro] = useState(filtros[0]);
+  const { user } = useAuth();
 
   useEffect(() => {
-    if (usuario?.id) {
-      fetchPublicacionesByUsuario(usuario.id);
+    if (user?.id) {
+      fetchPublicacionesByUsuario(user.id);
+      recuperarFavoritos();
+      fetchReseniasHechas();
+      fetchReseniasRecibidas();
     }
-  }, [fetchPublicacionesByUsuario, usuario]);
+  }, [fetchPublicacionesByUsuario, user]);
 
   if (userLoading || loading) return <ActivityIndicator style={{ marginTop: 20 }} />;
   if (error) return <Text style={{ color: "red" }}>Error: {error}</Text>;
@@ -44,6 +49,26 @@ export default function PerfilScreen() {
     ));
   };
 
+  const renderFavoritos = () => {
+    if (!pubFavoritas.length) {
+      return (
+        <Text style={{ color: Colors.disabled_primary, textAlign: "center", marginTop: 10 }}>
+          No tiene favoritos aún.
+        </Text>
+      );
+    }
+
+    return pubFavoritas.map((p) => (
+      <View key={p.id} style={styles.row}>
+        <ProductCard
+          title={p.titulo}
+          description={p.descripcion}
+          imageUrl={p.fotos_url[0] || ""}
+        />
+      </View>
+    ));
+  };
+
   const renderResenias = () => {
     if (!reseniasRecibidas.length) {
       return <Text style={{ color: Colors.disabled_primary, textAlign: "center", marginTop: 10 }}>No tiene reseñas recibidas aún.</Text>;
@@ -52,10 +77,10 @@ export default function PerfilScreen() {
     return reseniasRecibidas.map((r) => (
       <ReviewCard
         key={r.id}
-        username={r.autorNombre}
+        username={r.usuarioNombre}
         headline={`Valoración: ${r.valoracion}`}
         description={r.descripcion}
-        date=""
+        date={r.fecha}
       />
     ));
   };
@@ -67,7 +92,7 @@ export default function PerfilScreen() {
         reseniasHechas.map((r) => (
           <ReviewCard
             key={r.id}
-            username={r.autorNombre}
+            username={r.usuarioNombre}
             headline={`Valoración: ${r.valoracion}`}
             description={r.descripcion}
             date=""
@@ -86,9 +111,9 @@ export default function PerfilScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Avatar name={usuario?.nombre || "U"} size={80} />
+        <Avatar name={user?.nombre || "U"} size={80} />
         <Text style={styles.nombre}>
-          {usuario?.nombre} {usuario?.apellido}
+          {user?.nombre} {user?.apellido}
         </Text>
 
         <View style={styles.filtrosContainer}>
@@ -114,12 +139,18 @@ export default function PerfilScreen() {
         </View>
       </View>
 
-      <ScrollView style={styles.contenido} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.contenido}
+        showsVerticalScrollIndicator={false}
+      >
         {selectedFiltro === "Publicaciones"
           ? renderPublicaciones()
           : selectedFiltro === "Reseñas"
             ? renderResenias()
-            : renderHistorial()}
+            : selectedFiltro === "Historial"
+              ? renderHistorial()
+              : renderFavoritos()
+        }
       </ScrollView>
     </View>
   );
