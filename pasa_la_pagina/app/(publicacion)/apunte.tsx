@@ -75,6 +75,7 @@ export default function ApunteForm() {
       contentContainerStyle={{ flexGrow: 1, paddingBottom: 50 }}
       keyboardShouldPersistTaps="handled"
       enableOnAndroid
+      showsVerticalScrollIndicator={false} 
       extraScrollHeight={100}
       enableAutomaticScroll
     >

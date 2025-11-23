@@ -235,6 +235,7 @@ export default function FinalizarPublicacionScreen() {
       contentContainerStyle={{ flexGrow: 1, paddingBottom: 50 }}
       keyboardShouldPersistTaps="handled"
       enableOnAndroid
+      showsVerticalScrollIndicator={false}
       extraScrollHeight={100}
       enableAutomaticScroll
     >
@@ -312,7 +313,11 @@ export default function FinalizarPublicacionScreen() {
             onPhotoTaken={(uri) => setImages((prev) => [...prev, uri])}
           />
 
-          <ScrollView horizontal style={{ marginVertical: 10 }}>
+          <ScrollView 
+          horizontal 
+          style={{ marginVertical: 10 }}
+          showsHorizontalScrollIndicator={false}
+          >
             {images.map((uri, idx) => (
               <Image key={idx} source={{ uri }} style={{ width: 100, height: 100, marginRight: 10 }} />
             ))}

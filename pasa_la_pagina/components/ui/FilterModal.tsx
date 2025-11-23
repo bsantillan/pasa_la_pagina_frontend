@@ -309,7 +309,10 @@ export default function FilterModal({ visible, onClose }: FilterModalProps) {
             ))}
           </View>
 
-          <ScrollView style={styles.scrollView}>
+          <ScrollView
+            style={styles.scrollView}
+            showsVerticalScrollIndicator={false}
+          >
             {activeTab === "general" && renderGeneralTab()}
             {activeTab === "material" && renderMaterialTab()}
             {activeTab === "cercania" && renderCercaniaTab()}

@@ -123,9 +123,9 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   imageContainer: {
-    width: "90%",               
+    width: "80%",               
     alignSelf: "center",       
-    height: screenWidth * 0.85,
+    height: screenWidth * 0.80,
     borderRadius: 12,
     overflow: "hidden",
     position: "relative",      

@@ -1,10 +1,17 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
 
+type Usuario = {
+  id: number;
+  nombre: string;
+  apellido: string;
+  email: string;
+};
+
 type AuthContextType = {
   accessToken: string | null;
   refreshToken: string | null;
-  user: { id: number; email: string; nombre: string; apellido: string } | null;
+  user: Usuario | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   loginWithGoogle: (idToken: string) => Promise<void>;
@@ -37,6 +44,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const storedRefresh = await AsyncStorage.getItem("refreshToken");
         setAccessToken(storedAccess);
         setRefreshToken(storedRefresh);
+
+        if (storedAccess) {
+          await fetchUsuario(storedAccess); // <-- carga los datos del usuario desde el backend
+        }
+
       } catch (error) {
         console.error('Error loading token:', error);
       } finally {
@@ -45,6 +57,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
     loadTokens();
   }, []);
+
   const decodeJWT = (
     token: string
   ): { exp?: number;[key: string]: any } | null => {
@@ -91,8 +104,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       nombre: data.nombre,
       apellido: data.apellido,
       email: data.email,
-    }); 
-    console.log("User id"+user?.id)
+    });
+    console.log("User id" + user?.id)
   };
 
   const loginWithGoogle = async (idToken: string) => {
@@ -163,8 +176,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         body: JSON.stringify({ refreshToken }),
       });
 
-      console.log("Refresh token response status:", response);
-
       if (!response.ok) {
         await logout(); // <--- esto es Promise<void>
         refreshPromise = null;
@@ -184,8 +195,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const getValidAccessToken = useCallback(async () => {
     if (!accessToken) return null;
 
-
-
     try {
       const decoded = decodeJWT(accessToken);
       if (!decoded || !decoded.exp || Date.now() >= decoded.exp * 1000) {
@@ -199,6 +208,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       return await refreshAccessToken();
     }
   }, [accessToken]);
+
+  const fetchUsuario = async (token : string) => {
+    try {
+      if (!token) return;
+
+      const res = await fetch(`${API_URL}user/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Error al obtener usuario");
+      const data = await res.json();
+      setUser(data);
+
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <AuthContext.Provider
