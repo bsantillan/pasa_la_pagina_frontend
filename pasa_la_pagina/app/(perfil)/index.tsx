@@ -37,6 +37,7 @@ export default function PerfilScreen() {
     fetchReseniasHechas,
     fetchReseniasRecibidas,
     loading: userLoading,
+    eliminarPublicacion
   } = useUser();
   const {
     pubsUser,
@@ -156,6 +157,18 @@ export default function PerfilScreen() {
           title={p.titulo}
           description={p.descripcion}
           imageUrl={p.fotos_url[0] || ""}
+          showMoreButton={true}
+          onEdit={() => {
+            console.log("Editar publicación", p.id);
+          }}
+          onDelete={async () => {
+            const confirmado = await eliminarPublicacion(p.id);
+            if (confirmado) {
+              fetchPublicacionesByUsuario(user!.id);
+            } else {
+              console.log("No se pudo eliminar la publicación");
+            }
+          }}
         />
       </View>
     ));
