@@ -5,7 +5,7 @@ import { ReviewCard } from "@/components/ui/ReviewCard";
 import { Colors } from "@/constants/Colors";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePublicacion } from "@/contexts/PublicacionContext";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter, useSegments } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
@@ -29,12 +29,14 @@ export default function PerfilUsuarioScreen() {
     const { usuarioId } = useLocalSearchParams();
     const router = useRouter();
     const { getValidAccessToken } = useAuth();
-    const { 
-        pubsUser, 
-        fetchPublicacionesByUsuario, 
-        loading: pubLoading 
+    const {
+        pubsUser,
+        fetchPublicacionesByUsuario,
+        loading: pubLoading
     } = usePublicacion();
-    
+    const segments = useSegments() as string[];
+
+
     const [selectedFiltro, setSelectedFiltro] = useState(filtros[0]);
     const [loading, setLoading] = useState(true);
     const [usuario, setUsuario] = useState<Usuario | null>(null);
@@ -49,10 +51,15 @@ export default function PerfilUsuarioScreen() {
         }
     }, [usuarioId]);
 
+    useEffect(() => {
+        console.log(segments);
+
+    }, []);
+
     const fetchDatosUsuario = async () => {
         setLoading(true);
         setError(null);
-        
+
         try {
             const accessToken = await getValidAccessToken();
 
@@ -81,7 +88,7 @@ export default function PerfilUsuarioScreen() {
             try {
                 const reseniaUrl = `${process.env.EXPO_PUBLIC_API_URL}resenia/recibidas/${usuarioId}`;
                 console.log("🔍 URL de reseñas:", reseniaUrl);
-                
+
                 const reseniasResponse = await fetch(reseniaUrl, {
                     headers: { Authorization: `Bearer ${accessToken}` },
                 });
@@ -89,10 +96,10 @@ export default function PerfilUsuarioScreen() {
                 if (reseniasResponse.ok) {
                     const reseniasData = await reseniasResponse.json();
                     console.log("⭐ Reseñas raw:", reseniasData);
-                    
+
                     // Verificar diferentes formatos de respuesta
                     let resenas = [];
-                    
+
                     if (Array.isArray(reseniasData)) {
                         resenas = reseniasData;
                     } else if (reseniasData.content) {
@@ -100,7 +107,7 @@ export default function PerfilUsuarioScreen() {
                     } else if (reseniasData.resenias) {
                         resenas = reseniasData.resenias;
                     }
-                    
+
                     // Normalizar formato de campos (por si viene en diferentes formatos)
                     resenas = resenas.map((r: any) => ({
                         id: r.id,
@@ -109,19 +116,19 @@ export default function PerfilUsuarioScreen() {
                         descripcion: r.descripcion,
                         fecha: r.fecha || ""
                     }));
-                    
+
                     console.log(`✅ ${resenas.length} reseñas cargadas`);
                     setResenias(resenas);
                 } else {
                     const errorText = await reseniasResponse.text();
                     console.warn("⚠️ Error en reseñas:", errorText);
-                    
+
                     // Parsear el error para ver más detalles
                     try {
                         const errorJson = JSON.parse(errorText);
                         console.warn("Error JSON:", errorJson);
-                    } catch {}
-                    
+                    } catch { }
+
                     setResenias([]);
                 }
             } catch (reseniaErr: any) {
