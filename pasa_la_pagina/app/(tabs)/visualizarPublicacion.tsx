@@ -46,16 +46,15 @@ export default function VisualizarPublicacion() {
   };
 
   const irAPerfil = () => {
-  if (publicacion?.usuario_id) {
-    router.push({
-      pathname: "/(perfil)/usuario",
-      params: {
-        usuarioId: publicacion.usuario_id,
-        fromPublicacion: id
-      }
-    } as any);
-  }
-};
+    if (publicacion?.usuario_id) {
+      router.push({
+        pathname: "/(perfil)/usuario",
+        params: {
+          usuarioId: publicacion.usuario_id
+        }
+      } as any);
+    }
+  };
 
 
   useEffect(() => {
@@ -151,7 +150,7 @@ export default function VisualizarPublicacion() {
       <ScrollView
         style={styles.containerScroll}
         contentContainerStyle={{ paddingBottom: 40 }}
-        showsVerticalScrollIndicator={false} 
+        showsVerticalScrollIndicator={false}
       >
         <View>
           <Text style={styles.titulo}>{publicacion.titulo}</Text>
@@ -251,7 +250,7 @@ export default function VisualizarPublicacion() {
           {/* Botón para ir al perfil del usuario */}
           <TouchableOpacity style={styles.perfilCard} onPress={irAPerfil}>
             <View style={styles.perfilContent}>
-              <Avatar 
+              <Avatar
                 name={`${publicacion.usuario_nombre} ${publicacion.usuario_apellido}`}
                 size={48}
               />
