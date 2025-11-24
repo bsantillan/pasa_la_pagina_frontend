@@ -123,6 +123,7 @@ export default function PerfilScreen() {
       }
 
       await getIntercambiosReseñables();
+      await fetchReseniasHechas();
       setShowReseñaModal(false);
       setSelectedIntercambio(null);
     } catch (err: any) {
