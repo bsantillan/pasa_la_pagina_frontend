@@ -1,13 +1,14 @@
+import { AsyncAutocompleteInput } from "@/components/ui/AsyncAutocompleteInput";
 import PrimaryButton from "@/components/ui/Boton/Primary";
+import { CustomDropdown } from "@/components/ui/CustomDropdown";
 import CustomInput from "@/components/ui/CustomInput";
 import { Colors } from "@/constants/Colors";
 import { useEnums } from "@/contexts/EnumsContext";
 import { usePublicacion } from "@/contexts/PublicacionContext";
 import Ionicons from "@expo/vector-icons/build/Ionicons";
-import { Picker } from "@react-native-picker/picker";
 import { router } from "expo-router";
-import React, { useEffect, useState } from "react";
-import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { Keyboard, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 
 const ProgressBar = ({ currentStep, totalSteps }: { currentStep: number; totalSteps: number }) => {
@@ -61,27 +62,27 @@ export default function ApunteForm() {
   const [step, setStep] = useState(1);
   const [stepHistory, setStepHistory] = useState<number[]>([1]);
   const [showErrors, setShowErrors] = useState(false);
-  const [query, setQuery] = useState("");
-  const [buscando, setBuscando] = useState(false);
-  const [idiomasFiltrados, setIdiomasFiltrados] = useState<string[]>([]);
+
+  const tituloRef = useRef<TextInput>(null);
+  const paginasRef = useRef<TextInput>(null);
+  const idiomaRef = useRef<TextInput>(null);
+  const anioRef = useRef<TextInput>(null);
+  const carreraRef = useRef<TextInput>(null);
+  const institucionRef = useRef<TextInput>(null);
+  const materiaRef = useRef<TextInput>(null);
+  const seccionRef = useRef<TextInput>(null);
 
   const { apunte, comunes, updateApunte, updateComunes } = usePublicacion();
   const { nivelesEducativos, fetchNivelesEducativos, buscarIdiomas } = useEnums();
+  const nivelOptions = (nivelesEducativos ?? []).map(n => ({
+    label: n,
+    value: n,
+  }));
 
   // Carga de idiomas y niveles educativos
   useEffect(() => {
     if (!nivelesEducativos) fetchNivelesEducativos();
-
-    const timeout = setTimeout(async () => {
-      if (query.trim()) {
-        const resultados = await buscarIdiomas(query.trim());
-        setIdiomasFiltrados(resultados);
-        setBuscando(true);
-      } else setBuscando(false);
-    }, 200);
-
-    return () => clearTimeout(timeout);
-  }, [query, nivelesEducativos]);
+  }, [nivelesEducativos]);
 
   const goToStep = (nextStep: number) => {
     setStep(nextStep);
@@ -119,18 +120,16 @@ export default function ApunteForm() {
   const handleStep1Next = () => isStep1Valid() ? goToStep(2) : setShowErrors(true);
   const handleStep2Next = () => isStep2Valid() ? router.push("/(publicacion)/publicacion") : setShowErrors(true);
 
-  const getInputStyle = (value: string | number | undefined) => [
-    styles.input,
-    showErrors && (!value || (typeof value === "string" && !value.trim())) && styles.inputError,
-  ];
-
-  const getPickerStyle = (value: string | boolean | undefined) => [
-    styles.pickerWrapper,
-    showErrors && (value === undefined || value === "" || value === null) && styles.inputError,
-  ];
-
   return (
-    <KeyboardAwareScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+    <KeyboardAwareScrollView
+      showsVerticalScrollIndicator={false}
+      style={styles.container}
+      contentContainerStyle={styles.scrollContent}
+      keyboardShouldPersistTaps="handled"
+      enableOnAndroid
+      extraScrollHeight={120}
+      enableAutomaticScroll
+    >
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={handleBack} style={styles.backButton}>
@@ -152,52 +151,33 @@ export default function ApunteForm() {
             value={apunte.titulo || ""}
             onChangeText={(t) => updateApunte({ titulo: t })}
             showErrors={showErrors}
+            inputRef={tituloRef}
+            returnKeyType="next"
+            onSubmitEditing={() => paginasRef.current?.focus()}
           />
 
           <Text style={styles.label}>Páginas</Text>
-
           <CustomInput
             placeholder="Páginas"
             value={String(apunte.paginas || "")}
             keyboardType="numeric"
             onChangeText={(t) => updateApunte({ paginas: parseInt(t) })}
             showErrors={showErrors}
+            inputRef={paginasRef}
+            returnKeyType="next"
+            onSubmitEditing={() => idiomaRef.current?.focus()}
           />
 
           <Text style={styles.label}>Idioma</Text>
-          <View style={{ position: "relative", zIndex: 1000 }}>
-            <TextInput
-              value={query || apunte.idioma || ""}
-              onChangeText={(t) => {
-                setQuery(t);
-                updateApunte({ idioma: "" });
-                setBuscando(Boolean(t.trim()));
-              }}
-              placeholder="Seleccioná o escribí un idioma..."
-              style={getInputStyle(apunte.idioma)}
-              placeholderTextColor={showErrors && !apunte.idioma?.trim() ? "#ff6b6b" : "#999"}
-            />
-            {showErrors && !apunte.idioma?.trim() && (
-              <Text style={styles.errorText}>Este campo es obligatorio</Text>
-            )}
-            {buscando && idiomasFiltrados.length > 0 && (
-              <ScrollView style={styles.dropdownScroll} keyboardShouldPersistTaps="handled">
-                {idiomasFiltrados.map((item) => (
-                  <TouchableOpacity
-                    key={item}
-                    onPress={() => {
-                      setBuscando(false);
-                      setQuery("");
-                      updateApunte({ idioma: item });
-                    }}
-                    style={styles.dropdownItem}
-                  >
-                    <Text style={styles.dropdownItemText}>{item}</Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            )}
-          </View>
+          <AsyncAutocompleteInput
+            value={apunte.idioma || ""}
+            showErrors={showErrors}
+            fetchOptions={buscarIdiomas}
+            onSelect={(item) => updateApunte({ idioma: item })}
+            inputRef={idiomaRef}
+            returnKeyType="next"
+            onSubmitEditing={() => anioRef.current?.focus()}
+          />
 
           <Text style={styles.label}>Año de elaboración</Text>
           <CustomInput
@@ -206,27 +186,34 @@ export default function ApunteForm() {
             keyboardType="numeric"
             onChangeText={(t) => updateApunte({ anio_elaboracion: parseInt(t) })}
             showErrors={showErrors}
+            inputRef={anioRef}
+            returnKeyType="done"
+            onSubmitEditing={() => Keyboard.dismiss()}
           />
 
           <Text style={styles.label}>Formato</Text>
-          <View style={getPickerStyle(comunes.digital)}>
-            <Picker selectedValue={comunes.digital} onValueChange={v => updateComunes({ digital: v })}>
-              <Picker.Item label="Seleccionar..." value="" />
-              <Picker.Item label="Digital" value={true} />
-              <Picker.Item label="Físico" value={false} />
-            </Picker>
-          </View>
-          {showErrors && (comunes.digital === null || comunes.digital === undefined) && <Text style={styles.errorText}>Este campo es obligatorio</Text>}
+          <CustomDropdown
+            value={comunes.digital}
+            onValueChange={(v) => updateComunes({ digital: v })}
+            options={[
+              { label: "Digital", value: true },
+              { label: "Físico", value: false },
+            ]}
+            placeholder="Selecciona un formato"
+            showErrors={showErrors}
+          />
 
-          <Text style={styles.label}>Nuevo</Text>
-          <View style={getPickerStyle(comunes.nuevo)}>
-            <Picker selectedValue={comunes.nuevo} onValueChange={v => updateComunes({ nuevo: v })}>
-              <Picker.Item label="Seleccionar..." value="" />
-              <Picker.Item label="Sí" value={true} />
-              <Picker.Item label="No" value={false} />
-            </Picker>
-          </View>
-          {showErrors && (comunes.nuevo === null || comunes.nuevo === undefined) && <Text style={styles.errorText}>Este campo es obligatorio</Text>}
+          <Text style={styles.label}>Estado</Text>
+          <CustomDropdown
+            value={comunes.nuevo}
+            onValueChange={(v) => updateComunes({ nuevo: v })}
+            options={[
+              { label: "Nuevo", value: true },
+              { label: "Usado", value: false },
+            ]}
+            placeholder="Selecciona un estado"
+            showErrors={showErrors}
+          />
 
           <PrimaryButton title="Siguiente" onPress={handleStep1Next} />
         </View>
@@ -236,13 +223,13 @@ export default function ApunteForm() {
       {step === 2 && (
         <View style={styles.stepContainer}>
           <Text style={styles.label}>Nivel educativo</Text>
-          <View style={getPickerStyle(apunte.nivel_educativo)}>
-            <Picker selectedValue={apunte.nivel_educativo} onValueChange={v => updateApunte({ nivel_educativo: v, carrera:"" })}>
-              <Picker.Item label="Seleccionar..." value="" />
-              {nivelesEducativos?.map(n => <Picker.Item key={n} label={n} value={n} />)}
-            </Picker>
-          </View>
-          {showErrors && !apunte.nivel_educativo?.trim() && <Text style={styles.errorText}>Este campo es obligatorio</Text>}
+          <CustomDropdown
+            value={apunte.nivel_educativo}
+            onValueChange={(v) => updateApunte({ nivel_educativo: v, carrera: "" })}
+            options={nivelOptions}
+            placeholder="Selecciona un nivel educativo"
+            showErrors={showErrors}
+          />
 
           {apunte.nivel_educativo === "Superior" && (
             <>
@@ -252,6 +239,9 @@ export default function ApunteForm() {
                 value={apunte.carrera || ""}
                 onChangeText={(t) => updateApunte({ carrera: t })}
                 showErrors={showErrors}
+                inputRef={carreraRef}
+                returnKeyType="next"
+                onSubmitEditing={() => institucionRef.current?.focus()}
               />
             </>
           )}
@@ -262,6 +252,9 @@ export default function ApunteForm() {
             value={apunte.institucion || ""}
             onChangeText={(t) => updateApunte({ institucion: t })}
             showErrors={showErrors}
+            inputRef={institucionRef}
+            returnKeyType="next"
+            onSubmitEditing={() => materiaRef.current?.focus()}
           />
 
           <Text style={styles.label}>Materia</Text>
@@ -270,6 +263,9 @@ export default function ApunteForm() {
             value={apunte.materia || ""}
             onChangeText={(t) => updateApunte({ materia: t })}
             showErrors={showErrors}
+            inputRef={materiaRef}
+            returnKeyType="next"
+            onSubmitEditing={() => seccionRef.current?.focus()}
           />
 
           <Text style={styles.label}>Sección</Text>
@@ -278,6 +274,9 @@ export default function ApunteForm() {
             value={apunte.seccion || ""}
             onChangeText={(t) => updateApunte({ seccion: t })}
             showErrors={showErrors}
+            inputRef={seccionRef}
+            returnKeyType="done"
+            onSubmitEditing={() => Keyboard.dismiss()}
           />
 
           <PrimaryButton title="Siguiente" onPress={handleStep2Next} />

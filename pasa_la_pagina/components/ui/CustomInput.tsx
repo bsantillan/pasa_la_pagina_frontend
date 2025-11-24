@@ -1,7 +1,6 @@
 import { Colors } from "@/constants/Colors";
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import React, { useState } from "react";
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, TextInput, View } from "react-native";
 
 interface InputFieldProps {
     placeholder: string;
@@ -15,6 +14,15 @@ interface InputFieldProps {
 
     showErrors?: boolean;
     errorMessage?: string;
+
+    multiline?: boolean;
+    minHeight?: number;
+    maxHeight?: number;
+
+    returnKeyType?: "done" | "next" | "go" | "search" | "send";
+    onSubmitEditing?: () => void;
+    blurOnSubmit?: boolean;
+    inputRef?: React.RefObject<TextInput | null>;
 }
 
 const CustomInput: React.FC<InputFieldProps> = ({
@@ -28,26 +36,41 @@ const CustomInput: React.FC<InputFieldProps> = ({
     style,
     showErrors = false,
     errorMessage = "Este campo es obligatorio",
+    multiline = false,
+    minHeight = 50,
+    maxHeight = 200,
+
+    returnKeyType = "done",
+    onSubmitEditing,
+    blurOnSubmit = true,
+    inputRef,
 }) => {
     const [showPassword, setShowPassword] = useState(false);
-    const isPassword = secureTextEntry;
+    const [inputHeight, setInputHeight] = useState(minHeight);
 
+    const isPassword = secureTextEntry;
     const hasError = showErrors && !value?.trim();
 
     return (
         <View style={style}>
-            <View style={[styles.container, hasError && styles.inputError]}>
-                {iconName && (
-                    <MaterialIcons
-                        name={iconName as any}
-                        size={22}
-                        color={hasError ? "#ff4444" : "#666"}
-                        style={styles.icon}
-                    />
-                )}
-
+            <View
+                style={[
+                    styles.container,
+                    hasError && styles.inputError,
+                    multiline && {
+                        height: inputHeight,
+                        paddingVertical: 10,
+                        alignItems: "flex-start",
+                    },
+                ]}
+            >
                 <TextInput
-                    style={[styles.input, { flex: 1 }]}
+                    ref={inputRef}
+                    style={[
+                        styles.input,
+                        { flex: 1 },
+                        multiline && { textAlignVertical: "top" },
+                    ]}
                     placeholder={placeholder}
                     value={value}
                     onChangeText={onChangeText}
@@ -55,29 +78,28 @@ const CustomInput: React.FC<InputFieldProps> = ({
                     keyboardType={keyboardType}
                     autoCapitalize={autoCapitalize}
                     placeholderTextColor={hasError ? "#ff6b6b" : "#999"}
-                />
+                    multiline={multiline}
+                    onContentSizeChange={(e) => {
+                        if (multiline) {
+                            const height = e.nativeEvent.contentSize.height;
+                            setInputHeight(Math.min(Math.max(minHeight, height), maxHeight));
+                        }
+                    }}
 
-                {isPassword && (
-                    <TouchableOpacity
-                        onPress={() => setShowPassword(!showPassword)}
-                        style={styles.eyeButton}
-                    >
-                        <MaterialIcons
-                            name={showPassword ? "visibility" : "visibility-off"}
-                            size={22}
-                            color={hasError ? "#ff4444" : "#666"}
-                        />
-                    </TouchableOpacity>
-                )}
+                    // 👉 NUEVO
+                    returnKeyType={returnKeyType}
+                    onSubmitEditing={onSubmitEditing}
+                    blurOnSubmit={blurOnSubmit}
+                />
             </View>
 
-            {/* 🔥 TEXTO DE ERROR */}
             {hasError && errorMessage && (
                 <Text style={styles.errorText}>{errorMessage}</Text>
             )}
         </View>
     );
 };
+
 
 export default CustomInput;
 

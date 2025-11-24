@@ -1,4 +1,5 @@
 ﻿import PrimaryButton from "@/components/ui/Boton/Primary";
+import { CustomDropdown } from "@/components/ui/CustomDropdown";
 import CustomInput from "@/components/ui/CustomInput";
 import { FotoCarousel } from "@/components/ui/FotosCarousel";
 import { Colors } from "@/constants/Colors";
@@ -6,16 +7,15 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useEnums } from "@/contexts/EnumsContext";
 import { usePublicacion } from "@/contexts/PublicacionContext";
 import Ionicons from "@expo/vector-icons/build/Ionicons";
-import { Picker } from "@react-native-picker/picker";
 import * as ImagePicker from "expo-image-picker";
 import * as Location from "expo-location";
 import { router } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActionSheetIOS,
   Alert,
-  Dimensions,
   Image,
+  Keyboard,
   Modal,
   Platform,
   ScrollView,
@@ -23,7 +23,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import MapView, { Marker } from "react-native-maps";
@@ -77,7 +77,11 @@ const ProgressBar = ({ currentStep, totalSteps }: { currentStep: number; totalSt
 
 export default function FinalizarPublicacionScreen() {
   const { tiposOferta, fetchTiposOferta } = useEnums();
-  const { tipo, libro, apunte, comunes, updateLibro, updateApunte, updateComunes, reset } = usePublicacion();
+  const tipoOptions = (tiposOferta ?? []).map(t => ({
+    label: t,
+    value: t,
+  }));
+  const { tipo, libro, apunte, comunes, updateComunes, reset } = usePublicacion();
   const { getValidAccessToken } = useAuth();
 
   const [step, setStep] = useState<1 | 2>(1);
@@ -90,8 +94,6 @@ export default function FinalizarPublicacionScreen() {
     longitudeDelta: 0.05,
   });
   const [images, setImages] = useState<string[]>([]);
-  const [mapVisible, setMapVisible] = useState(true);
-  const [cameraVisible, setCameraVisible] = useState(false);
   const [customAlert, setCustomAlert] = useState<{
     title: string;
     description: string;
@@ -100,6 +102,11 @@ export default function FinalizarPublicacionScreen() {
   const [showErrors, setShowErrors] = useState(false);
   const [addressText, setAddressText] = useState<string | null>(null);
   const [imagePickerVisible, setImagePickerVisible] = useState(false);
+
+  const enlaceRef = useRef<TextInput>(null);
+  const cantidadRef = useRef<TextInput>(null);
+  const precioRef = useRef<TextInput>(null);
+  const descripcionRef = useRef<TextInput>(null);
 
   useEffect(() => {
     if (!tiposOferta) fetchTiposOferta();
@@ -111,12 +118,6 @@ export default function FinalizarPublicacionScreen() {
     onAccept?: () => void
   ) => {
     setCustomAlert({ title, description, onAccept });
-  };
-
-  const handleCloseAlert = () => {
-    const action = customAlert?.onAccept;
-    setCustomAlert(null);
-    action?.();
   };
 
   //  Obtener Ubicacion actual
@@ -151,6 +152,7 @@ export default function FinalizarPublicacionScreen() {
       Alert.alert("Error", "No se pudo obtener la ubicación actual. Inténtalo de nuevo.");
     }
   };
+
   const handleBack = () => {
     if (step === 2) {
       setStep(1);
@@ -382,7 +384,7 @@ export default function FinalizarPublicacionScreen() {
 
   const isStep1Complete = () => {
     // Validar URL solo si es digital + donación
-    const needsUrl = comunes.digital && comunes.tipo_oferta === "Donación";
+    const needsUrl = (comunes.digital && comunes.tipo_oferta === "Donacion");
 
     // Validar cantidad solo si es físico
     const needsCantidad = !comunes.digital;
@@ -401,50 +403,17 @@ export default function FinalizarPublicacionScreen() {
     );
   };
 
-  const handleNextStep = () => {
-    // Validaciones
-
-    if (!comunes.tipo_oferta) {
-      showCustomAlert("Error", "Debes seleccionar un tipo de oferta.");
-      return;
-    }
-
-    if (comunes.tipo_oferta === "Venta" && (!comunes.precio || comunes.precio <= 0)) {
-      showCustomAlert("Error", "El precio es obligatorio para ventas.");
-      return;
-    }
-
-    if ((!comunes.cantidad || comunes.cantidad <= 0) && !comunes.digital) {
-      showCustomAlert("Error", "Debes ingresar la cantidad ya que el material es de formato fisico.");
-      return;
-    }
-
-    if (!images.length) {
-      showCustomAlert("Error", "Debes seleccionar al menos una imagen.");
-      return;
-    }
-
-    if (!location && !manualLocation) {
-      showCustomAlert("Error", "Debes seleccionar una ubicacion.");
-      return;
-    }
-
-    // Si pasa todas las validaciones, avanzar al siguiente step
-    if (!isStep1Complete()) {
-      setShowErrors(true);
-      return;
-    }
-    setStep(2);
-  };
+  const handleNextStep = () => isStep1Complete() ? setStep(2) : setShowErrors(true);
 
   const getInputStyle = (value: string | number | undefined) => {
     const isEmpty = value === undefined || value === "" || (typeof value === "string" && !value.trim());
     return [styles.input, showErrors && isEmpty && styles.inputError];
   };
 
-  const getPickerStyle = (value: boolean | undefined | string) => {
-    const isEmpty = value === undefined || value === "";
-    return [styles.pickerWrapper, showErrors && isEmpty && styles.inputError];
+  const getNextRefAfterEnlace = () => {
+    if (comunes.digital === false) return cantidadRef; // físico → cantidad
+    if (comunes.tipo_oferta === "Venta") return precioRef; // digital + venta → precio
+    return descripcionRef; // si no hay cantidad ni precio → descripción
   };
 
   return (
@@ -475,6 +444,60 @@ export default function FinalizarPublicacionScreen() {
           <Text style={styles.title}>Detalles de la publicación</Text>
           <Text style={styles.subtitle}>Completá la información.</Text>
 
+          <Text style={styles.label}>Tipo de Oferta</Text>
+          <CustomDropdown
+            value={comunes.tipo_oferta}
+            onValueChange={(v) => {
+              updateComunes({ tipo_oferta: v });
+              if (v !== "Venta") {
+                updateComunes({ precio: undefined });
+              }
+              if (!comunes.digital || !v?.includes("Donaci")) {
+                updateComunes({ url: undefined });
+              }
+            }}
+            options={tipoOptions}
+            placeholder="Selecciona un tipo de oferta"
+            showErrors={showErrors}
+          />
+
+          {/* ENLACE: Solo para formato digital + tipo donación - AHORA AQUÍ DEBAJO DE TIPO DE OFERTA */}
+          {comunes.digital === true && comunes.tipo_oferta?.includes("Donaci") && (
+            <>
+              <Text style={styles.label}>Enlace</Text>
+              <CustomInput
+                placeholder="Enlace"
+                value={comunes.url || ""}
+                onChangeText={(t) => updateComunes({ url: t })}
+                showErrors={showErrors}
+                inputRef={enlaceRef}
+                returnKeyType="next"
+                blurOnSubmit={false}
+                onSubmitEditing={() => {
+                  const next = getNextRefAfterEnlace();
+                  next?.current?.focus();
+                }}
+              />
+            </>
+          )}
+
+          {/* PRECIO: Solo para tipo de oferta "Venta" */}
+          {comunes.tipo_oferta === "Venta" && (
+            <>
+              <Text style={styles.label}>Precio</Text>
+              <CustomInput
+                placeholder="Precio"
+                value={comunes.precio?.toString() || ""}
+                keyboardType="numeric"
+                onChangeText={(t) => updateComunes({ precio: parseFloat(t) || undefined })}
+                showErrors={showErrors}
+                inputRef={precioRef}
+                returnKeyType={comunes.digital ? "next" : "next"}
+                blurOnSubmit={false}
+                onSubmitEditing={() => descripcionRef.current?.focus()}
+              />
+            </>
+          )}
 
           {/* CANTIDAD: Solo para formato físico */}
           {comunes.digital === false && (
@@ -486,70 +509,28 @@ export default function FinalizarPublicacionScreen() {
                 keyboardType="numeric"
                 onChangeText={(t) => updateComunes({ cantidad: parseInt(t, 10) || undefined })}
                 showErrors={showErrors}
+                inputRef={cantidadRef}
+                returnKeyType="next"
+                blurOnSubmit={false}
+                onSubmitEditing={() => descripcionRef.current?.focus()}
               />
             </>
           )}
 
           <Text style={styles.label}>Descripción</Text>
-          <TextInput
-            style={[getInputStyle(comunes.descripcion), styles.textArea]}
+          <CustomInput
             placeholder="Descripción"
             value={comunes.descripcion || ""}
             onChangeText={(t) => updateComunes({ descripcion: t })}
             multiline
+            minHeight={100}
+            maxHeight={250}
+            showErrors={showErrors}
+            errorMessage="Este campo es obligatorio"
+            inputRef={descripcionRef}
+            returnKeyType="done"
+            onSubmitEditing={() => Keyboard.dismiss()}
           />
-          {showErrors && !comunes.descripcion?.trim() && <Text style={styles.errorText}>Este campo es obligatorio</Text>}
-
-          <Text style={styles.label}>Tipo de Oferta</Text>
-          <View style={getPickerStyle(comunes.tipo_oferta)}>
-            <Picker
-              style={styles.picker}
-              selectedValue={comunes.tipo_oferta || ""}
-              onValueChange={(v) => {
-                updateComunes({ tipo_oferta: v });
-                // Limpiar precio si no es venta
-                if (v !== "Venta") {
-                  updateComunes({ precio: undefined });
-                }
-                // Limpiar URL si no cumple la condición: digital Y donación
-                if (!comunes.digital || !v?.includes("Donaci")) {
-                  updateComunes({ url: undefined });
-                }
-              }}
-            >
-              <Picker.Item label="Seleccionar..." value="" />
-              {tiposOferta?.map((t) => <Picker.Item key={t} label={t} value={t} />)}
-            </Picker>
-          </View>
-          {showErrors && !comunes.tipo_oferta && <Text style={styles.errorText}>Este campo es obligatorio</Text>}
-
-          {/* ENLACE: Solo para formato digital + tipo donación - AHORA AQUÍ DEBAJO DE TIPO DE OFERTA */}
-          {comunes.digital === true && comunes.tipo_oferta?.includes("Donaci") && (
-            <>
-              <Text style={styles.label}>Enlace</Text>
-              <CustomInput
-                placeholder="Enlace"
-                value={comunes.url || ""}
-                onChangeText={(t) => updateComunes({ url: t })}
-                showErrors={showErrors}
-              />
-            </>
-          )}
-
-          {/* PRECIO: Solo para tipo de oferta "Venta" */}
-          {comunes.tipo_oferta === "Venta" && (
-            <>
-              <Text style={styles.label}>Precio</Text>
-              <TextInput
-                keyboardType="numeric"
-                style={getInputStyle(comunes.precio)}
-                placeholder="Precio"
-                value={comunes.precio?.toString() || ""}
-                onChangeText={(t) => updateComunes({ precio: parseFloat(t) || undefined })}
-              />
-              {showErrors && (!comunes.precio || comunes.precio <= 0) && <Text style={styles.errorText}>Este campo es obligatorio</Text>}
-            </>
-          )}
 
           <Text style={styles.label}>Imágenes</Text>
           <TouchableOpacity style={styles.imagePicker} onPress={showImageOptions}>
@@ -610,7 +591,7 @@ export default function FinalizarPublicacionScreen() {
       {step === 2 && (
         <View style={{ flex: 1 }}>
           <ScrollView style={styles.containerScroll} contentContainerStyle={{ paddingBottom: 40 }}>
-            <View style={{ height: Dimensions.get("window").width * 1.4 }}>
+            <View>
               {/* TÍTULO */}
               <Text style={{
                 fontSize: 26,
@@ -630,7 +611,7 @@ export default function FinalizarPublicacionScreen() {
                 style={{
                   fontSize: 18,
                   marginTop: 20,
-                  marginBottom: 16,
+                  marginBottom: 14,
                   paddingHorizontal: 8,
                   fontWeight: "500",
                   color: "#444",
@@ -697,18 +678,9 @@ export default function FinalizarPublicacionScreen() {
                 </Text>
 
                 {addressText && (
-                  <View
-                    style={{
-                      backgroundColor: "#F5F5F5",
-                      padding: 12,
-                      borderRadius: 10,
-                      marginBottom: 10,
-                      flexDirection: "row",
-                      alignItems: "center",
-                      gap: 8,
-                    }}
-                  >
-                    <Text style={{ fontSize: 14 }}>{addressText}</Text>
+                  <View style={styles.locationInfo}>
+                    <Ionicons name="location" size={18} color={Colors.primary} />
+                    <Text style={styles.locationText}>{addressText}</Text>
                   </View>
                 )}
 
