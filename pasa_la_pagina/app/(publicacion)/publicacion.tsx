@@ -1,4 +1,5 @@
-import PrimaryButton from "@/components/ui/Boton/Primary";
+﻿import PrimaryButton from "@/components/ui/Boton/Primary";
+import CameraModal from "@/components/ui/CameraModal";
 import { FotoCarousel } from "@/components/ui/FotosCarousel";
 import { Colors } from "@/constants/Colors";
 import { useAuth } from "@/contexts/AuthContext";
@@ -89,6 +90,13 @@ export default function FinalizarPublicacionScreen() {
     longitudeDelta: 0.05,
   });
   const [images, setImages] = useState<string[]>([]);
+  const [mapVisible, setMapVisible] = useState(true);
+  const [cameraVisible, setCameraVisible] = useState(false);
+  const [customAlert, setCustomAlert] = useState<{
+    title: string;
+    description: string;
+    onAccept?: () => void;
+  } | null>(null);
   const [showErrors, setShowErrors] = useState(false);
   const [addressText, setAddressText] = useState<string | null>(null);
   const [imagePickerVisible, setImagePickerVisible] = useState(false);
@@ -97,13 +105,27 @@ export default function FinalizarPublicacionScreen() {
     if (!tiposOferta) fetchTiposOferta();
   }, []);
 
-  // 📍 Obtener ubicación actual - versión corregida
-const getCurrentLocation = async () => {
-  const { status } = await Location.requestForegroundPermissionsAsync();
-  if (status !== "granted") {
-    Alert.alert("Permiso denegado", "No se pudo acceder a la ubicación.");
-    return;
-  }
+  const showCustomAlert = (
+    title: string,
+    description: string,
+    onAccept?: () => void
+  ) => {
+    setCustomAlert({ title, description, onAccept });
+  };
+
+  const handleCloseAlert = () => {
+    const action = customAlert?.onAccept;
+    setCustomAlert(null);
+    action?.();
+  };
+
+  //  Obtener Ubicacion actual
+  const getCurrentLocation = async () => {
+    const { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== "granted") {
+      showCustomAlert("Permiso denegado", "No se pudo acceder a la ubicacion.");
+      return;
+    }
 
   try {
     const loc = await Location.getCurrentPositionAsync({});
@@ -228,6 +250,7 @@ const getCurrentLocation = async () => {
     setImages((prev) => prev.filter((_, i) => i !== index));
   };
 
+  //  Subir imgenes a Cloudinary
   const uploadImages = async (): Promise<string[]> => {
     const preset = process.env.EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET ?? "";
     const cloudName = process.env.EXPO_PUBLIC_CLOUDINARY_NAME ?? "";
@@ -250,6 +273,7 @@ const getCurrentLocation = async () => {
     return uploads;
   };
 
+  //  Payloads
   const buildLibroPayload = (uploadedUrls: string[], usuarioId: number) => {
     const payload: any = {
       titulo: libro?.titulo ?? "",
@@ -300,20 +324,23 @@ const getCurrentLocation = async () => {
     return payload;
   };
 
+  //  Publicar
   const handleSubmit = async () => {
     try {
       const accessToken = await getValidAccessToken();
       if (!accessToken) {
-        Alert.alert("Error", "No estás autenticado.");
-        router.replace("/login");
+        showCustomAlert("Error", "No estas autenticado.", () => {
+          router.replace("/login");
+        });
         return;
       }
       const mers = await fetch(`${process.env.EXPO_PUBLIC_API_URL}user/me`, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
       if (!mers.ok) {
-        Alert.alert("Error", "No se pudo obtener el usuario actual.");
-        router.replace("/login");
+        showCustomAlert("Error", "No se pudo obtener el usuario actual.", () => {
+          router.replace("/login");
+        });
         return;
       }
       const me = await mers.json();
@@ -329,7 +356,7 @@ const getCurrentLocation = async () => {
         payload = buildApuntePayload(uploadedUrls, me.id);
         endpoint = `${process.env.EXPO_PUBLIC_API_URL}publicacion/nuevo/apunte`;
       } else {
-        throw new Error("Tipo de publicación inválido");
+        throw new Error("Tipo de publicacion invalido");
       }
 
       const response = await fetch(endpoint, {
@@ -343,12 +370,13 @@ const getCurrentLocation = async () => {
         throw new Error(`Error ${response.status}: ${body}`);
       }
 
-      Alert.alert("Éxito", "La publicación fue creada correctamente");
-      reset();
-      router.replace("/(tabs)");
-    } catch (err: any) {
+      showCustomAlert("Exito", "La publicacion fue creada correctamente", () => {
+        reset();
+        router.replace("/(tabs)");
+      });
+    } catch (err) {
       console.error(err);
-      Alert.alert("Error", "Ocurrió un error al crear la publicación.");
+      showCustomAlert("Error", "Ocurri un error al crear la publicacion.");
     }
   };
 
@@ -374,6 +402,34 @@ const getCurrentLocation = async () => {
   };
 
   const handleNextStep = () => {
+    // Validaciones
+
+    if (!comunes.tipo_oferta) {
+      showCustomAlert("Error", "Debes seleccionar un tipo de oferta.");
+      return;
+    }
+
+    if (comunes.tipo_oferta === "Venta" && (!comunes.precio || comunes.precio <= 0)) {
+      showCustomAlert("Error", "El precio es obligatorio para ventas.");
+      return;
+    }
+
+    if ((!comunes.cantidad || comunes.cantidad <= 0) && !comunes.digital) {
+      showCustomAlert("Error", "Debes ingresar la cantidad ya que el material es de formato fisico.");
+      return;
+    }
+
+    if (!images.length) {
+      showCustomAlert("Error", "Debes seleccionar al menos una imagen.");
+      return;
+    }
+
+    if (!location && !manualLocation) {
+      showCustomAlert("Error", "Debes seleccionar una ubicacion.");
+      return;
+    }
+
+    // Si pasa todas las validaciones, avanzar al siguiente step
     if (!isStep1Complete()) {
       setShowErrors(true);
       return;
@@ -405,7 +461,7 @@ const getCurrentLocation = async () => {
         <TouchableOpacity onPress={handleBack} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={Colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Crear publicación</Text>
+        <Text style={styles.headerTitle}>Crear publicacion</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -413,7 +469,6 @@ const getCurrentLocation = async () => {
         currentStep={step === 1 ? 3 : 4}
         totalSteps={3}
       />
-
 
       {step === 1 && (
         <View style={styles.stepContainer}>
@@ -925,6 +980,67 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: "#838589",
+  },
+  buttonContainer: {
+    flexDirection: "row",
+    width: "100%",
+    justifyContent: "center",
+    marginHorizontal: 16,
+    gap: 10,
+  },
+  styleBtn: {
+    flex: 1,
+    paddingHorizontal: 16,
+    width: "100%",
+    height: 36,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  title_material: {
+    fontSize: 25,
+    fontWeight: "600",
+    color: Colors.primary,
+    marginBottom: 10,
+    textAlign: "left",
+    alignSelf: "flex-start",
+  },
+  customAlertOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.35)",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 24,
+  },
+  customAlertCard: {
+    width: "100%",
+    maxWidth: 360,
+    backgroundColor: Colors.white,
+    borderRadius: 18,
+    paddingVertical: 20,
+    paddingHorizontal: 18,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.18,
+    shadowRadius: 18,
+    elevation: 10,
+    alignItems: "center",
+  },
+  customAlertTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: Colors.text,
+    marginBottom: 10,
+    textAlign: "center",
+  },
+  customAlertDescription: {
+    fontSize: 14,
+    color: "#4A4A4A",
+    textAlign: "center",
+    marginBottom: 16,
+  },
+  customAlertButton: {
+    minWidth: 180,
+    height: 38,
   },
 
   /* Review / VisualizarPublicacion styles */
