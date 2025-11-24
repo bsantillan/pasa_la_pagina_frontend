@@ -27,36 +27,39 @@ const SPACING = 16;
    MARKER MEMOIZADO
 --------------------------- */
 export const CustomMarker = React.memo(
-    ({ isSelected, tipo }: { isSelected: boolean; tipo: string }) => (
-        <View style={styles.markerContainer}>
-            <View
-                style={[
-                    styles.marker,
-                    { backgroundColor: isSelected ? Colors.cta : Colors.primary },
-                ]}
-            >
-                <Ionicons
-                    name={tipo === "apunte" ? "document-text" : "book"}
-                    size={14}
-                    color={Colors.white}
+    function CustomMarker({ isSelected, tipo }: { isSelected: boolean; tipo: string }) {
+        return (
+            <View style={styles.markerContainer}>
+                <View
+                    style={[
+                        styles.marker,
+                        { backgroundColor: isSelected ? Colors.cta : Colors.primary },
+                    ]}
+                >
+                    <Ionicons
+                        name={tipo === "apunte" ? "document-text" : "book"}
+                        size={14}
+                        color={Colors.white}
+                    />
+                </View>
+                <View
+                    style={[
+                        styles.markerArrow,
+                        { borderTopColor: isSelected ? Colors.cta : Colors.primary },
+                    ]}
                 />
             </View>
-            <View
-                style={[
-                    styles.markerArrow,
-                    { borderTopColor: isSelected ? Colors.cta : Colors.primary },
-                ]}
-            />
-        </View>
-    ),
+        );
+    },
     (prev, next) => prev.isSelected === next.isSelected && prev.tipo === next.tipo
 );
+
 
 /* ---------------------------
    CARD MEMOIZADA
 --------------------------- */
 const PublicacionCard = React.memo(
-    ({
+    function PublicacionCard({
         item,
         isSelected,
         onPress,
@@ -64,7 +67,7 @@ const PublicacionCard = React.memo(
         item: Publicacion;
         isSelected: boolean;
         onPress: () => void;
-    }) => {
+    }) {
         const imageUrl =
             item.fotos_url?.[0] || "https://via.placeholder.com/150x150?text=Sin+imagen";
 

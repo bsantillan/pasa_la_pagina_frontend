@@ -371,7 +371,7 @@ export default function FinalizarPublicacionScreen() {
         const body = await response.text();
         throw new Error(`Error ${response.status}: ${body}`);
       }
-
+      console.log("Publicacion creada con exito");
       showCustomAlert("Exito", "La publicacion fue creada correctamente", () => {
         reset();
         router.replace("/(tabs)");
@@ -417,6 +417,7 @@ export default function FinalizarPublicacionScreen() {
   };
 
   return (
+    <>
     <KeyboardAwareScrollView
       style={styles.container}
       contentContainerStyle={styles.scrollContent}
@@ -771,6 +772,31 @@ export default function FinalizarPublicacionScreen() {
         </TouchableOpacity>
       </Modal>
     </KeyboardAwareScrollView>
+     <Modal
+        visible={!!customAlert}
+        transparent
+        animationType="fade"
+        onRequestClose={handleCloseAlert}
+      >
+        <TouchableOpacity
+          style={styles.customAlertOverlay}
+          activeOpacity={1}
+          onPress={handleCloseAlert}
+        >
+          <View style={styles.customAlertCard}>
+            <Text style={styles.customAlertTitle}>{customAlert?.title}</Text>
+            <Text style={styles.customAlertDescription}>
+              {customAlert?.description}
+            </Text>
+            <PrimaryButton
+              title="Aceptar"
+              onPress={handleCloseAlert}
+              styleBtn={styles.customAlertButton}
+            />
+          </View>
+        </TouchableOpacity>
+      </Modal>
+       </>
   );
 }
 

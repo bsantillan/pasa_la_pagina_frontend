@@ -487,7 +487,7 @@ export default function UsuarioDetail() {
             onAccept={handleConcretar}
             onCancel={handleCancelar}
             acceptLabel={isOwner ? "Generar código" : "Ingresar código"}
-            cancelLabel="Cancelar"
+            cancelLabel="Cancelar Intercambio"
           />
         </View>
       </Modal>
