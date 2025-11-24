@@ -27,6 +27,11 @@ export const AlertCard = ({
             <Text style={styles.description}>{description}</Text>
 
             <View style={styles.actions}>
+                <PrimaryButton
+                    title={acceptLabel}
+                    onPress={onAccept}
+                    styleBtn={{ width: "90%" }}
+                />
                 {onCancel && (
                     <SecondaryButton
                         onPress={onCancel}
@@ -34,11 +39,6 @@ export const AlertCard = ({
                         styleBtn={{ width: "90%" }}
                     />
                 )}
-                <PrimaryButton
-                    title={acceptLabel}
-                    onPress={onAccept}
-                    styleBtn={{ width: "90%" }}
-                />
             </View>
         </View>
     );

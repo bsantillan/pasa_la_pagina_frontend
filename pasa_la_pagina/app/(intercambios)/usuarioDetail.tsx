@@ -354,7 +354,7 @@ export default function UsuarioDetail() {
 
       await validarIntercambioConCodigo(
         Number(chatInfo?.intercambio_id),
-        codigoInput,
+        codigoInput.toUpperCase(),
         token
       );
       setValidationSuccess(true);
