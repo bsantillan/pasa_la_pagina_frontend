@@ -11,6 +11,7 @@ import FilterModal from "./FilterModal";
 export default function Header() {
     const router = useRouter();
     const segments = useSegments() as string[];
+    const isPerfilIndex = segments.length === 1 && segments[0] === "(perfil)";
 
     // ⚠️ IMPORTANTE: aseguramos que los params existan siempre correctamente
     const params = useLocalSearchParams<{
@@ -45,7 +46,7 @@ export default function Header() {
 
     // ✔ FIX COMPLETO DEL BOTÓN ATRÁS
     const handleBack = () => {
-        
+
         // Si venimos desde visualizar, debemos volver exactamente ahí
         if (isInUsuarioPerfil && params.fromPublicacion) {
             router.push({
@@ -107,7 +108,7 @@ export default function Header() {
                                     </View>
                                 )}
                             </TouchableOpacity>
-                            {segments.includes("(perfil)/index") && (
+                            {isPerfilIndex && (
                                 <TouchableOpacity onPress={() => { logout(); router.push("/login"); }} style={styles.filterBtn}>
                                     <Ionicons name="log-out-outline" size={25} color={Colors.primary} />
                                 </TouchableOpacity>
