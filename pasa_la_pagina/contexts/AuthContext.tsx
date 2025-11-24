@@ -113,15 +113,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, [accessToken, refreshToken]);
 
   // ------------------------- FETCH USER -------------------------
-  const fetchUsuario = async (token: string) => {
+  const fetchUsuario = async (): Promise<"OK" | "TOKEN_EXPIRED" | null> => {
     try {
+      const token = await getValidAccessToken(); // <- token ya refrescado si expiró
+      if (!token) return "TOKEN_EXPIRED";
+
       const res = await fetch(`${API_URL}user/me`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (res.status === 401) return "TOKEN_EXPIRED";
+      if (res.status === 401 || res.status === 403) return "TOKEN_EXPIRED";
 
-      if (!res.ok) throw new Error("Error al obtener usuario");
+      if (!res.ok) throw new Error("Error al obtener usuario: " + res.status);
 
       const data = await res.json();
       setUser(data);
@@ -142,16 +145,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setAccessToken(storedAccess);
         setRefreshToken(storedRefresh);
 
-        if (!storedAccess) return;
+        if (!storedAccess && !storedRefresh) return;
 
-        const result = await fetchUsuario(storedAccess);
-
-        if (result === "TOKEN_EXPIRED" && storedRefresh) {
-          const newToken = await refreshAccessToken();
-          if (newToken) {
-            await fetchUsuario(newToken);
-          }
-        }
+        await fetchUsuario(); // <- ya se encargará de refrescar si es necesario
       } catch (err) {
         console.error("Error loading token:", err);
       } finally {

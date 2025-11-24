@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNotifications } from "@/contexts/NotificacionContext";
 import { usePublicacion } from "@/contexts/PublicacionContext";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter, useSegments } from "expo-router";
+import { useLocalSearchParams, useRouter, useSegments } from "expo-router";
 import React, { useState } from "react";
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import FilterModal from "./FilterModal";
@@ -11,7 +11,18 @@ import FilterModal from "./FilterModal";
 export default function Header() {
     const router = useRouter();
     const segments = useSegments() as string[];
+    const isPerfilIndex = segments.length === 1 && segments[0] === "(perfil)";
+
+    // ⚠️ IMPORTANTE: aseguramos que los params existan siempre correctamente
+    const params = useLocalSearchParams<{
+        usuarioId?: string;
+        fromPublicacion?: string;
+        id?: string;
+        query?: string;
+    }>();
+
     const [openFilter, setOpenFilter] = useState(false);
+
     const { logout } = useAuth();
     const { filtros, cargarinicial, setFiltros } = usePublicacion();
     const { notificaciones } = useNotifications();
@@ -19,6 +30,11 @@ export default function Header() {
 
     const isInTabsRoot = segments[0] === "(tabs)" && segments.length === 1;
     const isInNotificaciones = segments.includes("(notificaciones)");
+
+    // ✔ Detecta correctamente "/(perfil)/usuario" aunque haya _layout
+    const isInUsuarioPerfil =
+        segments.includes("(perfil)") &&
+        (segments.at(-1) === "usuario" || segments.includes("usuario"));
 
     const handleSubmitEditing = async () => {
         if (segments.includes("listado")) {
@@ -28,27 +44,38 @@ export default function Header() {
         }
     };
 
+    // ✔ FIX COMPLETO DEL BOTÓN ATRÁS
+    const handleBack = () => {
+
+        // Si venimos desde visualizar, debemos volver exactamente ahí
+        if (isInUsuarioPerfil && params.fromPublicacion) {
+            router.push({
+                pathname: "/(tabs)/visualizar/[id]",
+                params: { id: params.fromPublicacion }
+            } as any);
+            return;
+        }
+
+        // Por defecto solo volvemos a la pantalla previa
+        router.back();
+    };
+
     return (
         <View style={styles.container}>
             <View style={styles.row}>
 
-                {/* Botón de volver SIEMPRE visible cuando no estás en root */}
                 {!isInTabsRoot && (
-                    <TouchableOpacity onPress={() => router.back()} style={styles.iconBtn}>
+                    <TouchableOpacity onPress={handleBack} style={styles.iconBtn}>
                         <Ionicons name="arrow-back" size={24} color={Colors.text} />
                     </TouchableOpacity>
                 )}
 
-                {/* ----------------------------- */}
-                {/*        MODO NOTIFICACIONES   */}
-                {/* ----------------------------- */}
                 {isInNotificaciones ? (
                     <View style={styles.notificacionesContainer}>
                         <Text style={styles.notificacionesText}>Notificaciones</Text>
                     </View>
                 ) : (
                     <>
-                        {/* BUSCADOR - solo si NO estamos en notificaciones */}
                         <View style={styles.searchContainer}>
                             <Ionicons name="search" size={18} color="#999" style={{ marginRight: 6 }} />
                             <TextInput
@@ -62,7 +89,6 @@ export default function Header() {
                             />
                         </View>
 
-                        {/* Iconos derecha */}
                         <View style={styles.rightIcons}>
                             {segments.includes("listado") && (
                                 <TouchableOpacity onPress={() => setOpenFilter(true)} style={styles.filterBtn}>
@@ -82,8 +108,8 @@ export default function Header() {
                                     </View>
                                 )}
                             </TouchableOpacity>
-                            {segments.includes("(perfil)") && (
-                                <TouchableOpacity onPress={() => {logout();router.push("/login")}} style={styles.filterBtn}>
+                            {isPerfilIndex && (
+                                <TouchableOpacity onPress={() => { logout(); router.push("/login"); }} style={styles.filterBtn}>
                                     <Ionicons name="log-out-outline" size={25} color={Colors.primary} />
                                 </TouchableOpacity>
                             )}
@@ -92,7 +118,6 @@ export default function Header() {
                 )}
             </View>
 
-            {/* Modal de filtro solo si NO estamos en notificaciones */}
             {!isInNotificaciones && (
                 <FilterModal visible={openFilter} onClose={() => setOpenFilter(false)} />
             )}
@@ -152,15 +177,6 @@ const styles = StyleSheet.create({
     notificationBtn: {
         position: "relative",
         padding: 6,
-    },
-    notificationDot: {
-        position: "absolute",
-        right: 8,
-        top: 6,
-        width: 8,
-        height: 8,
-        borderRadius: 4,
-        backgroundColor: Colors.primary,
     },
     filterBtn: {
         paddingHorizontal: 6,

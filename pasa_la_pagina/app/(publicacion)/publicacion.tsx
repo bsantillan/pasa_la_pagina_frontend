@@ -1,21 +1,21 @@
 ﻿import PrimaryButton from "@/components/ui/Boton/Primary";
-import CameraModal from "@/components/ui/CameraModal";
+import { CustomDropdown } from "@/components/ui/CustomDropdown";
+import CustomInput from "@/components/ui/CustomInput";
 import { FotoCarousel } from "@/components/ui/FotosCarousel";
 import { Colors } from "@/constants/Colors";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEnums } from "@/contexts/EnumsContext";
 import { usePublicacion } from "@/contexts/PublicacionContext";
 import Ionicons from "@expo/vector-icons/build/Ionicons";
-import { Picker } from "@react-native-picker/picker";
 import * as ImagePicker from "expo-image-picker";
 import * as Location from "expo-location";
 import { router } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActionSheetIOS,
   Alert,
-  Dimensions,
   Image,
+  Keyboard,
   Modal,
   Platform,
   ScrollView,
@@ -23,7 +23,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import MapView, { Marker } from "react-native-maps";
@@ -77,7 +77,11 @@ const ProgressBar = ({ currentStep, totalSteps }: { currentStep: number; totalSt
 
 export default function FinalizarPublicacionScreen() {
   const { tiposOferta, fetchTiposOferta } = useEnums();
-  const { tipo, libro, apunte, comunes, updateLibro, updateApunte, updateComunes, reset } = usePublicacion();
+  const tipoOptions = (tiposOferta ?? []).map(t => ({
+    label: t,
+    value: t,
+  }));
+  const { tipo, libro, apunte, comunes, updateComunes, reset } = usePublicacion();
   const { getValidAccessToken } = useAuth();
 
   const [step, setStep] = useState<1 | 2>(1);
@@ -90,8 +94,6 @@ export default function FinalizarPublicacionScreen() {
     longitudeDelta: 0.05,
   });
   const [images, setImages] = useState<string[]>([]);
-  const [mapVisible, setMapVisible] = useState(true);
-  const [cameraVisible, setCameraVisible] = useState(false);
   const [customAlert, setCustomAlert] = useState<{
     title: string;
     description: string;
@@ -100,6 +102,11 @@ export default function FinalizarPublicacionScreen() {
   const [showErrors, setShowErrors] = useState(false);
   const [addressText, setAddressText] = useState<string | null>(null);
   const [imagePickerVisible, setImagePickerVisible] = useState(false);
+
+  const enlaceRef = useRef<TextInput>(null);
+  const cantidadRef = useRef<TextInput>(null);
+  const precioRef = useRef<TextInput>(null);
+  const descripcionRef = useRef<TextInput>(null);
 
   useEffect(() => {
     if (!tiposOferta) fetchTiposOferta();
@@ -113,12 +120,6 @@ export default function FinalizarPublicacionScreen() {
     setCustomAlert({ title, description, onAccept });
   };
 
-  const handleCloseAlert = () => {
-    const action = customAlert?.onAccept;
-    setCustomAlert(null);
-    action?.();
-  };
-
   //  Obtener Ubicacion actual
   const getCurrentLocation = async () => {
     const { status } = await Location.requestForegroundPermissionsAsync();
@@ -127,30 +128,31 @@ export default function FinalizarPublicacionScreen() {
       return;
     }
 
-  try {
-    const loc = await Location.getCurrentPositionAsync({});
-    
-    // 👇 Actualizar estado de ubicación actual
-    setLocation({ 
-      latitude: loc.coords.latitude, 
-      longitude: loc.coords.longitude 
-    });
-    
-    // 👇 Actualizar contexto
-    updateComunes({ 
-      latitud: loc.coords.latitude, 
-      longitud: loc.coords.longitude 
-    });
-    
-    // 👇 Limpiar ubicación manual para que no interfiera
-    setManualLocation(null);
-    
-    Alert.alert("Éxito", "Ubicación actual obtenida correctamente");
-  } catch (error) {
-    console.error("Error al obtener ubicación actual:", error);
-    Alert.alert("Error", "No se pudo obtener la ubicación actual. Inténtalo de nuevo.");
-  }
-};
+    try {
+      const loc = await Location.getCurrentPositionAsync({});
+
+      // 👇 Actualizar estado de ubicación actual
+      setLocation({
+        latitude: loc.coords.latitude,
+        longitude: loc.coords.longitude
+      });
+
+      // 👇 Actualizar contexto
+      updateComunes({
+        latitud: loc.coords.latitude,
+        longitud: loc.coords.longitude
+      });
+
+      // 👇 Limpiar ubicación manual para que no interfiera
+      setManualLocation(null);
+
+      Alert.alert("Éxito", "Ubicación actual obtenida correctamente");
+    } catch (error) {
+      console.error("Error al obtener ubicación actual:", error);
+      Alert.alert("Error", "No se pudo obtener la ubicación actual. Inténtalo de nuevo.");
+    }
+  };
+
   const handleBack = () => {
     if (step === 2) {
       setStep(1);
@@ -158,6 +160,12 @@ export default function FinalizarPublicacionScreen() {
     } else {
       router.back();
     }
+  };
+
+  const handleCloseAlert = () => {
+    const action = customAlert?.onAccept;
+    setCustomAlert(null);
+    action?.();
   };
 
   const getAddressFromCoords = async (latitude: number, longitude: number) => {
@@ -369,7 +377,7 @@ export default function FinalizarPublicacionScreen() {
         const body = await response.text();
         throw new Error(`Error ${response.status}: ${body}`);
       }
-
+      console.log("Publicacion creada con exito");
       showCustomAlert("Exito", "La publicacion fue creada correctamente", () => {
         reset();
         router.replace("/(tabs)");
@@ -382,7 +390,7 @@ export default function FinalizarPublicacionScreen() {
 
   const isStep1Complete = () => {
     // Validar URL solo si es digital + donación
-    const needsUrl = comunes.digital && comunes.tipo_oferta === "Donación";
+    const needsUrl = (comunes.digital && comunes.tipo_oferta === "Donacion");
 
     // Validar cantidad solo si es físico
     const needsCantidad = !comunes.digital;
@@ -401,406 +409,400 @@ export default function FinalizarPublicacionScreen() {
     );
   };
 
-  const handleNextStep = () => {
-    // Validaciones
-
-    if (!comunes.tipo_oferta) {
-      showCustomAlert("Error", "Debes seleccionar un tipo de oferta.");
-      return;
-    }
-
-    if (comunes.tipo_oferta === "Venta" && (!comunes.precio || comunes.precio <= 0)) {
-      showCustomAlert("Error", "El precio es obligatorio para ventas.");
-      return;
-    }
-
-    if ((!comunes.cantidad || comunes.cantidad <= 0) && !comunes.digital) {
-      showCustomAlert("Error", "Debes ingresar la cantidad ya que el material es de formato fisico.");
-      return;
-    }
-
-    if (!images.length) {
-      showCustomAlert("Error", "Debes seleccionar al menos una imagen.");
-      return;
-    }
-
-    if (!location && !manualLocation) {
-      showCustomAlert("Error", "Debes seleccionar una ubicacion.");
-      return;
-    }
-
-    // Si pasa todas las validaciones, avanzar al siguiente step
-    if (!isStep1Complete()) {
-      setShowErrors(true);
-      return;
-    }
-    setStep(2);
-  };
+  const handleNextStep = () => isStep1Complete() ? setStep(2) : setShowErrors(true);
 
   const getInputStyle = (value: string | number | undefined) => {
     const isEmpty = value === undefined || value === "" || (typeof value === "string" && !value.trim());
     return [styles.input, showErrors && isEmpty && styles.inputError];
   };
 
-  const getPickerStyle = (value: boolean | undefined | string) => {
-    const isEmpty = value === undefined || value === "";
-    return [styles.pickerWrapper, showErrors && isEmpty && styles.inputError];
+  const getNextRefAfterEnlace = () => {
+    if (comunes.digital === false) return cantidadRef; // físico → cantidad
+    if (comunes.tipo_oferta === "Venta") return precioRef; // digital + venta → precio
+    return descripcionRef; // si no hay cantidad ni precio → descripción
   };
 
   return (
-    <KeyboardAwareScrollView
-      style={styles.container}
-      contentContainerStyle={styles.scrollContent}
-      keyboardShouldPersistTaps="handled"
-      enableOnAndroid
-      showsVerticalScrollIndicator={false}
-      extraScrollHeight={100}
-      enableAutomaticScroll
-    >
-      <View style={styles.header}>
-        <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={Colors.text} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Crear publicacion</Text>
-        <View style={{ width: 40 }} />
-      </View>
+    <>
+      <KeyboardAwareScrollView
+        style={styles.container}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        enableOnAndroid
+        showsVerticalScrollIndicator={false}
+        extraScrollHeight={100}
+        enableAutomaticScroll
+      >
+        <View style={styles.header}>
+          <TouchableOpacity onPress={handleBack} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={24} color={Colors.text} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Crear publicacion</Text>
+          <View style={{ width: 40 }} />
+        </View>
 
-      <ProgressBar
-        currentStep={step === 1 ? 3 : 4}
-        totalSteps={3}
-      />
+        <ProgressBar
+          currentStep={step === 1 ? 3 : 4}
+          totalSteps={3}
+        />
 
-      {step === 1 && (
-        <View style={styles.stepContainer}>
-          <Text style={styles.title}>Detalles de la publicación</Text>
-          <Text style={styles.subtitle}>Completá la información.</Text>
+        {step === 1 && (
+          <View style={styles.stepContainer}>
+            <Text style={styles.title}>Detalles de la publicación</Text>
+            <Text style={styles.subtitle}>Completá la información.</Text>
 
-
-          {/* CANTIDAD: Solo para formato físico */}
-          {comunes.digital === false && (
-            <>
-              <Text style={styles.label}>Cantidad</Text>
-              <TextInput
-                keyboardType="numeric"
-                style={getInputStyle(comunes.cantidad)}
-                placeholder="Cantidad"
-                value={comunes.cantidad?.toString() || ""}
-                onChangeText={(t) => updateComunes({ cantidad: parseInt(t, 10) || undefined })}
-              />
-              {showErrors && !comunes.cantidad && <Text style={styles.errorText}>Este campo es obligatorio</Text>}
-            </>
-          )}
-
-          <Text style={styles.label}>Descripción</Text>
-          <TextInput
-            style={[getInputStyle(comunes.descripcion), styles.textArea]}
-            placeholder="Descripción"
-            value={comunes.descripcion || ""}
-            onChangeText={(t) => updateComunes({ descripcion: t })}
-            multiline
-          />
-          {showErrors && !comunes.descripcion?.trim() && <Text style={styles.errorText}>Este campo es obligatorio</Text>}
-
-          <Text style={styles.label}>Tipo de Oferta</Text>
-          <View style={getPickerStyle(comunes.tipo_oferta)}>
-            <Picker
-              style={styles.picker}
-              selectedValue={comunes.tipo_oferta || ""}
+            <Text style={styles.label}>Tipo de Oferta</Text>
+            <CustomDropdown
+              value={comunes.tipo_oferta}
               onValueChange={(v) => {
                 updateComunes({ tipo_oferta: v });
-                // Limpiar precio si no es venta
                 if (v !== "Venta") {
                   updateComunes({ precio: undefined });
                 }
-                // Limpiar URL si no cumple la condición: digital Y donación
                 if (!comunes.digital || !v?.includes("Donaci")) {
                   updateComunes({ url: undefined });
                 }
               }}
-            >
-              <Picker.Item label="Seleccionar..." value="" />
-              {tiposOferta?.map((t) => <Picker.Item key={t} label={t} value={t} />)}
-            </Picker>
-          </View>
-          {showErrors && !comunes.tipo_oferta && <Text style={styles.errorText}>Este campo es obligatorio</Text>}
+              options={tipoOptions}
+              placeholder="Selecciona un tipo de oferta"
+              showErrors={showErrors}
+            />
 
-          {/* ENLACE: Solo para formato digital + tipo donación - AHORA AQUÍ DEBAJO DE TIPO DE OFERTA */}
-          {comunes.digital === true && comunes.tipo_oferta?.includes("Donaci") && (
-            <>
-              <Text style={styles.label}>Enlace</Text>
-              <TextInput
-                style={getInputStyle(comunes.url)}
-                placeholder="Enlace"
-                value={comunes.url || ""}
-                onChangeText={(t) => updateComunes({ url: t })}
-              />
-              {showErrors && !comunes.url?.trim() && <Text style={styles.errorText}>Este campo es obligatorio</Text>}
-            </>
-          )}
-
-          {/* PRECIO: Solo para tipo de oferta "Venta" */}
-          {comunes.tipo_oferta === "Venta" && (
-            <>
-              <Text style={styles.label}>Precio</Text>
-              <TextInput
-                keyboardType="numeric"
-                style={getInputStyle(comunes.precio)}
-                placeholder="Precio"
-                value={comunes.precio?.toString() || ""}
-                onChangeText={(t) => updateComunes({ precio: parseFloat(t) || undefined })}
-              />
-              {showErrors && (!comunes.precio || comunes.precio <= 0) && <Text style={styles.errorText}>Este campo es obligatorio</Text>}
-            </>
-          )}
-
-          <Text style={styles.label}>Imágenes</Text>
-          <TouchableOpacity style={styles.imagePicker} onPress={showImageOptions}>
-            <Ionicons name="images-outline" size={32} color={Colors.primary} />
-            <Text style={styles.imagePickerText}>Seleccionar imágenes</Text>
-            <Text style={styles.imagePickerSubtext}>Tocá para elegir desde tu galería</Text>
-          </TouchableOpacity>
-
-          {images.length > 0 && (
-            <View style={styles.imagesContainer}>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.imagesScrollContent}>
-                {images.map((uri, i) => (
-                  <View key={i} style={styles.imageWrapper}>
-                    <Image source={{ uri }} style={styles.imageThumb} />
-                    <TouchableOpacity style={styles.removeImageBtn} onPress={() => removeImage(i)}>
-                      <Ionicons name="close-circle" size={24} color="#ff4444" />
-                    </TouchableOpacity>
-                  </View>
-                ))}
-              </ScrollView>
-            </View>
-          )}
-          {showErrors && images.length === 0 && <Text style={styles.errorText}>Debes agregar al menos una imagen</Text>}
-
-          <Text style={styles.sectionTitle}>Seleccionar ubicación</Text>
-          {addressText && (
-            <View style={styles.locationInfo}>
-              <Ionicons name="location" size={18} color={Colors.primary} />
-              <Text style={styles.locationText}>{addressText}</Text>
-            </View>
-          )}
-          <View style={styles.mapContainer}>
-            <MapView
-              style={styles.map}
-              region={mapRegion}
-              onRegionChangeComplete={setMapRegion}
-              onPress={(e) => {
-                const { latitude, longitude } = e.nativeEvent.coordinate;
-                setManualLocation({ latitude, longitude });
-                updateComunes({ latitud: latitude, longitud: longitude });
-                setLocation(null);
-                getAddressFromCoords(latitude, longitude);
-              }}
-            >
-              {location && <Marker coordinate={location} />}
-              {manualLocation && <Marker coordinate={manualLocation} />}
-            </MapView>
-            <TouchableOpacity style={styles.currentLocationBtn} onPress={getCurrentLocation}>
-              <Ionicons name="locate" size={24} color={Colors.primary} />
-            </TouchableOpacity>
-          </View>
-          {showErrors && !location && !manualLocation && <Text style={styles.errorText}>Debes seleccionar una ubicación</Text>}
-
-          <PrimaryButton styleBtn={styles.continueBtn} title="Continuar" onPress={handleNextStep} />
-        </View>
-      )}
-
-      {step === 2 && (
-        <View style={{ flex: 1 }}>
-          <ScrollView style={styles.containerScroll} contentContainerStyle={{ paddingBottom: 40 }}>
-            <View style={{ height: Dimensions.get("window").width * 1.4 }}>
-              {/* TÍTULO */}
-              <Text style={{
-                fontSize: 26,
-                fontWeight: "700",
-                marginBottom: 12,
-                color: Colors.primary,
-                textAlign: "center",
-              }}>
-                {tipo === "libro" ? libro?.titulo : apunte?.titulo}
-              </Text>
-
-              {/* CARRUSEL DE FOTOS */}
-              <FotoCarousel fotos={images} mostrarFavorito={false} />
-
-              {/* DESCRIPCIÓN */}
-              <Text
-                style={{
-                  fontSize: 18,
-                  marginTop: 20,
-                  marginBottom: 16,
-                  paddingHorizontal: 8,
-                  fontWeight: "500",
-                  color: "#444",
-                }}
-              >
-                {comunes.descripcion}
-              </Text>
-            </View>
-
-            {/* CARD DE DETALLES */}
-            <View
-              style={{
-                backgroundColor: "white",
-                padding: 20,
-                borderRadius: 20,
-                marginBottom: 24,
-                shadowColor: "#000",
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.15,
-                shadowRadius: 8,
-                elevation: 6,
-              }}
-            >
-              <Text style={styles.detailLabel}>Descripción: <Text style={styles.detailValue}>{comunes.descripcion}</Text></Text>
-              <Text style={styles.detailLabel}>Tipo de Oferta: <Text style={styles.detailValue}>{comunes.tipo_oferta}</Text></Text>
-              {comunes.tipo_oferta === "Venta" && <Text style={styles.detailLabel}>Precio: <Text style={styles.detailValue}>${comunes.precio}</Text></Text>}
-              <Text style={styles.detailLabel}>Cantidad: <Text style={styles.detailValue}>{comunes.cantidad}</Text></Text>
-              <Text style={styles.detailLabel}>Idioma: <Text style={styles.detailValue}>{tipo === "libro" ? libro?.idioma : apunte?.idioma}</Text></Text>
-              <Text style={styles.detailLabel}>Formato: <Text style={styles.detailValue}>{comunes?.digital ? "Digital" : "Físico"}</Text></Text>
-
-              {tipo === "libro" ? (
-                <>
-                  <Text style={styles.detailLabel}>Autor: <Text style={styles.detailValue}>{libro?.autor}</Text></Text>
-                  <Text style={styles.detailLabel}>Editorial: <Text style={styles.detailValue}>{libro?.editorial}</Text></Text>
-                  <Text style={styles.detailLabel}>ISBN: <Text style={styles.detailValue}>{libro?.isbn}</Text></Text>
-                  <Text style={styles.detailLabel}>Género: <Text style={styles.detailValue}>{libro?.genero}</Text></Text>
-                </>
-              ) : (
-                <>
-                  <Text style={styles.detailLabel}>Materia: <Text style={styles.detailValue}>{apunte?.materia}</Text></Text>
-                  <Text style={styles.detailLabel}>Institución: <Text style={styles.detailValue}>{apunte?.institucion}</Text></Text>
-                  <Text style={styles.detailLabel}>Nivel educativo: <Text style={styles.detailValue}>{apunte?.nivel_educativo}</Text></Text>
-                  <Text style={styles.detailLabel}>Sección: <Text style={styles.detailValue}>{apunte?.seccion}</Text></Text>
-                  <Text style={styles.detailLabel}>Carrera: <Text style={styles.detailValue}>{apunte?.carrera}</Text></Text>
-                  <Text style={styles.detailLabel}>Año de elaboración: <Text style={styles.detailValue}>{apunte?.anio_elaboracion}</Text></Text>
-                  <Text style={styles.detailLabel}>Cantidad de páginas: <Text style={styles.detailValue}>{apunte?.paginas}</Text></Text>
-                </>
-              )}
-
-            </View>
-
-            {/* UBICACIÓN */}
-            {(location || manualLocation) && (
-              <View style={{ marginBottom: 20 }}>
-                <Text
-                  style={{
-                    fontSize: 20,
-                    fontWeight: "600",
-                    marginBottom: 10,
-                    color: Colors.text,
+            {/* ENLACE: Solo para formato digital + tipo donación - AHORA AQUÍ DEBAJO DE TIPO DE OFERTA */}
+            {comunes.digital === true && comunes.tipo_oferta?.includes("Donaci") && (
+              <>
+                <Text style={styles.label}>Enlace</Text>
+                <CustomInput
+                  placeholder="Enlace"
+                  value={comunes.url || ""}
+                  onChangeText={(t) => updateComunes({ url: t })}
+                  showErrors={showErrors}
+                  inputRef={enlaceRef}
+                  returnKeyType="next"
+                  blurOnSubmit={false}
+                  onSubmitEditing={() => {
+                    const next = getNextRefAfterEnlace();
+                    next?.current?.focus();
                   }}
-                >
-                  Ubicación
-                </Text>
-
-                {addressText && (
-                  <View
-                    style={{
-                      backgroundColor: "#F5F5F5",
-                      padding: 12,
-                      borderRadius: 10,
-                      marginBottom: 10,
-                      flexDirection: "row",
-                      alignItems: "center",
-                      gap: 8,
-                    }}
-                  >
-                    <Text style={{ fontSize: 14 }}>{addressText}</Text>
-                  </View>
-                )}
-
-                <MapView
-                  style={{
-                    width: "100%",
-                    height: 250,
-                    borderRadius: 12,
-                    marginTop: 6,
-                  }}
-                  initialRegion={{
-                    latitude: location?.latitude ?? manualLocation?.latitude!,
-                    longitude: location?.longitude ?? manualLocation?.longitude!,
-                    latitudeDelta: 0.01,
-                    longitudeDelta: 0.01,
-                  }}
-                >
-                  <Marker coordinate={location ?? manualLocation!} />
-                </MapView>
-              </View>
+                />
+              </>
             )}
 
-            {/* BOTÓN */}
-            <PrimaryButton
-              styleBtn={{ height: 48, marginTop: 20, marginBottom: 36 }}
-              title="Publicar"
-              onPress={handleSubmit}
+            {/* PRECIO: Solo para tipo de oferta "Venta" */}
+            {comunes.tipo_oferta === "Venta" && (
+              <>
+                <Text style={styles.label}>Precio</Text>
+                <CustomInput
+                  placeholder="Precio"
+                  value={comunes.precio?.toString() || ""}
+                  keyboardType="numeric"
+                  onChangeText={(t) => updateComunes({ precio: parseFloat(t) || undefined })}
+                  showErrors={showErrors}
+                  inputRef={precioRef}
+                  returnKeyType={comunes.digital ? "next" : "next"}
+                  blurOnSubmit={false}
+                  onSubmitEditing={() => descripcionRef.current?.focus()}
+                />
+              </>
+            )}
+
+            {/* CANTIDAD: Solo para formato físico */}
+            {comunes.digital === false && (
+              <>
+                <Text style={styles.label}>Cantidad</Text>
+                <CustomInput
+                  placeholder="Cantidad"
+                  value={comunes.cantidad?.toString() || ""}
+                  keyboardType="numeric"
+                  onChangeText={(t) => updateComunes({ cantidad: parseInt(t, 10) || undefined })}
+                  showErrors={showErrors}
+                  inputRef={cantidadRef}
+                  returnKeyType="next"
+                  blurOnSubmit={false}
+                  onSubmitEditing={() => descripcionRef.current?.focus()}
+                />
+              </>
+            )}
+
+            <Text style={styles.label}>Descripción</Text>
+            <CustomInput
+              placeholder="Descripción"
+              value={comunes.descripcion || ""}
+              onChangeText={(t) => updateComunes({ descripcion: t })}
+              multiline
+              minHeight={100}
+              maxHeight={250}
+              showErrors={showErrors}
+              errorMessage="Este campo es obligatorio"
+              inputRef={descripcionRef}
+              returnKeyType="done"
+              onSubmitEditing={() => Keyboard.dismiss()}
             />
-          </ScrollView>
-        </View>
 
-      )}
+            <Text style={styles.label}>Imágenes</Text>
+            <TouchableOpacity style={styles.imagePicker} onPress={showImageOptions}>
+              <Ionicons name="images-outline" size={32} color={Colors.primary} />
+              <Text style={styles.imagePickerText}>Seleccionar imágenes</Text>
+              <Text style={styles.imagePickerSubtext}>Tocá para elegir desde tu galería</Text>
+            </TouchableOpacity>
+
+            {images.length > 0 && (
+              <View style={styles.imagesContainer}>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.imagesScrollContent}>
+                  {images.map((uri, i) => (
+                    <View key={i} style={styles.imageWrapper}>
+                      <Image source={{ uri }} style={styles.imageThumb} />
+                      <TouchableOpacity style={styles.removeImageBtn} onPress={() => removeImage(i)}>
+                        <Ionicons name="close-circle" size={24} color="#ff4444" />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+            {showErrors && images.length === 0 && <Text style={styles.errorText}>Debes agregar al menos una imagen</Text>}
+
+            <Text style={styles.sectionTitle}>Seleccionar ubicación</Text>
+            {addressText && (
+              <View style={styles.locationInfo}>
+                <Ionicons name="location" size={18} color={Colors.primary} />
+                <Text style={styles.locationText}>{addressText}</Text>
+              </View>
+            )}
+            <View style={styles.mapContainer}>
+              <MapView
+                style={styles.map}
+                region={mapRegion}
+                onRegionChangeComplete={setMapRegion}
+                onPress={(e) => {
+                  const { latitude, longitude } = e.nativeEvent.coordinate;
+                  setManualLocation({ latitude, longitude });
+                  updateComunes({ latitud: latitude, longitud: longitude });
+                  setLocation(null);
+                  getAddressFromCoords(latitude, longitude);
+                }}
+              >
+                {location && <Marker coordinate={location} />}
+                {manualLocation && <Marker coordinate={manualLocation} />}
+              </MapView>
+              <TouchableOpacity style={styles.currentLocationBtn} onPress={getCurrentLocation}>
+                <Ionicons name="locate" size={24} color={Colors.primary} />
+              </TouchableOpacity>
+            </View>
+            {showErrors && !location && !manualLocation && <Text style={styles.errorText}>Debes seleccionar una ubicación</Text>}
+
+            <PrimaryButton styleBtn={styles.continueBtn} title="Continuar" onPress={handleNextStep} />
+          </View>
+        )}
+
+        {step === 2 && (
+          <View style={{ flex: 1 }}>
+            <ScrollView style={styles.containerScroll} contentContainerStyle={{ paddingBottom: 40 }}>
+              <View>
+                {/* TÍTULO */}
+                <Text style={{
+                  fontSize: 26,
+                  fontWeight: "700",
+                  marginBottom: 12,
+                  color: Colors.primary,
+                  textAlign: "center",
+                }}>
+                  {tipo === "libro" ? libro?.titulo : apunte?.titulo}
+                </Text>
+
+                {/* CARRUSEL DE FOTOS */}
+                <FotoCarousel fotos={images} mostrarFavorito={false} />
+
+                {/* DESCRIPCIÓN */}
+                <Text
+                  style={{
+                    fontSize: 18,
+                    marginTop: 20,
+                    marginBottom: 14,
+                    paddingHorizontal: 8,
+                    fontWeight: "500",
+                    color: "#444",
+                  }}
+                >
+                  {comunes.descripcion}
+                </Text>
+              </View>
+
+              {/* CARD DE DETALLES */}
+              <View
+                style={{
+                  backgroundColor: "white",
+                  padding: 20,
+                  borderRadius: 20,
+                  marginBottom: 24,
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.15,
+                  shadowRadius: 8,
+                  elevation: 6,
+                }}
+              >
+                <Text style={styles.detailLabel}>Descripción: <Text style={styles.detailValue}>{comunes.descripcion}</Text></Text>
+                <Text style={styles.detailLabel}>Tipo de Oferta: <Text style={styles.detailValue}>{comunes.tipo_oferta}</Text></Text>
+                {comunes.tipo_oferta === "Venta" && <Text style={styles.detailLabel}>Precio: <Text style={styles.detailValue}>${comunes.precio}</Text></Text>}
+                <Text style={styles.detailLabel}>Cantidad: <Text style={styles.detailValue}>{comunes.cantidad}</Text></Text>
+                <Text style={styles.detailLabel}>Idioma: <Text style={styles.detailValue}>{tipo === "libro" ? libro?.idioma : apunte?.idioma}</Text></Text>
+                <Text style={styles.detailLabel}>Formato: <Text style={styles.detailValue}>{comunes?.digital ? "Digital" : "Físico"}</Text></Text>
+
+                {tipo === "libro" ? (
+                  <>
+                    <Text style={styles.detailLabel}>Autor: <Text style={styles.detailValue}>{libro?.autor}</Text></Text>
+                    <Text style={styles.detailLabel}>Editorial: <Text style={styles.detailValue}>{libro?.editorial}</Text></Text>
+                    <Text style={styles.detailLabel}>ISBN: <Text style={styles.detailValue}>{libro?.isbn}</Text></Text>
+                    <Text style={styles.detailLabel}>Género: <Text style={styles.detailValue}>{libro?.genero}</Text></Text>
+                  </>
+                ) : (
+                  <>
+                    <Text style={styles.detailLabel}>Materia: <Text style={styles.detailValue}>{apunte?.materia}</Text></Text>
+                    <Text style={styles.detailLabel}>Institución: <Text style={styles.detailValue}>{apunte?.institucion}</Text></Text>
+                    <Text style={styles.detailLabel}>Nivel educativo: <Text style={styles.detailValue}>{apunte?.nivel_educativo}</Text></Text>
+                    <Text style={styles.detailLabel}>Sección: <Text style={styles.detailValue}>{apunte?.seccion}</Text></Text>
+                    <Text style={styles.detailLabel}>Carrera: <Text style={styles.detailValue}>{apunte?.carrera}</Text></Text>
+                    <Text style={styles.detailLabel}>Año de elaboración: <Text style={styles.detailValue}>{apunte?.anio_elaboracion}</Text></Text>
+                    <Text style={styles.detailLabel}>Cantidad de páginas: <Text style={styles.detailValue}>{apunte?.paginas}</Text></Text>
+                  </>
+                )}
+
+              </View>
+
+              {/* UBICACIÓN */}
+              {(location || manualLocation) && (
+                <View style={{ marginBottom: 20 }}>
+                  <Text
+                    style={{
+                      fontSize: 20,
+                      fontWeight: "600",
+                      marginBottom: 10,
+                      color: Colors.text,
+                    }}
+                  >
+                    Ubicación
+                  </Text>
+
+                  {addressText && (
+                    <View style={styles.locationInfo}>
+                      <Ionicons name="location" size={18} color={Colors.primary} />
+                      <Text style={styles.locationText}>{addressText}</Text>
+                    </View>
+                  )}
+
+                  <MapView
+                    style={{
+                      width: "100%",
+                      height: 250,
+                      borderRadius: 12,
+                      marginTop: 6,
+                    }}
+                    initialRegion={{
+                      latitude: location?.latitude ?? manualLocation?.latitude!,
+                      longitude: location?.longitude ?? manualLocation?.longitude!,
+                      latitudeDelta: 0.01,
+                      longitudeDelta: 0.01,
+                    }}
+                  >
+                    <Marker coordinate={location ?? manualLocation!} />
+                  </MapView>
+                </View>
+              )}
+
+              {/* BOTÓN */}
+              <PrimaryButton
+                styleBtn={{ height: 48, marginTop: 20, marginBottom: 36 }}
+                title="Publicar"
+                onPress={handleSubmit}
+              />
+            </ScrollView>
+          </View>
+
+        )}
 
 
 
+        <Modal
+          visible={imagePickerVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setImagePickerVisible(false)}
+        >
+          <TouchableOpacity
+            style={styles.modalOverlay}
+            activeOpacity={1}
+            onPress={() => setImagePickerVisible(false)}
+          >
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Agregar imagen</Text>
+              <Text style={styles.modalSubtitle}>Seleccioná cómo querés agregar la imagen</Text>
+
+              <TouchableOpacity
+                style={styles.modalOption}
+                onPress={() => { setImagePickerVisible(false); pickFromCamera(); }}
+              >
+                <View style={styles.modalOptionIcon}>
+                  <Ionicons name="camera" size={24} color={Colors.primary} />
+                </View>
+                <Text style={styles.modalOptionText}>Tomar foto</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.modalOption}
+                onPress={() => { setImagePickerVisible(false); pickFromGallery(); }}
+              >
+                <View style={styles.modalOptionIcon}>
+                  <Ionicons name="images" size={24} color={Colors.primary} />
+                </View>
+                <Text style={styles.modalOptionText}>Elegir de galería</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.modalOption}
+                onPress={() => { setImagePickerVisible(false); pickFromFiles(); }}
+              >
+                <View style={styles.modalOptionIcon}>
+                  <Ionicons name="folder" size={24} color={Colors.primary} />
+                </View>
+                <Text style={styles.modalOptionText}>Elegir de archivos</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.modalCancelBtn}
+                onPress={() => setImagePickerVisible(false)}
+              >
+                <Text style={styles.modalCancelText}>Cancelar</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </Modal>
+      </KeyboardAwareScrollView>
       <Modal
-        visible={imagePickerVisible}
+        visible={!!customAlert}
         transparent
         animationType="fade"
-        onRequestClose={() => setImagePickerVisible(false)}
+        onRequestClose={handleCloseAlert}
       >
         <TouchableOpacity
-          style={styles.modalOverlay}
+          style={styles.customAlertOverlay}
           activeOpacity={1}
-          onPress={() => setImagePickerVisible(false)}
+          onPress={handleCloseAlert}
         >
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Agregar imagen</Text>
-            <Text style={styles.modalSubtitle}>Seleccioná cómo querés agregar la imagen</Text>
-
-            <TouchableOpacity
-              style={styles.modalOption}
-              onPress={() => { setImagePickerVisible(false); pickFromCamera(); }}
-            >
-              <View style={styles.modalOptionIcon}>
-                <Ionicons name="camera" size={24} color={Colors.primary} />
-              </View>
-              <Text style={styles.modalOptionText}>Tomar foto</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.modalOption}
-              onPress={() => { setImagePickerVisible(false); pickFromGallery(); }}
-            >
-              <View style={styles.modalOptionIcon}>
-                <Ionicons name="images" size={24} color={Colors.primary} />
-              </View>
-              <Text style={styles.modalOptionText}>Elegir de galería</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.modalOption}
-              onPress={() => { setImagePickerVisible(false); pickFromFiles(); }}
-            >
-              <View style={styles.modalOptionIcon}>
-                <Ionicons name="folder" size={24} color={Colors.primary} />
-              </View>
-              <Text style={styles.modalOptionText}>Elegir de archivos</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.modalCancelBtn}
-              onPress={() => setImagePickerVisible(false)}
-            >
-              <Text style={styles.modalCancelText}>Cancelar</Text>
-            </TouchableOpacity>
+          <View style={styles.customAlertCard}>
+            <Text style={styles.customAlertTitle}>{customAlert?.title}</Text>
+            <Text style={styles.customAlertDescription}>
+              {customAlert?.description}
+            </Text>
+            <PrimaryButton
+              title="Aceptar"
+              onPress={handleCloseAlert}
+              styleBtn={styles.customAlertButton}
+            />
           </View>
         </TouchableOpacity>
       </Modal>
-    </KeyboardAwareScrollView>
+    </>
   );
 }
 

@@ -90,7 +90,7 @@ export default function LoginScreen() {
 
       <View style={styles.form}>
         <View style={styles.title_div}>
-          <Text style={styles.title}>Log in</Text>
+          <Text style={styles.title}>Iniciar Sesión</Text>
           <Text style={styles.subtitle}>Bienvenido</Text>
         </View>
 
@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
   form: {
     flex: 1,
     padding: 20,
-    alignItems: "center",
+    alignItems: "stretch",
     marginLeft: 39,
     marginRight: 39,
   },
@@ -188,6 +188,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
     fontSize: 14,
     color: "#555",
+    textAlign: "center",
   },
   link: {
     color: Colors.cta,
@@ -202,6 +203,7 @@ const styles = StyleSheet.create({
     marginVertical: 15,
     color: "#999",
     fontSize: 14,
+    textAlign: "center",
   },
   googleButton: {
     flexDirection: "row",

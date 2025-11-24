@@ -1,7 +1,8 @@
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { Colors } from "../../constants/Colors";
 import PrimaryButton from "./Boton/Primary";
+import SecondaryButton from "./Boton/Secondary";
 
 type AlertCardProps = {
     title: string;
@@ -26,12 +27,18 @@ export const AlertCard = ({
             <Text style={styles.description}>{description}</Text>
 
             <View style={styles.actions}>
+                <PrimaryButton
+                    title={acceptLabel}
+                    onPress={onAccept}
+                    styleBtn={{ width: "90%" }}
+                />
                 {onCancel && (
-                    <TouchableOpacity onPress={onCancel}>
-                        <Text style={styles.cancel}>{cancelLabel}</Text>
-                    </TouchableOpacity>
+                    <SecondaryButton
+                        onPress={onCancel}
+                        title={cancelLabel}
+                        styleBtn={{ width: "90%" }}
+                    />
                 )}
-                <PrimaryButton title={acceptLabel} onPress={onAccept} />
             </View>
         </View>
     );
@@ -59,14 +66,11 @@ const styles = StyleSheet.create({
         marginVertical: 8,
     },
     actions: {
-        flexDirection: "row",
+        flexDirection: "column",
         justifyContent: "center",
         marginTop: 8,
+        gap: 8,
         alignItems: "center",
     },
-    cancel: {
-        marginRight: 30,
-        color: Colors.secondary,
-        fontWeight: "bold",
-    },
+
 });

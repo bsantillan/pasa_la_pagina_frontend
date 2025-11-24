@@ -239,7 +239,7 @@ export default function UsuarioDetail() {
               pollingIntervalRef.current = null;
               // Redirigir a pantalla de reseña
               setShowReviewModal(true);
-            }, 1500);
+            }, 15000);
           }
         } catch (err) {
           console.error("Error en polling:", err);
@@ -354,7 +354,7 @@ export default function UsuarioDetail() {
 
       await validarIntercambioConCodigo(
         Number(chatInfo?.intercambio_id),
-        codigoInput,
+        codigoInput.toUpperCase(),
         token
       );
       setValidationSuccess(true);
@@ -451,7 +451,14 @@ export default function UsuarioDetail() {
       </View>
       <View style={styles.sub}>
         <Pressable
-          onPress={() => router.replace(`/(perfil)/publico${chatInfo?.usuario_id}`)}
+          onPress={() => {
+            router.push({
+              pathname: "/(perfil)/usuario",
+              params: {
+                usuarioId: chatInfo.usuario_id
+              }
+            } as any);
+          }}
         >
           <Ionicons
             name="person-circle-outline"
@@ -487,7 +494,7 @@ export default function UsuarioDetail() {
             onAccept={handleConcretar}
             onCancel={handleCancelar}
             acceptLabel={isOwner ? "Generar código" : "Ingresar código"}
-            cancelLabel="Cancelar"
+            cancelLabel="Cancelar Intercambio"
           />
         </View>
       </Modal>
@@ -685,17 +692,24 @@ export default function UsuarioDetail() {
                   multiline
                   numberOfLines={4}
                 />
-                <View style={styles.reviewButtons}>
-                  <SecondaryButton
-                    styleBtn={{ width: "50%" }}
-                    title="Atras"
+                <View style={styles.modalButtons}>
+                  <TouchableOpacity
+                    style={[styles.button, styles.secondaryButton]}
                     onPress={() => setReviewStep(3)}
-                  />
-                  <PrimaryButton
-                    styleBtn={{ width: "50%" }}
-                    title="Enviar reseña"
+                  >
+                    <Text style={styles.buttonText}>Atrás</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.button, styles.primaryButton]}
                     onPress={() => setReviewStep(5)}
-                  />
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <ActivityIndicator size="small" color="white" />
+                    ) : (
+                      <Text style={styles.buttonText}>Enviar reseña</Text>
+                    )}
+                  </TouchableOpacity>
                 </View>
               </>
             )}
@@ -713,7 +727,7 @@ export default function UsuarioDetail() {
                     title="Cerrar"
                     onPress={() => {
                       setShowReviewModal(false);
-                      router.push("/(perfil)"); // 👈 REDIRECCIÓN A PERFIL
+                      router.push("/(perfil)");
                     }}
                   />
                   <PrimaryButton
@@ -893,5 +907,26 @@ const styles = StyleSheet.create({
     gap: 8,
     marginTop: 16,
     justifyContent: "center",
+  },
+  modalButtons: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 16,
+  },
+  button: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  primaryButton: {
+    backgroundColor: Colors.primary,
+  },
+  secondaryButton: {
+    backgroundColor: Colors.disabled_primary,
+  },
+  buttonText: {
+    color: "white",
+    fontWeight: "bold",
   },
 });

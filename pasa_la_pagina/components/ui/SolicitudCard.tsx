@@ -13,6 +13,7 @@ type IntercambioCardProps = {
   solicitanteConcreto?: boolean;
   propietarioConcreto?: boolean;
   rolUsuario?: string;
+  perfilClickeable?: boolean;
 };
 
 export const SolicitudCard: React.FC<IntercambioCardProps> = ({
@@ -25,6 +26,7 @@ export const SolicitudCard: React.FC<IntercambioCardProps> = ({
   solicitanteConcreto,
   propietarioConcreto,
   rolUsuario,
+  perfilClickeable = false,
 }) => {
   const inicial = nombreUsuario.charAt(0).toUpperCase();
 
@@ -87,7 +89,10 @@ export const SolicitudCard: React.FC<IntercambioCardProps> = ({
     }
   };
 
-  const isClickable = estado === "PENDIENTE" || mensaje;
+  const isClickable = perfilClickeable
+    ? true
+    : estado === "PENDIENTE" || mensaje;
+
 
   return (
     <Pressable

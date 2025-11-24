@@ -1,4 +1,5 @@
 import { AlertCard } from "@/components/ui/AlertaCard";
+import { Avatar } from "@/components/ui/Avatar";
 import PrimaryButton from "@/components/ui/Boton/Primary";
 import { FotoCarousel } from "@/components/ui/FotosCarousel";
 import { Colors } from "@/constants/Colors";
@@ -7,7 +8,7 @@ import { useIntercambio } from "@/contexts/IntercambioContext";
 import { usePublicacion } from "@/contexts/PublicacionContext";
 import { Publicacion } from "@/types/Publicacion";
 import { Ionicons } from "@expo/vector-icons";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -25,6 +26,7 @@ import { CustomMarker } from "../(mapa)";
 
 export default function VisualizarPublicacion() {
   const { id } = useLocalSearchParams();
+  const router = useRouter();
   const [publicacion, setPublicacion] = useState<Publicacion | null>(null);
   const { getValidAccessToken } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -42,6 +44,18 @@ export default function VisualizarPublicacion() {
       Linking.openURL(publicacion.url);
     }
   };
+
+  const irAPerfil = () => {
+    if (publicacion?.usuario_id) {
+      router.push({
+        pathname: "/(perfil)/usuario",
+        params: {
+          usuarioId: publicacion.usuario_id
+        }
+      } as any);
+    }
+  };
+
 
   useEffect(() => {
     const fetchPublicacion = async () => {
@@ -71,7 +85,7 @@ export default function VisualizarPublicacion() {
         }
 
         const data = await response.json();
-        console.log("Datos del fetch:", data); // log de los datos reales
+        console.log("Datos del fetch:", data);
         setPublicacion(data);
       } catch (error) {
         console.error("Error fetching publicacion:", error);
@@ -88,11 +102,8 @@ export default function VisualizarPublicacion() {
       (async () => {
         const userLoc = await getUserLocation();
         if (userLoc && publicacion?.latitud && publicacion?.longitud) {
-
-          // Región centrada entre usuario y publicación
           const midLat = (userLoc.latitude + publicacion.latitud) / 2;
           const midLng = (userLoc.longitude + publicacion.longitud) / 2;
-
 
           setModalRegion({
             latitude: publicacion.latitud,
@@ -139,7 +150,7 @@ export default function VisualizarPublicacion() {
       <ScrollView
         style={styles.containerScroll}
         contentContainerStyle={{ paddingBottom: 40 }}
-        showsVerticalScrollIndicator={false} 
+        showsVerticalScrollIndicator={false}
       >
         <View>
           <Text style={styles.titulo}>{publicacion.titulo}</Text>
@@ -150,7 +161,6 @@ export default function VisualizarPublicacion() {
             <Text style={styles.opiniones}>Detalles</Text>
 
             <View style={styles.iconRow}>
-              {/* ICONO MAPA */}
               <TouchableOpacity onPress={() => setModalVisible(true)}>
                 <Ionicons name="map-outline" size={24} color={Colors.primary} />
               </TouchableOpacity>
@@ -236,11 +246,21 @@ export default function VisualizarPublicacion() {
               styleBtn={{ marginTop: 12, height: 36 }}
             ></PrimaryButton>
           </View>
+
+          {/* Botón para ir al perfil del usuario */}
+          <TouchableOpacity style={styles.perfilCard} onPress={irAPerfil}>
+            <View style={styles.perfilContent}>
+              <Avatar
+                name={`${publicacion.usuario_nombre} ${publicacion.usuario_apellido}`}
+                size={48}
+              />
+              <Text style={styles.perfilNombre}>
+                {publicacion.usuario_nombre} {publicacion.usuario_apellido}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={24} color={Colors.primary} />
+          </TouchableOpacity>
         </View>
-        <Text style={styles.opiniones}>
-          Opiniones de {publicacion.usuario_apellido + " " + publicacion.usuario_nombre}
-        </Text>
-        {/* Falta el listado de opiniones del usuario */}
       </ScrollView>
       {publicacion.usuario_id !== userid && (
         <View>
@@ -257,7 +277,7 @@ export default function VisualizarPublicacion() {
           >
             <View style={styles.modalBackground}>
               <AlertCard
-                title={`Contactar a ${publicacion.usuario_nombre}${publicacion.usuario_apellido}`}
+                title={`Contactar a ${publicacion.usuario_nombre} ${publicacion.usuario_apellido}`}
                 description={`Vamos a enviar un mensaje predeterminado sobre la publicación "${publicacion.titulo}".`}
                 onAccept={() => {
                   setShowAlert(false);
@@ -289,7 +309,6 @@ export default function VisualizarPublicacion() {
                     showsMyLocationButton={false}
                     showsCompass={false}
                   >
-                    {/* Marcador de la publicación */}
                     {publicacion?.latitud && publicacion?.longitud && (
                       <Marker
                         coordinate={{
@@ -304,8 +323,6 @@ export default function VisualizarPublicacion() {
                         />
                       </Marker>
                     )}
-
-
                   </MapView>
                 ) : (
                   <ActivityIndicator size="large" color={Colors.primary} />
@@ -313,7 +330,6 @@ export default function VisualizarPublicacion() {
               </View>
             </TouchableOpacity>
           </Modal>
-
         </View>
       )}
     </View>
@@ -353,6 +369,32 @@ const styles = StyleSheet.create({
     color: "#3C3C43",
     marginBottom: 4,
     fontWeight: "500",
+  },
+  perfilCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderRadius: 24,
+    backgroundColor: Colors.white,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    marginVertical: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.24,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  perfilContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  perfilNombre: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: Colors.primary,
+    marginLeft: 12,
   },
   modalBackground: {
     flex: 1,

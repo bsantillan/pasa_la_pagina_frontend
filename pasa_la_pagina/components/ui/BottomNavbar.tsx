@@ -12,7 +12,6 @@ const TABS = [
     { name: "profile", label: "Profile", icon: "person-outline", activeIcon: "person", route: "/(perfil)/" },
 ];
 
-
 export default function BottomNavbar() {
     const [active, setActive] = useState('home');
     const router = useRouter();
