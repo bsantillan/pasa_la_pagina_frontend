@@ -7,9 +7,10 @@ import { useChat } from "@/contexts/ChatContext";
 import { useIntercambio } from "@/contexts/IntercambioContext";
 import Ionicons from "@expo/vector-icons/build/Ionicons";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   FlatList,
+  Keyboard,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -20,6 +21,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function Chat() {
   const [visible, setVisible] = useState(false);
@@ -38,13 +40,22 @@ export default function Chat() {
   const [text, setText] = useState("");
 
   const flatListRef = useRef<FlatList<any>>(null);
+  const insets = useSafeAreaInsets();
+  const bottomSpacing = Math.max(8, insets.bottom - 6);
+
+  const scrollToBottom = useCallback(() => {
+    if (!flatListRef.current) return;
+    requestAnimationFrame(() => {
+      flatListRef.current?.scrollToEnd({ animated: true });
+    });
+  }, []);
 
   // Auto scroll abajo cuando llegan mensajes
   useEffect(() => {
-    if (flatListRef.current && messages.length > 0) {
-      flatListRef.current.scrollToEnd({ animated: true });
+    if (messages.length > 0) {
+      scrollToBottom();
     }
-  }, [messages]);
+  }, [messages, scrollToBottom]);
 
   // Cargar historial + datos del chat + conexion WS
   useEffect(() => {
@@ -55,6 +66,16 @@ export default function Chat() {
     const disconnect = initWebSocket(id);
     return disconnect;
   }, [chatId]);
+
+  // Reforzar posicion al cerrar/abrir teclado
+  useEffect(() => {
+    const showSub = Keyboard.addListener("keyboardDidShow", scrollToBottom);
+    const hideSub = Keyboard.addListener("keyboardDidHide", scrollToBottom);
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, [scrollToBottom]);
 
   // Loader si chatInfo es null
   if (!chatInfo) {
@@ -92,8 +113,8 @@ export default function Chat() {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 70}
+      behavior="padding"
+      keyboardVerticalOffset={Platform.OS === "ios" ? insets.top : 0}
     >
       {/* HEADER */}
       <View style={styles.header}>
@@ -134,11 +155,14 @@ export default function Chat() {
               isOwnMessage={item.usuarioEmail === user?.email}
             />
           )}
-          contentContainerStyle={{ padding: 10, paddingBottom: 20 }}
+          contentContainerStyle={{ padding: 10, paddingBottom: 20 + bottomSpacing }}
+          keyboardDismissMode="interactive"
+          keyboardShouldPersistTaps="handled"
+          onContentSizeChange={scrollToBottom}
         />
 
         {/* INPUT */}
-        <View style={styles.inputBar}>
+        <View style={[styles.inputBar, { paddingBottom: bottomSpacing }]}>
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
@@ -253,7 +277,7 @@ const styles = StyleSheet.create({
 
   /* INPUT BAR */
   inputBar: {
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.background,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderTopLeftRadius: 12,
