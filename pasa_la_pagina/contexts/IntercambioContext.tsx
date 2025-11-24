@@ -1,7 +1,7 @@
 import React, {
-    createContext,
-    useContext,
-    useState
+  createContext,
+  useContext,
+  useState
 } from "react";
 import { useAuth } from "./AuthContext";
 
@@ -25,6 +25,19 @@ export type Intercambio = {
   chatId?: number;
 };
 
+export type IntercambioReseñable = {
+  id: number;
+  tituloPublicacion: string;
+  nombre: string;
+  apellido: string;
+  usuarioId: number;
+  usuarioEmail: string;
+  estado: EstadoIntercambio;
+  fechaInicio: string;
+  esReseñable: boolean;
+  rolUsuario: string;
+};
+
 export type BuscarIntercambioRequest = {
   estadosIntercambio?: EstadoIntercambio[];
   fechaInicio?: string;
@@ -37,6 +50,7 @@ export type BuscarIntercambioRequest = {
 type IntercambioContextType = {
   intercambios: Intercambio[] | null;
   intercambioSeleccionado: Intercambio | null;
+  intercambiosReseñables: IntercambioReseñable[] | null;
   loading: boolean;
   wsConnected: boolean;
   ultimoEstadoIntercambio: {
@@ -73,6 +87,7 @@ type IntercambioContextType = {
     mensaje: string;
   }>;
     rechazarIntercambio: (id: number) => Promise<void>;
+    getIntercambiosReseñables: () => Promise<any[]>;
 };
 
 const IntercambioContext = createContext<IntercambioContextType | undefined>(
@@ -90,6 +105,7 @@ export const IntercambioProvider = ({
   const [intercambios, setIntercambios] = useState<Intercambio[] | null>(null);
   const [intercambioSeleccionado, setIntercambioSeleccionado] =
     useState<Intercambio | null>(null);
+  const [intercambiosReseñables, setIntercambiosReseñables] = useState<IntercambioReseñable[]>([]);
   const [loading, setLoading] = useState(false);
   const [wsConnected, setWsConnected] = useState(false);
   const [ultimoEstadoIntercambio, setUltimoEstadoIntercambio] = useState<{
@@ -128,7 +144,35 @@ export const IntercambioProvider = ({
     }
   };
 
-  // ... tus funciones existentes ...
+  const getIntercambiosReseñables = async () => {
+    setLoading(true);
+    try {
+      const token = await getValidAccessToken();
+      if (!token) throw new Error("No hay token válido");
+
+      const res = await fetch(`${API_URL}intercambio/intercambios-usuario-reseñables`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`Error al obtener intercambios reseñables: ${res.status} - ${text}`);
+      }
+
+      const data = await res.json();
+      console.log("Intercambios reseñables obtenidos:", data);
+      setIntercambiosReseñables(data); 
+      return data// Retorna la lista directamente
+    } catch (err: any) {
+      console.log(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const solicitarIntercambio = async (id: number) => {
     setLoading(true);
@@ -340,6 +384,7 @@ export const IntercambioProvider = ({
       value={{
         intercambios,
         intercambioSeleccionado,
+        intercambiosReseñables,
         loading,
         wsConnected,
         ultimoEstadoIntercambio,
@@ -353,6 +398,7 @@ export const IntercambioProvider = ({
         validarIntercambioConCodigo,
         getEstadoActualizado,
         rechazarIntercambio,
+        getIntercambiosReseñables,
       }}
     >
       {children}
