@@ -1,12 +1,12 @@
 import { Colors } from "@/constants/Colors";
+import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
-import { StyleSheet, Text, TextInput, View } from "react-native";
+import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
 interface InputFieldProps {
     placeholder: string;
     value: string;
     onChangeText: (text: string) => void;
-    iconName?: string;
     secureTextEntry?: boolean;
     keyboardType?: "default" | "email-address" | "numeric" | "phone-pad";
     autoCapitalize?: "none" | "sentences" | "words" | "characters";
@@ -29,7 +29,6 @@ const CustomInput: React.FC<InputFieldProps> = ({
     placeholder,
     value,
     onChangeText,
-    iconName,
     secureTextEntry = false,
     keyboardType = "default",
     autoCapitalize = "none",
@@ -85,12 +84,23 @@ const CustomInput: React.FC<InputFieldProps> = ({
                             setInputHeight(Math.min(Math.max(minHeight, height), maxHeight));
                         }
                     }}
-
-                    // 👉 NUEVO
                     returnKeyType={returnKeyType}
                     onSubmitEditing={onSubmitEditing}
                     blurOnSubmit={blurOnSubmit}
                 />
+
+                {isPassword && (
+                    <Pressable
+                        style={styles.eyeButton}
+                        onPress={() => setShowPassword((prev) => !prev)}
+                    >
+                        <Ionicons
+                            name={showPassword ? "eye-off" : "eye"}
+                            size={22}
+                            color="#444"
+                        />
+                    </Pressable>
+                )}
             </View>
 
             {hasError && errorMessage && (
@@ -99,7 +109,6 @@ const CustomInput: React.FC<InputFieldProps> = ({
         </View>
     );
 };
-
 
 export default CustomInput;
 
@@ -122,9 +131,6 @@ const styles = StyleSheet.create({
     input: {
         color: "#000",
         fontSize: 14,
-    },
-    icon: {
-        marginRight: 8,
     },
     eyeButton: {
         paddingHorizontal: 6,
