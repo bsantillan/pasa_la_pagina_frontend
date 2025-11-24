@@ -161,10 +161,10 @@ const styles = StyleSheet.create({
   form: {
     flex: 1,
     padding: 20,
-    justifyContent: "center",
-    marginRight: 39,
+    alignItems: "stretch",
     marginLeft: 39,
-    alignItems: "center",
+    marginRight: 39,
+    justifyContent: "center",
   },
   title: {
     width: "100%",
@@ -193,6 +193,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 400,
     color: "#838589",
+    textAlign: "center",
+    width: "100%",
   },
   link: {
     color: Colors.cta,

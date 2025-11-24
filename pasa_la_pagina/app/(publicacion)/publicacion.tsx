@@ -1,5 +1,5 @@
 ﻿import PrimaryButton from "@/components/ui/Boton/Primary";
-import CameraModal from "@/components/ui/CameraModal";
+import CustomInput from "@/components/ui/CustomInput";
 import { FotoCarousel } from "@/components/ui/FotosCarousel";
 import { Colors } from "@/constants/Colors";
 import { useAuth } from "@/contexts/AuthContext";
@@ -127,30 +127,30 @@ export default function FinalizarPublicacionScreen() {
       return;
     }
 
-  try {
-    const loc = await Location.getCurrentPositionAsync({});
-    
-    // 👇 Actualizar estado de ubicación actual
-    setLocation({ 
-      latitude: loc.coords.latitude, 
-      longitude: loc.coords.longitude 
-    });
-    
-    // 👇 Actualizar contexto
-    updateComunes({ 
-      latitud: loc.coords.latitude, 
-      longitud: loc.coords.longitude 
-    });
-    
-    // 👇 Limpiar ubicación manual para que no interfiera
-    setManualLocation(null);
-    
-    Alert.alert("Éxito", "Ubicación actual obtenida correctamente");
-  } catch (error) {
-    console.error("Error al obtener ubicación actual:", error);
-    Alert.alert("Error", "No se pudo obtener la ubicación actual. Inténtalo de nuevo.");
-  }
-};
+    try {
+      const loc = await Location.getCurrentPositionAsync({});
+
+      // 👇 Actualizar estado de ubicación actual
+      setLocation({
+        latitude: loc.coords.latitude,
+        longitude: loc.coords.longitude
+      });
+
+      // 👇 Actualizar contexto
+      updateComunes({
+        latitud: loc.coords.latitude,
+        longitud: loc.coords.longitude
+      });
+
+      // 👇 Limpiar ubicación manual para que no interfiera
+      setManualLocation(null);
+
+      Alert.alert("Éxito", "Ubicación actual obtenida correctamente");
+    } catch (error) {
+      console.error("Error al obtener ubicación actual:", error);
+      Alert.alert("Error", "No se pudo obtener la ubicación actual. Inténtalo de nuevo.");
+    }
+  };
   const handleBack = () => {
     if (step === 2) {
       setStep(1);
@@ -480,14 +480,13 @@ export default function FinalizarPublicacionScreen() {
           {comunes.digital === false && (
             <>
               <Text style={styles.label}>Cantidad</Text>
-              <TextInput
-                keyboardType="numeric"
-                style={getInputStyle(comunes.cantidad)}
+              <CustomInput
                 placeholder="Cantidad"
                 value={comunes.cantidad?.toString() || ""}
+                keyboardType="numeric"
                 onChangeText={(t) => updateComunes({ cantidad: parseInt(t, 10) || undefined })}
+                showErrors={showErrors}
               />
-              {showErrors && !comunes.cantidad && <Text style={styles.errorText}>Este campo es obligatorio</Text>}
             </>
           )}
 
@@ -528,13 +527,12 @@ export default function FinalizarPublicacionScreen() {
           {comunes.digital === true && comunes.tipo_oferta?.includes("Donaci") && (
             <>
               <Text style={styles.label}>Enlace</Text>
-              <TextInput
-                style={getInputStyle(comunes.url)}
+              <CustomInput
                 placeholder="Enlace"
                 value={comunes.url || ""}
                 onChangeText={(t) => updateComunes({ url: t })}
+                showErrors={showErrors}
               />
-              {showErrors && !comunes.url?.trim() && <Text style={styles.errorText}>Este campo es obligatorio</Text>}
             </>
           )}
 
