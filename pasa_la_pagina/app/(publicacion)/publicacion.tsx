@@ -162,6 +162,12 @@ export default function FinalizarPublicacionScreen() {
     }
   };
 
+  const handleCloseAlert = () => {
+    const action = customAlert?.onAccept;
+    setCustomAlert(null);
+    action?.();
+  };
+
   const getAddressFromCoords = async (latitude: number, longitude: number) => {
     try {
       const results = await Location.reverseGeocodeAsync({ latitude, longitude });
@@ -418,361 +424,361 @@ export default function FinalizarPublicacionScreen() {
 
   return (
     <>
-    <KeyboardAwareScrollView
-      style={styles.container}
-      contentContainerStyle={styles.scrollContent}
-      keyboardShouldPersistTaps="handled"
-      enableOnAndroid
-      showsVerticalScrollIndicator={false}
-      extraScrollHeight={100}
-      enableAutomaticScroll
-    >
-      <View style={styles.header}>
-        <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={Colors.text} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Crear publicacion</Text>
-        <View style={{ width: 40 }} />
-      </View>
-
-      <ProgressBar
-        currentStep={step === 1 ? 3 : 4}
-        totalSteps={3}
-      />
-
-      {step === 1 && (
-        <View style={styles.stepContainer}>
-          <Text style={styles.title}>Detalles de la publicación</Text>
-          <Text style={styles.subtitle}>Completá la información.</Text>
-
-          <Text style={styles.label}>Tipo de Oferta</Text>
-          <CustomDropdown
-            value={comunes.tipo_oferta}
-            onValueChange={(v) => {
-              updateComunes({ tipo_oferta: v });
-              if (v !== "Venta") {
-                updateComunes({ precio: undefined });
-              }
-              if (!comunes.digital || !v?.includes("Donaci")) {
-                updateComunes({ url: undefined });
-              }
-            }}
-            options={tipoOptions}
-            placeholder="Selecciona un tipo de oferta"
-            showErrors={showErrors}
-          />
-
-          {/* ENLACE: Solo para formato digital + tipo donación - AHORA AQUÍ DEBAJO DE TIPO DE OFERTA */}
-          {comunes.digital === true && comunes.tipo_oferta?.includes("Donaci") && (
-            <>
-              <Text style={styles.label}>Enlace</Text>
-              <CustomInput
-                placeholder="Enlace"
-                value={comunes.url || ""}
-                onChangeText={(t) => updateComunes({ url: t })}
-                showErrors={showErrors}
-                inputRef={enlaceRef}
-                returnKeyType="next"
-                blurOnSubmit={false}
-                onSubmitEditing={() => {
-                  const next = getNextRefAfterEnlace();
-                  next?.current?.focus();
-                }}
-              />
-            </>
-          )}
-
-          {/* PRECIO: Solo para tipo de oferta "Venta" */}
-          {comunes.tipo_oferta === "Venta" && (
-            <>
-              <Text style={styles.label}>Precio</Text>
-              <CustomInput
-                placeholder="Precio"
-                value={comunes.precio?.toString() || ""}
-                keyboardType="numeric"
-                onChangeText={(t) => updateComunes({ precio: parseFloat(t) || undefined })}
-                showErrors={showErrors}
-                inputRef={precioRef}
-                returnKeyType={comunes.digital ? "next" : "next"}
-                blurOnSubmit={false}
-                onSubmitEditing={() => descripcionRef.current?.focus()}
-              />
-            </>
-          )}
-
-          {/* CANTIDAD: Solo para formato físico */}
-          {comunes.digital === false && (
-            <>
-              <Text style={styles.label}>Cantidad</Text>
-              <CustomInput
-                placeholder="Cantidad"
-                value={comunes.cantidad?.toString() || ""}
-                keyboardType="numeric"
-                onChangeText={(t) => updateComunes({ cantidad: parseInt(t, 10) || undefined })}
-                showErrors={showErrors}
-                inputRef={cantidadRef}
-                returnKeyType="next"
-                blurOnSubmit={false}
-                onSubmitEditing={() => descripcionRef.current?.focus()}
-              />
-            </>
-          )}
-
-          <Text style={styles.label}>Descripción</Text>
-          <CustomInput
-            placeholder="Descripción"
-            value={comunes.descripcion || ""}
-            onChangeText={(t) => updateComunes({ descripcion: t })}
-            multiline
-            minHeight={100}
-            maxHeight={250}
-            showErrors={showErrors}
-            errorMessage="Este campo es obligatorio"
-            inputRef={descripcionRef}
-            returnKeyType="done"
-            onSubmitEditing={() => Keyboard.dismiss()}
-          />
-
-          <Text style={styles.label}>Imágenes</Text>
-          <TouchableOpacity style={styles.imagePicker} onPress={showImageOptions}>
-            <Ionicons name="images-outline" size={32} color={Colors.primary} />
-            <Text style={styles.imagePickerText}>Seleccionar imágenes</Text>
-            <Text style={styles.imagePickerSubtext}>Tocá para elegir desde tu galería</Text>
+      <KeyboardAwareScrollView
+        style={styles.container}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        enableOnAndroid
+        showsVerticalScrollIndicator={false}
+        extraScrollHeight={100}
+        enableAutomaticScroll
+      >
+        <View style={styles.header}>
+          <TouchableOpacity onPress={handleBack} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={24} color={Colors.text} />
           </TouchableOpacity>
-
-          {images.length > 0 && (
-            <View style={styles.imagesContainer}>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.imagesScrollContent}>
-                {images.map((uri, i) => (
-                  <View key={i} style={styles.imageWrapper}>
-                    <Image source={{ uri }} style={styles.imageThumb} />
-                    <TouchableOpacity style={styles.removeImageBtn} onPress={() => removeImage(i)}>
-                      <Ionicons name="close-circle" size={24} color="#ff4444" />
-                    </TouchableOpacity>
-                  </View>
-                ))}
-              </ScrollView>
-            </View>
-          )}
-          {showErrors && images.length === 0 && <Text style={styles.errorText}>Debes agregar al menos una imagen</Text>}
-
-          <Text style={styles.sectionTitle}>Seleccionar ubicación</Text>
-          {addressText && (
-            <View style={styles.locationInfo}>
-              <Ionicons name="location" size={18} color={Colors.primary} />
-              <Text style={styles.locationText}>{addressText}</Text>
-            </View>
-          )}
-          <View style={styles.mapContainer}>
-            <MapView
-              style={styles.map}
-              region={mapRegion}
-              onRegionChangeComplete={setMapRegion}
-              onPress={(e) => {
-                const { latitude, longitude } = e.nativeEvent.coordinate;
-                setManualLocation({ latitude, longitude });
-                updateComunes({ latitud: latitude, longitud: longitude });
-                setLocation(null);
-                getAddressFromCoords(latitude, longitude);
-              }}
-            >
-              {location && <Marker coordinate={location} />}
-              {manualLocation && <Marker coordinate={manualLocation} />}
-            </MapView>
-            <TouchableOpacity style={styles.currentLocationBtn} onPress={getCurrentLocation}>
-              <Ionicons name="locate" size={24} color={Colors.primary} />
-            </TouchableOpacity>
-          </View>
-          {showErrors && !location && !manualLocation && <Text style={styles.errorText}>Debes seleccionar una ubicación</Text>}
-
-          <PrimaryButton styleBtn={styles.continueBtn} title="Continuar" onPress={handleNextStep} />
+          <Text style={styles.headerTitle}>Crear publicacion</Text>
+          <View style={{ width: 40 }} />
         </View>
-      )}
 
-      {step === 2 && (
-        <View style={{ flex: 1 }}>
-          <ScrollView style={styles.containerScroll} contentContainerStyle={{ paddingBottom: 40 }}>
-            <View>
-              {/* TÍTULO */}
-              <Text style={{
-                fontSize: 26,
-                fontWeight: "700",
-                marginBottom: 12,
-                color: Colors.primary,
-                textAlign: "center",
-              }}>
-                {tipo === "libro" ? libro?.titulo : apunte?.titulo}
-              </Text>
+        <ProgressBar
+          currentStep={step === 1 ? 3 : 4}
+          totalSteps={3}
+        />
 
-              {/* CARRUSEL DE FOTOS */}
-              <FotoCarousel fotos={images} mostrarFavorito={false} />
+        {step === 1 && (
+          <View style={styles.stepContainer}>
+            <Text style={styles.title}>Detalles de la publicación</Text>
+            <Text style={styles.subtitle}>Completá la información.</Text>
 
-              {/* DESCRIPCIÓN */}
-              <Text
-                style={{
-                  fontSize: 18,
-                  marginTop: 20,
-                  marginBottom: 14,
-                  paddingHorizontal: 8,
-                  fontWeight: "500",
-                  color: "#444",
-                }}
-              >
-                {comunes.descripcion}
-              </Text>
-            </View>
-
-            {/* CARD DE DETALLES */}
-            <View
-              style={{
-                backgroundColor: "white",
-                padding: 20,
-                borderRadius: 20,
-                marginBottom: 24,
-                shadowColor: "#000",
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.15,
-                shadowRadius: 8,
-                elevation: 6,
+            <Text style={styles.label}>Tipo de Oferta</Text>
+            <CustomDropdown
+              value={comunes.tipo_oferta}
+              onValueChange={(v) => {
+                updateComunes({ tipo_oferta: v });
+                if (v !== "Venta") {
+                  updateComunes({ precio: undefined });
+                }
+                if (!comunes.digital || !v?.includes("Donaci")) {
+                  updateComunes({ url: undefined });
+                }
               }}
-            >
-              <Text style={styles.detailLabel}>Descripción: <Text style={styles.detailValue}>{comunes.descripcion}</Text></Text>
-              <Text style={styles.detailLabel}>Tipo de Oferta: <Text style={styles.detailValue}>{comunes.tipo_oferta}</Text></Text>
-              {comunes.tipo_oferta === "Venta" && <Text style={styles.detailLabel}>Precio: <Text style={styles.detailValue}>${comunes.precio}</Text></Text>}
-              <Text style={styles.detailLabel}>Cantidad: <Text style={styles.detailValue}>{comunes.cantidad}</Text></Text>
-              <Text style={styles.detailLabel}>Idioma: <Text style={styles.detailValue}>{tipo === "libro" ? libro?.idioma : apunte?.idioma}</Text></Text>
-              <Text style={styles.detailLabel}>Formato: <Text style={styles.detailValue}>{comunes?.digital ? "Digital" : "Físico"}</Text></Text>
+              options={tipoOptions}
+              placeholder="Selecciona un tipo de oferta"
+              showErrors={showErrors}
+            />
 
-              {tipo === "libro" ? (
-                <>
-                  <Text style={styles.detailLabel}>Autor: <Text style={styles.detailValue}>{libro?.autor}</Text></Text>
-                  <Text style={styles.detailLabel}>Editorial: <Text style={styles.detailValue}>{libro?.editorial}</Text></Text>
-                  <Text style={styles.detailLabel}>ISBN: <Text style={styles.detailValue}>{libro?.isbn}</Text></Text>
-                  <Text style={styles.detailLabel}>Género: <Text style={styles.detailValue}>{libro?.genero}</Text></Text>
-                </>
-              ) : (
-                <>
-                  <Text style={styles.detailLabel}>Materia: <Text style={styles.detailValue}>{apunte?.materia}</Text></Text>
-                  <Text style={styles.detailLabel}>Institución: <Text style={styles.detailValue}>{apunte?.institucion}</Text></Text>
-                  <Text style={styles.detailLabel}>Nivel educativo: <Text style={styles.detailValue}>{apunte?.nivel_educativo}</Text></Text>
-                  <Text style={styles.detailLabel}>Sección: <Text style={styles.detailValue}>{apunte?.seccion}</Text></Text>
-                  <Text style={styles.detailLabel}>Carrera: <Text style={styles.detailValue}>{apunte?.carrera}</Text></Text>
-                  <Text style={styles.detailLabel}>Año de elaboración: <Text style={styles.detailValue}>{apunte?.anio_elaboracion}</Text></Text>
-                  <Text style={styles.detailLabel}>Cantidad de páginas: <Text style={styles.detailValue}>{apunte?.paginas}</Text></Text>
-                </>
-              )}
-
-            </View>
-
-            {/* UBICACIÓN */}
-            {(location || manualLocation) && (
-              <View style={{ marginBottom: 20 }}>
-                <Text
-                  style={{
-                    fontSize: 20,
-                    fontWeight: "600",
-                    marginBottom: 10,
-                    color: Colors.text,
+            {/* ENLACE: Solo para formato digital + tipo donación - AHORA AQUÍ DEBAJO DE TIPO DE OFERTA */}
+            {comunes.digital === true && comunes.tipo_oferta?.includes("Donaci") && (
+              <>
+                <Text style={styles.label}>Enlace</Text>
+                <CustomInput
+                  placeholder="Enlace"
+                  value={comunes.url || ""}
+                  onChangeText={(t) => updateComunes({ url: t })}
+                  showErrors={showErrors}
+                  inputRef={enlaceRef}
+                  returnKeyType="next"
+                  blurOnSubmit={false}
+                  onSubmitEditing={() => {
+                    const next = getNextRefAfterEnlace();
+                    next?.current?.focus();
                   }}
-                >
-                  Ubicación
-                </Text>
-
-                {addressText && (
-                  <View style={styles.locationInfo}>
-                    <Ionicons name="location" size={18} color={Colors.primary} />
-                    <Text style={styles.locationText}>{addressText}</Text>
-                  </View>
-                )}
-
-                <MapView
-                  style={{
-                    width: "100%",
-                    height: 250,
-                    borderRadius: 12,
-                    marginTop: 6,
-                  }}
-                  initialRegion={{
-                    latitude: location?.latitude ?? manualLocation?.latitude!,
-                    longitude: location?.longitude ?? manualLocation?.longitude!,
-                    latitudeDelta: 0.01,
-                    longitudeDelta: 0.01,
-                  }}
-                >
-                  <Marker coordinate={location ?? manualLocation!} />
-                </MapView>
-              </View>
+                />
+              </>
             )}
 
-            {/* BOTÓN */}
-            <PrimaryButton
-              styleBtn={{ height: 48, marginTop: 20, marginBottom: 36 }}
-              title="Publicar"
-              onPress={handleSubmit}
+            {/* PRECIO: Solo para tipo de oferta "Venta" */}
+            {comunes.tipo_oferta === "Venta" && (
+              <>
+                <Text style={styles.label}>Precio</Text>
+                <CustomInput
+                  placeholder="Precio"
+                  value={comunes.precio?.toString() || ""}
+                  keyboardType="numeric"
+                  onChangeText={(t) => updateComunes({ precio: parseFloat(t) || undefined })}
+                  showErrors={showErrors}
+                  inputRef={precioRef}
+                  returnKeyType={comunes.digital ? "next" : "next"}
+                  blurOnSubmit={false}
+                  onSubmitEditing={() => descripcionRef.current?.focus()}
+                />
+              </>
+            )}
+
+            {/* CANTIDAD: Solo para formato físico */}
+            {comunes.digital === false && (
+              <>
+                <Text style={styles.label}>Cantidad</Text>
+                <CustomInput
+                  placeholder="Cantidad"
+                  value={comunes.cantidad?.toString() || ""}
+                  keyboardType="numeric"
+                  onChangeText={(t) => updateComunes({ cantidad: parseInt(t, 10) || undefined })}
+                  showErrors={showErrors}
+                  inputRef={cantidadRef}
+                  returnKeyType="next"
+                  blurOnSubmit={false}
+                  onSubmitEditing={() => descripcionRef.current?.focus()}
+                />
+              </>
+            )}
+
+            <Text style={styles.label}>Descripción</Text>
+            <CustomInput
+              placeholder="Descripción"
+              value={comunes.descripcion || ""}
+              onChangeText={(t) => updateComunes({ descripcion: t })}
+              multiline
+              minHeight={100}
+              maxHeight={250}
+              showErrors={showErrors}
+              errorMessage="Este campo es obligatorio"
+              inputRef={descripcionRef}
+              returnKeyType="done"
+              onSubmitEditing={() => Keyboard.dismiss()}
             />
-          </ScrollView>
-        </View>
 
-      )}
+            <Text style={styles.label}>Imágenes</Text>
+            <TouchableOpacity style={styles.imagePicker} onPress={showImageOptions}>
+              <Ionicons name="images-outline" size={32} color={Colors.primary} />
+              <Text style={styles.imagePickerText}>Seleccionar imágenes</Text>
+              <Text style={styles.imagePickerSubtext}>Tocá para elegir desde tu galería</Text>
+            </TouchableOpacity>
 
-
-
-      <Modal
-        visible={imagePickerVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setImagePickerVisible(false)}
-      >
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setImagePickerVisible(false)}
-        >
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Agregar imagen</Text>
-            <Text style={styles.modalSubtitle}>Seleccioná cómo querés agregar la imagen</Text>
-
-            <TouchableOpacity
-              style={styles.modalOption}
-              onPress={() => { setImagePickerVisible(false); pickFromCamera(); }}
-            >
-              <View style={styles.modalOptionIcon}>
-                <Ionicons name="camera" size={24} color={Colors.primary} />
+            {images.length > 0 && (
+              <View style={styles.imagesContainer}>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.imagesScrollContent}>
+                  {images.map((uri, i) => (
+                    <View key={i} style={styles.imageWrapper}>
+                      <Image source={{ uri }} style={styles.imageThumb} />
+                      <TouchableOpacity style={styles.removeImageBtn} onPress={() => removeImage(i)}>
+                        <Ionicons name="close-circle" size={24} color="#ff4444" />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </ScrollView>
               </View>
-              <Text style={styles.modalOptionText}>Tomar foto</Text>
-            </TouchableOpacity>
+            )}
+            {showErrors && images.length === 0 && <Text style={styles.errorText}>Debes agregar al menos una imagen</Text>}
 
-            <TouchableOpacity
-              style={styles.modalOption}
-              onPress={() => { setImagePickerVisible(false); pickFromGallery(); }}
-            >
-              <View style={styles.modalOptionIcon}>
-                <Ionicons name="images" size={24} color={Colors.primary} />
+            <Text style={styles.sectionTitle}>Seleccionar ubicación</Text>
+            {addressText && (
+              <View style={styles.locationInfo}>
+                <Ionicons name="location" size={18} color={Colors.primary} />
+                <Text style={styles.locationText}>{addressText}</Text>
               </View>
-              <Text style={styles.modalOptionText}>Elegir de galería</Text>
-            </TouchableOpacity>
+            )}
+            <View style={styles.mapContainer}>
+              <MapView
+                style={styles.map}
+                region={mapRegion}
+                onRegionChangeComplete={setMapRegion}
+                onPress={(e) => {
+                  const { latitude, longitude } = e.nativeEvent.coordinate;
+                  setManualLocation({ latitude, longitude });
+                  updateComunes({ latitud: latitude, longitud: longitude });
+                  setLocation(null);
+                  getAddressFromCoords(latitude, longitude);
+                }}
+              >
+                {location && <Marker coordinate={location} />}
+                {manualLocation && <Marker coordinate={manualLocation} />}
+              </MapView>
+              <TouchableOpacity style={styles.currentLocationBtn} onPress={getCurrentLocation}>
+                <Ionicons name="locate" size={24} color={Colors.primary} />
+              </TouchableOpacity>
+            </View>
+            {showErrors && !location && !manualLocation && <Text style={styles.errorText}>Debes seleccionar una ubicación</Text>}
 
-            <TouchableOpacity
-              style={styles.modalOption}
-              onPress={() => { setImagePickerVisible(false); pickFromFiles(); }}
-            >
-              <View style={styles.modalOptionIcon}>
-                <Ionicons name="folder" size={24} color={Colors.primary} />
-              </View>
-              <Text style={styles.modalOptionText}>Elegir de archivos</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.modalCancelBtn}
-              onPress={() => setImagePickerVisible(false)}
-            >
-              <Text style={styles.modalCancelText}>Cancelar</Text>
-            </TouchableOpacity>
+            <PrimaryButton styleBtn={styles.continueBtn} title="Continuar" onPress={handleNextStep} />
           </View>
-        </TouchableOpacity>
-      </Modal>
-    </KeyboardAwareScrollView>
-     <Modal
+        )}
+
+        {step === 2 && (
+          <View style={{ flex: 1 }}>
+            <ScrollView style={styles.containerScroll} contentContainerStyle={{ paddingBottom: 40 }}>
+              <View>
+                {/* TÍTULO */}
+                <Text style={{
+                  fontSize: 26,
+                  fontWeight: "700",
+                  marginBottom: 12,
+                  color: Colors.primary,
+                  textAlign: "center",
+                }}>
+                  {tipo === "libro" ? libro?.titulo : apunte?.titulo}
+                </Text>
+
+                {/* CARRUSEL DE FOTOS */}
+                <FotoCarousel fotos={images} mostrarFavorito={false} />
+
+                {/* DESCRIPCIÓN */}
+                <Text
+                  style={{
+                    fontSize: 18,
+                    marginTop: 20,
+                    marginBottom: 14,
+                    paddingHorizontal: 8,
+                    fontWeight: "500",
+                    color: "#444",
+                  }}
+                >
+                  {comunes.descripcion}
+                </Text>
+              </View>
+
+              {/* CARD DE DETALLES */}
+              <View
+                style={{
+                  backgroundColor: "white",
+                  padding: 20,
+                  borderRadius: 20,
+                  marginBottom: 24,
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.15,
+                  shadowRadius: 8,
+                  elevation: 6,
+                }}
+              >
+                <Text style={styles.detailLabel}>Descripción: <Text style={styles.detailValue}>{comunes.descripcion}</Text></Text>
+                <Text style={styles.detailLabel}>Tipo de Oferta: <Text style={styles.detailValue}>{comunes.tipo_oferta}</Text></Text>
+                {comunes.tipo_oferta === "Venta" && <Text style={styles.detailLabel}>Precio: <Text style={styles.detailValue}>${comunes.precio}</Text></Text>}
+                <Text style={styles.detailLabel}>Cantidad: <Text style={styles.detailValue}>{comunes.cantidad}</Text></Text>
+                <Text style={styles.detailLabel}>Idioma: <Text style={styles.detailValue}>{tipo === "libro" ? libro?.idioma : apunte?.idioma}</Text></Text>
+                <Text style={styles.detailLabel}>Formato: <Text style={styles.detailValue}>{comunes?.digital ? "Digital" : "Físico"}</Text></Text>
+
+                {tipo === "libro" ? (
+                  <>
+                    <Text style={styles.detailLabel}>Autor: <Text style={styles.detailValue}>{libro?.autor}</Text></Text>
+                    <Text style={styles.detailLabel}>Editorial: <Text style={styles.detailValue}>{libro?.editorial}</Text></Text>
+                    <Text style={styles.detailLabel}>ISBN: <Text style={styles.detailValue}>{libro?.isbn}</Text></Text>
+                    <Text style={styles.detailLabel}>Género: <Text style={styles.detailValue}>{libro?.genero}</Text></Text>
+                  </>
+                ) : (
+                  <>
+                    <Text style={styles.detailLabel}>Materia: <Text style={styles.detailValue}>{apunte?.materia}</Text></Text>
+                    <Text style={styles.detailLabel}>Institución: <Text style={styles.detailValue}>{apunte?.institucion}</Text></Text>
+                    <Text style={styles.detailLabel}>Nivel educativo: <Text style={styles.detailValue}>{apunte?.nivel_educativo}</Text></Text>
+                    <Text style={styles.detailLabel}>Sección: <Text style={styles.detailValue}>{apunte?.seccion}</Text></Text>
+                    <Text style={styles.detailLabel}>Carrera: <Text style={styles.detailValue}>{apunte?.carrera}</Text></Text>
+                    <Text style={styles.detailLabel}>Año de elaboración: <Text style={styles.detailValue}>{apunte?.anio_elaboracion}</Text></Text>
+                    <Text style={styles.detailLabel}>Cantidad de páginas: <Text style={styles.detailValue}>{apunte?.paginas}</Text></Text>
+                  </>
+                )}
+
+              </View>
+
+              {/* UBICACIÓN */}
+              {(location || manualLocation) && (
+                <View style={{ marginBottom: 20 }}>
+                  <Text
+                    style={{
+                      fontSize: 20,
+                      fontWeight: "600",
+                      marginBottom: 10,
+                      color: Colors.text,
+                    }}
+                  >
+                    Ubicación
+                  </Text>
+
+                  {addressText && (
+                    <View style={styles.locationInfo}>
+                      <Ionicons name="location" size={18} color={Colors.primary} />
+                      <Text style={styles.locationText}>{addressText}</Text>
+                    </View>
+                  )}
+
+                  <MapView
+                    style={{
+                      width: "100%",
+                      height: 250,
+                      borderRadius: 12,
+                      marginTop: 6,
+                    }}
+                    initialRegion={{
+                      latitude: location?.latitude ?? manualLocation?.latitude!,
+                      longitude: location?.longitude ?? manualLocation?.longitude!,
+                      latitudeDelta: 0.01,
+                      longitudeDelta: 0.01,
+                    }}
+                  >
+                    <Marker coordinate={location ?? manualLocation!} />
+                  </MapView>
+                </View>
+              )}
+
+              {/* BOTÓN */}
+              <PrimaryButton
+                styleBtn={{ height: 48, marginTop: 20, marginBottom: 36 }}
+                title="Publicar"
+                onPress={handleSubmit}
+              />
+            </ScrollView>
+          </View>
+
+        )}
+
+
+
+        <Modal
+          visible={imagePickerVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setImagePickerVisible(false)}
+        >
+          <TouchableOpacity
+            style={styles.modalOverlay}
+            activeOpacity={1}
+            onPress={() => setImagePickerVisible(false)}
+          >
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Agregar imagen</Text>
+              <Text style={styles.modalSubtitle}>Seleccioná cómo querés agregar la imagen</Text>
+
+              <TouchableOpacity
+                style={styles.modalOption}
+                onPress={() => { setImagePickerVisible(false); pickFromCamera(); }}
+              >
+                <View style={styles.modalOptionIcon}>
+                  <Ionicons name="camera" size={24} color={Colors.primary} />
+                </View>
+                <Text style={styles.modalOptionText}>Tomar foto</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.modalOption}
+                onPress={() => { setImagePickerVisible(false); pickFromGallery(); }}
+              >
+                <View style={styles.modalOptionIcon}>
+                  <Ionicons name="images" size={24} color={Colors.primary} />
+                </View>
+                <Text style={styles.modalOptionText}>Elegir de galería</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.modalOption}
+                onPress={() => { setImagePickerVisible(false); pickFromFiles(); }}
+              >
+                <View style={styles.modalOptionIcon}>
+                  <Ionicons name="folder" size={24} color={Colors.primary} />
+                </View>
+                <Text style={styles.modalOptionText}>Elegir de archivos</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.modalCancelBtn}
+                onPress={() => setImagePickerVisible(false)}
+              >
+                <Text style={styles.modalCancelText}>Cancelar</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </Modal>
+      </KeyboardAwareScrollView>
+      <Modal
         visible={!!customAlert}
         transparent
         animationType="fade"
@@ -796,7 +802,7 @@ export default function FinalizarPublicacionScreen() {
           </View>
         </TouchableOpacity>
       </Modal>
-       </>
+    </>
   );
 }
 
