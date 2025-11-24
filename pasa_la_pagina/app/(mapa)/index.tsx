@@ -27,36 +27,39 @@ const SPACING = 16;
    MARKER MEMOIZADO
 --------------------------- */
 export const CustomMarker = React.memo(
-    ({ isSelected, tipo }: { isSelected: boolean; tipo: string }) => (
-        <View style={styles.markerContainer}>
-            <View
-                style={[
-                    styles.marker,
-                    { backgroundColor: isSelected ? Colors.cta : Colors.primary },
-                ]}
-            >
-                <Ionicons
-                    name={tipo === "apunte" ? "document-text" : "book"}
-                    size={14}
-                    color={Colors.white}
+    function CustomMarker({ isSelected, tipo }: { isSelected: boolean; tipo: string }) {
+        return (
+            <View style={styles.markerContainer}>
+                <View
+                    style={[
+                        styles.marker,
+                        { backgroundColor: isSelected ? Colors.cta : Colors.primary },
+                    ]}
+                >
+                    <Ionicons
+                        name={tipo === "apunte" ? "document-text" : "book"}
+                        size={14}
+                        color={Colors.white}
+                    />
+                </View>
+                <View
+                    style={[
+                        styles.markerArrow,
+                        { borderTopColor: isSelected ? Colors.cta : Colors.primary },
+                    ]}
                 />
             </View>
-            <View
-                style={[
-                    styles.markerArrow,
-                    { borderTopColor: isSelected ? Colors.cta : Colors.primary },
-                ]}
-            />
-        </View>
-    ),
+        );
+    },
     (prev, next) => prev.isSelected === next.isSelected && prev.tipo === next.tipo
 );
+
 
 /* ---------------------------
    CARD MEMOIZADA
 --------------------------- */
 const PublicacionCard = React.memo(
-    ({
+    function PublicacionCard({
         item,
         isSelected,
         onPress,
@@ -64,7 +67,7 @@ const PublicacionCard = React.memo(
         item: Publicacion;
         isSelected: boolean;
         onPress: () => void;
-    }) => {
+    }) {
         const imageUrl =
             item.fotos_url?.[0] || "https://via.placeholder.com/150x150?text=Sin+imagen";
 
@@ -133,11 +136,14 @@ export default function MapaPublicaciones() {
 
     /* ------------------------
         UBICACIÓN INICIAL
+        - Si el usuario no da permiso, tomamos la primera publicación con coordenadas
+          cuando lleguen los datos para no quedarnos en el loading.
     ------------------------ */
     useEffect(() => {
-        const getInitialRegion = async () => {
-            const loc = await getUserLocation();
+        const resolveInitialRegion = async () => {
+            if (initialRegion) return;
 
+            const loc = await getUserLocation();
             if (loc) {
                 setInitialRegion({
                     latitude: loc.latitude,
@@ -145,18 +151,24 @@ export default function MapaPublicaciones() {
                     latitudeDelta: 0.05,
                     longitudeDelta: 0.05,
                 });
-            } else if (publicaciones.length > 0) {
-                const first = publicaciones[0];
+                return;
+            }
+
+            const firstWithCoords = publicaciones.find(
+                (p) => typeof p.latitud === "number" && typeof p.longitud === "number"
+            );
+            if (firstWithCoords) {
                 setInitialRegion({
-                    latitude: first.latitud!,
-                    longitude: first.longitud!,
+                    latitude: firstWithCoords.latitud!,
+                    longitude: firstWithCoords.longitud!,
                     latitudeDelta: 0.05,
                     longitudeDelta: 0.05,
                 });
             }
         };
-        getInitialRegion();
-    }, []);
+
+        resolveInitialRegion();
+    }, [getUserLocation, publicaciones, initialRegion]);
 
     /* ------------------------
         ANIMAR HACIA MARCADOR

@@ -19,7 +19,12 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "usesCleartextTraffic": true
+      "usesCleartextTraffic": true,
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyD5Lhf-f-S5-XyhBq3727TNYSWhpL2elco"
+        }
+      }
     },
     "web": {
       "bundler": "metro",
