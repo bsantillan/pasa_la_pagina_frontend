@@ -115,13 +115,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // ------------------------- FETCH USER -------------------------
   const fetchUsuario = async (token: string) => {
     try {
+      await getValidAccessToken();
       const res = await fetch(`${API_URL}user/me`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (res.status === 401) return "TOKEN_EXPIRED";
+      if (res.status === 401 || res.status === 403) return "TOKEN_EXPIRED";
 
-      if (!res.ok) throw new Error("Error al obtener usuario");
+      if (!res.ok) throw new Error("Error al obtener usuario: "+ res.status);
 
       const data = await res.json();
       setUser(data);

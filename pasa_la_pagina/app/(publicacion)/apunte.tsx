@@ -1,4 +1,5 @@
 import PrimaryButton from "@/components/ui/Boton/Primary";
+import CustomInput from "@/components/ui/CustomInput";
 import { Colors } from "@/constants/Colors";
 import { useEnums } from "@/contexts/EnumsContext";
 import { usePublicacion } from "@/contexts/PublicacionContext";
@@ -112,7 +113,8 @@ export default function ApunteForm() {
     !!apunte.nivel_educativo?.trim() &&
     !!apunte.institucion?.trim() &&
     !!apunte.materia?.trim() &&
-    !!apunte.seccion?.trim();
+    !!apunte.seccion?.trim() &&
+    (apunte.nivel_educativo !== "Superior" || !!apunte.carrera?.trim());
 
   const handleStep1Next = () => isStep1Valid() ? goToStep(2) : setShowErrors(true);
   const handleStep2Next = () => isStep2Valid() ? router.push("/(publicacion)/publicacion") : setShowErrors(true);
@@ -145,10 +147,22 @@ export default function ApunteForm() {
       {step === 1 && (
         <View style={styles.stepContainer}>
           <Text style={styles.label}>Título</Text>
-          <TextInput style={getInputStyle(apunte.titulo)} value={apunte.titulo} onChangeText={t => updateApunte({ titulo: t })} />
+          <CustomInput
+            placeholder="Título"
+            value={apunte.titulo || ""}
+            onChangeText={(t) => updateApunte({ titulo: t })}
+            showErrors={showErrors}
+          />
 
           <Text style={styles.label}>Páginas</Text>
-          <TextInput style={getInputStyle(apunte.paginas)} keyboardType="numeric" value={String(apunte.paginas || "")} onChangeText={t => updateApunte({ paginas: parseInt(t) })} />
+
+          <CustomInput
+            placeholder="Páginas"
+            value={String(apunte.paginas || "")}
+            keyboardType="numeric"
+            onChangeText={(t) => updateApunte({ paginas: parseInt(t) })}
+            showErrors={showErrors}
+          />
 
           <Text style={styles.label}>Idioma</Text>
           <View style={{ position: "relative", zIndex: 1000 }}>
@@ -186,7 +200,13 @@ export default function ApunteForm() {
           </View>
 
           <Text style={styles.label}>Año de elaboración</Text>
-          <TextInput style={getInputStyle(apunte.anio_elaboracion)} keyboardType="numeric" value={String(apunte.anio_elaboracion || "")} onChangeText={t => updateApunte({ anio_elaboracion: parseInt(t) })} />
+          <CustomInput
+            placeholder="Año de elaboración"
+            value={String(apunte.anio_elaboracion || "")}
+            keyboardType="numeric"
+            onChangeText={(t) => updateApunte({ anio_elaboracion: parseInt(t) })}
+            showErrors={showErrors}
+          />
 
           <Text style={styles.label}>Formato</Text>
           <View style={getPickerStyle(comunes.digital)}>
@@ -196,6 +216,7 @@ export default function ApunteForm() {
               <Picker.Item label="Físico" value={false} />
             </Picker>
           </View>
+          {showErrors && (comunes.digital === null || comunes.digital === undefined) && <Text style={styles.errorText}>Este campo es obligatorio</Text>}
 
           <Text style={styles.label}>Nuevo</Text>
           <View style={getPickerStyle(comunes.nuevo)}>
@@ -205,6 +226,7 @@ export default function ApunteForm() {
               <Picker.Item label="No" value={false} />
             </Picker>
           </View>
+          {showErrors && (comunes.nuevo === null || comunes.nuevo === undefined) && <Text style={styles.errorText}>Este campo es obligatorio</Text>}
 
           <PrimaryButton title="Siguiente" onPress={handleStep1Next} />
         </View>
@@ -215,20 +237,48 @@ export default function ApunteForm() {
         <View style={styles.stepContainer}>
           <Text style={styles.label}>Nivel educativo</Text>
           <View style={getPickerStyle(apunte.nivel_educativo)}>
-            <Picker selectedValue={apunte.nivel_educativo} onValueChange={v => updateApunte({ nivel_educativo: v })}>
+            <Picker selectedValue={apunte.nivel_educativo} onValueChange={v => updateApunte({ nivel_educativo: v, carrera:"" })}>
               <Picker.Item label="Seleccionar..." value="" />
               {nivelesEducativos?.map(n => <Picker.Item key={n} label={n} value={n} />)}
             </Picker>
           </View>
+          {showErrors && !apunte.nivel_educativo?.trim() && <Text style={styles.errorText}>Este campo es obligatorio</Text>}
+
+          {apunte.nivel_educativo === "Superior" && (
+            <>
+              <Text style={styles.label}>Carrera</Text>
+              <CustomInput
+                placeholder="Carrera"
+                value={apunte.carrera || ""}
+                onChangeText={(t) => updateApunte({ carrera: t })}
+                showErrors={showErrors}
+              />
+            </>
+          )}
 
           <Text style={styles.label}>Institución</Text>
-          <TextInput style={getInputStyle(apunte.institucion)} value={apunte.institucion} onChangeText={t => updateApunte({ institucion: t })} />
+          <CustomInput
+            placeholder="Institución"
+            value={apunte.institucion || ""}
+            onChangeText={(t) => updateApunte({ institucion: t })}
+            showErrors={showErrors}
+          />
 
           <Text style={styles.label}>Materia</Text>
-          <TextInput style={getInputStyle(apunte.materia)} value={apunte.materia} onChangeText={t => updateApunte({ materia: t })} />
+          <CustomInput
+            placeholder="Materia"
+            value={apunte.materia || ""}
+            onChangeText={(t) => updateApunte({ materia: t })}
+            showErrors={showErrors}
+          />
 
           <Text style={styles.label}>Sección</Text>
-          <TextInput style={getInputStyle(apunte.seccion)} value={apunte.seccion} onChangeText={t => updateApunte({ seccion: t })} />
+          <CustomInput
+            placeholder="Sección"
+            value={apunte.seccion || ""}
+            onChangeText={(t) => updateApunte({ seccion: t })}
+            showErrors={showErrors}
+          />
 
           <PrimaryButton title="Siguiente" onPress={handleStep2Next} />
         </View>
