@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   styleBtn: {
-    backgroundColor: Colors.background,
+    backgroundColor: 'transparent',
     width: "100%",
     height: 36,
     borderWidth: 2,

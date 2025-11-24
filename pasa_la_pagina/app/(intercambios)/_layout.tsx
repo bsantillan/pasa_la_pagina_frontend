@@ -1,6 +1,6 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { ChatProvider } from "@/contexts/ChatContext";
-import { IntercambioProvider } from "@/contexts/IntercambioContext";
+import { UserProvider } from "@/contexts/UserContext";
 import { Slot, useRouter } from "expo-router";
 import { useEffect } from "react";
 import { StyleSheet, View } from "react-native";
@@ -19,11 +19,11 @@ export default function IntercambiosLayout() {
 
     return (
         <View style={styles.container}>
-            <IntercambioProvider>
                 <ChatProvider>
-                    <Slot />
+                    <UserProvider>
+                        <Slot />
+                    </UserProvider>
                 </ChatProvider>
-            </IntercambioProvider>
         </View>
     );
 }

@@ -1,5 +1,6 @@
 export type Publicacion = {
   id: number;
+  favorito: boolean;
   titulo: string;
   descripcion: string;
   tipo_material: "Libro" | "Apunte";

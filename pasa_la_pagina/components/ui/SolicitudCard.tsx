@@ -43,6 +43,10 @@ export const SolicitudCard: React.FC<IntercambioCardProps> = ({
     if (estado === "PENDIENTE") {
       return "Pendiente";
     }
+
+    if (estado === "RECHAZADO") {
+      return "Rechazado";
+    }
     
     // Estado "ACEPTADO" - verificar si ambos concretaron
     if (estado === "ACEPTADO") {

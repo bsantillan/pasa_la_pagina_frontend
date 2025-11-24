@@ -9,18 +9,20 @@ import { Colors } from "../../constants/Colors";
 import { usePublicacion } from "../../contexts/PublicacionContext"; // 👈 Solo el hook
 import { useUser } from "../../contexts/UserContext";
 
-const filtros = ["Reseñas", "Publicaciones", "Historial"];
+const filtros = ["Reseñas", "Publicaciones", "Historial", "Favoritos"];
 
 export default function PerfilScreen() {
-  const { reseniasRecibidas, reseniasHechas, loading: userLoading } = useUser();
-  const { pubsUser, fetchPublicacionesByUsuario, loading, error } = usePublicacion();
+  const { reseniasRecibidas, reseniasHechas, fetchReseniasHechas, fetchReseniasRecibidas, loading: userLoading } = useUser();
+  const { pubsUser, pubFavoritas, fetchPublicacionesByUsuario, recuperarFavoritos, loading, error } = usePublicacion();
   const [selectedFiltro, setSelectedFiltro] = useState(filtros[0]);
   const { user } = useAuth();
-
 
   useEffect(() => {
     if (user?.id) {
       fetchPublicacionesByUsuario(user.id);
+      recuperarFavoritos();
+      fetchReseniasHechas();
+      fetchReseniasRecibidas();
     }
   }, [fetchPublicacionesByUsuario, user]);
 
@@ -47,6 +49,26 @@ export default function PerfilScreen() {
     ));
   };
 
+  const renderFavoritos = () => {
+    if (!pubFavoritas.length) {
+      return (
+        <Text style={{ color: Colors.disabled_primary, textAlign: "center", marginTop: 10 }}>
+          No tiene favoritos aún.
+        </Text>
+      );
+    }
+
+    return pubFavoritas.map((p) => (
+      <View key={p.id} style={styles.row}>
+        <ProductCard
+          title={p.titulo}
+          description={p.descripcion}
+          imageUrl={p.fotos_url[0] || ""}
+        />
+      </View>
+    ));
+  };
+
   const renderResenias = () => {
     if (!reseniasRecibidas.length) {
       return <Text style={{ color: Colors.disabled_primary, textAlign: "center", marginTop: 10 }}>No tiene reseñas recibidas aún.</Text>;
@@ -55,10 +77,10 @@ export default function PerfilScreen() {
     return reseniasRecibidas.map((r) => (
       <ReviewCard
         key={r.id}
-        username={r.autorNombre}
+        username={r.usuarioNombre}
         headline={`Valoración: ${r.valoracion}`}
         description={r.descripcion}
-        date=""
+        date={r.fecha}
       />
     ));
   };
@@ -70,7 +92,7 @@ export default function PerfilScreen() {
         reseniasHechas.map((r) => (
           <ReviewCard
             key={r.id}
-            username={r.autorNombre}
+            username={r.usuarioNombre}
             headline={`Valoración: ${r.valoracion}`}
             description={r.descripcion}
             date=""
@@ -125,7 +147,10 @@ export default function PerfilScreen() {
           ? renderPublicaciones()
           : selectedFiltro === "Reseñas"
             ? renderResenias()
-            : renderHistorial()}
+            : selectedFiltro === "Historial"
+              ? renderHistorial()
+              : renderFavoritos()
+        }
       </ScrollView>
     </View>
   );

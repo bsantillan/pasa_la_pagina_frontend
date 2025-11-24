@@ -17,13 +17,13 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  TouchableOpacity,
   View,
 } from "react-native";
 
 export default function Chat() {
   const [visible, setVisible] = useState(false);
-  const { chatId } = useLocalSearchParams<{ chatId: string }>();
-
+  const { chatId, fechaInicio } = useLocalSearchParams<{ chatId: string; fechaInicio: string}>();
   const {
     messages,
     chatInfo,
@@ -101,21 +101,20 @@ export default function Chat() {
           <Ionicons name="arrow-back" size={24} color={Colors.text} />
         </Pressable>
 
-        <View style={styles.headerCenter}>
-          <Avatar name={chatInfo.usuario} size={40} />
+        <TouchableOpacity
+          style={styles.headerCenter}
+          onPress={() =>
+            router.push("/(intercambios)/usuarioDetail")
+          }
+        >
+          <Avatar name={chatInfo.usuario_email} size={40} />
           <View style={styles.headerInfo}>
             <Text style={styles.headerTitle} numberOfLines={1}>
               {chatInfo.usuario}
             </Text>
-            <Text style={styles.headerSubtitle} numberOfLines={1}>
-              {chatInfo.titulo_publicacion}
-            </Text>
+            
           </View>
-        </View>
-
-        <Pressable onPress={() => setVisible(true)} style={styles.headerButton}>
-          <Ionicons name="checkmark-done-outline" size={24} color={Colors.primary} />
-        </Pressable>
+        </TouchableOpacity>
       </View>
 
       {/* MENSAJES + INPUT */}
@@ -205,6 +204,32 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  /*inputContainer: {
+    flex: 1,
+    marginHorizontal: 10,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 0.5,
+    borderColor: "#8E8E93",
+    borderRadius: 16,
+    opacity: 0.9,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 10,
+    height: 40,
+    marginVertical: 8,
+  },*/
+  inlineIcons: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginLeft: 8,
+  },
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
   headerCenter: {
     flex: 1,
     flexDirection: "row",
@@ -253,14 +278,6 @@ const styles = StyleSheet.create({
   sendButton: {
     padding: 8,
     marginLeft: 6,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  /* MODAL */
-  overlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
     justifyContent: "center",
     alignItems: "center",
   },

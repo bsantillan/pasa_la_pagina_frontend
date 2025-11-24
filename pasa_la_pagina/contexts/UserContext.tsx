@@ -1,20 +1,15 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useState } from "react";
 import { useAuth } from "./AuthContext";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
-type Usuario = {
-  id: number;
-  nombre: string;
-  apellido: string;
-  email: string;
-};
-
 type Resenia = {
   id: number;
+  fecha: string;
   descripcion: string;
   valoracion: number;
-  autorNombre: string;
+  usuarioNombre: string;
+  usuarioId: number;
   intercambioId: number;
 };
 
@@ -39,11 +34,12 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setLoading(true);
       const token = await getValidAccessToken();
-      const res = await fetch(`${API_URL}resenia/usuario/${user.id}/recibidas`, {
+      const res = await fetch(`${API_URL}resenia/usuario/recibidas`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("Error al obtener reseñas recibidas");
       const data = await res.json();
+      console.log(data);
       setReseniasRecibidas(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error(err);
@@ -58,7 +54,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setLoading(true);
       const token = await getValidAccessToken();
-      const res = await fetch(`${API_URL}resenia/usuario/${user.id}/hechas`, {
+      const res = await fetch(`${API_URL}resenia/usuario/hechas`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("Error al obtener reseñas hechas");
@@ -71,13 +67,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    if (user) {
-      fetchReseniasRecibidas();
-      fetchReseniasHechas();
-    }
-  }, [user]);
 
   return (
     <UserContext.Provider
