@@ -46,10 +46,17 @@ export default function VisualizarPublicacion() {
   };
 
   const irAPerfil = () => {
-    if (publicacion?.usuario_id) {
-      router.push(`/(perfil)/usuario?usuarioId=${publicacion.usuario_id}`);
-    }
-  };
+  if (publicacion?.usuario_id) {
+    router.push({
+      pathname: "/(perfil)/usuario",
+      params: {
+        usuarioId: publicacion.usuario_id,
+        fromPublicacion: id
+      }
+    } as any);
+  }
+};
+
 
   useEffect(() => {
     const fetchPublicacion = async () => {
