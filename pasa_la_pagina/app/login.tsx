@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
   form: {
     flex: 1,
     padding: 20,
-    alignItems: "center",
+    alignItems: "stretch",
     marginLeft: 39,
     marginRight: 39,
   },

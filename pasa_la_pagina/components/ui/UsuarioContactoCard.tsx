@@ -1,8 +1,8 @@
-import PrimaryButton from "@/components/ui/Boton/Primary";
+﻿import PrimaryButton from "@/components/ui/Boton/Primary";
 import SecondaryButton from "@/components/ui/Boton/Secondary";
 import { Colors } from "@/constants/Colors";
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 type UsuarioContactoProps = {
   nombreUsuario: string;
@@ -11,55 +11,46 @@ type UsuarioContactoProps = {
   fecha: string;
   onAceptar?: () => void;
   onRechazar?: () => void;
-  tituloAceptar: string;   
-  tituloRechazar: string; 
+  onClose?: () => void;
+  tituloAceptar: string;
+  tituloRechazar: string;
 };
 
 export const UsuarioContactoCard: React.FC<UsuarioContactoProps> = ({
   nombreUsuario,
   tituloPublicacion,
-  estado,
-  fecha,
+  estado: _estado,
+  fecha: _fecha,
   onAceptar,
   onRechazar,
   tituloAceptar,
-  tituloRechazar
+  tituloRechazar,
+  onClose,
 }) => {
   const inicial = nombreUsuario.charAt(0).toUpperCase();
 
   return (
     <View style={styles.card}>
-      {/* CABECERA */}
-      <View style={styles.header}>
-        {/* Avatar */}
-        <View style={styles.avatarContainer}>
-          <View style={styles.avatarCircle}>
-            <Text style={styles.avatarText}>{inicial}</Text>
-          </View>
-        </View>
+      {onClose && (
+        <Pressable
+          style={styles.closeButton}
+          onPress={onClose}
+          accessibilityLabel="Cerrar contacto"
+          hitSlop={10}
+        >
+          <Text style={styles.closeText}>X</Text>
+        </Pressable>
+      )}
 
-        {/* Info */}
-        <View style={styles.infoContainer}>
-          <Text style={styles.nombre}>{nombreUsuario}</Text>
-          <Text style={styles.titulo}>{tituloPublicacion}</Text>
+      <View style={styles.avatarContainer}>
+        <View style={styles.avatarCircle}>
+          <Text style={styles.avatarText}>{inicial}</Text>
         </View>
+      </View>
 
-        {/* Estado + Fecha */}
-        <View style={styles.estadoContainer}>
-          <Text
-            style={[
-              styles.estado,
-              estado === "PENDIENTE"
-                ? { color: Colors.secondary }
-                : estado === "CANCELADO"
-                  ? { color: Colors.cta }
-                  : { color: Colors.text },
-            ]}
-          >
-            {estado}
-          </Text>
-          <Text style={styles.fecha}>{fecha}</Text>
-        </View>
+      <View style={styles.infoContainer}>
+        <Text style={styles.nombre}>{nombreUsuario}</Text>
+        <Text style={styles.titulo}>{tituloPublicacion}</Text>
       </View>
 
       <View style={styles.buttonsContainer}>
@@ -82,107 +73,100 @@ export const UsuarioContactoCard: React.FC<UsuarioContactoProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    width: 378,
+    width: "90%",
+    maxWidth: 360,
     backgroundColor: Colors.white,
     borderRadius: 12,
-    padding: 8,
-    gap: 16,
+    paddingVertical: 26,
+    paddingHorizontal: 20,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    elevation: 5,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 16,
-    width: 350,
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 6,
+    alignItems: "center",
+    position: "relative",
   },
   avatarContainer: {
-    width: 46,
-    height: 46,
+    width: 96,
+    height: 96,
     justifyContent: "center",
     alignItems: "center",
+    marginBottom: 16,
   },
   avatarCircle: {
-    width: 35,
-    height: 35,
-    borderRadius: 35 / 2,
+    width: 86,
+    height: 86,
+    borderRadius: 86 / 2,
     backgroundColor: Colors.disabled_secondary,
     justifyContent: "center",
     alignItems: "center",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
     elevation: 3,
   },
   avatarText: {
     fontFamily: "Roboto",
-    fontWeight: "500",
-    fontSize: 20,
-    lineHeight: 23,
+    fontWeight: "700",
+    fontSize: 32,
+    lineHeight: 34,
     color: Colors.secondary,
     textAlign: "center",
   },
   infoContainer: {
-    flexDirection: "column",
-    justifyContent: "center",
-    gap: 4,
-    width: 203,
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    marginBottom: 18,
   },
   nombre: {
     fontFamily: "Montserrat",
     fontWeight: "700",
-    fontSize: 16,
+    fontSize: 18,
     color: Colors.text,
   },
   titulo: {
     fontFamily: "Montserrat",
-    fontWeight: "500",
-    fontSize: 13,
-    color: "#49454F",
-  },
-  estadoContainer: {
-    flexDirection: "column",
-    alignItems: "center",
-    gap: 8,
-  },
-  estado: {
-    fontFamily: "Montserrat",
-    fontWeight: "500",
-    fontSize: 13,
-    textAlign: "right",
-  },
-  fecha: {
-    fontFamily: "Montserrat",
-    fontWeight: "500",
-    fontSize: 13,
-    color: Colors.primary,
-    textAlign: "right",
+    fontWeight: "400",
+    fontSize: 14,
+    color: "#6B6B6B",
+    textAlign: "center",
   },
   buttonsContainer: {
     flexDirection: "column",
     alignItems: "center",
-    gap: 10,
-    alignSelf: "center",
+    gap: 12,
+    alignSelf: "stretch",
   },
   botonAceptar: {
-    width: 285,
-    height: 32,
+    width: "100%",
+    height: 42,
   },
   textAceptar: {
-    fontSize: 14,
-    fontWeight: "500",
+    fontSize: 15,
+    fontWeight: "600",
   },
   botonRechazar: {
-    width: 285,
-    height: 32,
+    width: "100%",
+    height: 42,
   },
   textRechazar: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: "600",
     color: Colors.secondary,
+  },
+  closeButton: {
+    position: "absolute",
+    top: 14,
+    right: 14,
+    zIndex: 1,
+    padding: 4,
+  },
+  closeText: {
+    fontSize: 22,
+    color: "#4A4A4A",
+    lineHeight: 24,
   },
 });

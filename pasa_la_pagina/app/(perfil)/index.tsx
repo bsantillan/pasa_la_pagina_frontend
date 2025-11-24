@@ -12,7 +12,7 @@ import { useUser } from "../../contexts/UserContext";
 const filtros = ["Reseñas", "Publicaciones", "Historial", "Favoritos"];
 
 export default function PerfilScreen() {
-  const { reseniasRecibidas, reseniasHechas, fetchReseniasHechas, fetchReseniasRecibidas, loading: userLoading } = useUser();
+  const { reseniasRecibidas, reseniasHechas, fetchReseniasHechas, fetchReseniasRecibidas, eliminarPublicacion, loading: userLoading } = useUser();
   const { pubsUser, pubFavoritas, fetchPublicacionesByUsuario, recuperarFavoritos, loading, error } = usePublicacion();
   const [selectedFiltro, setSelectedFiltro] = useState(filtros[0]);
   const { user } = useAuth();
@@ -44,6 +44,18 @@ export default function PerfilScreen() {
           title={p.titulo}
           description={p.descripcion}
           imageUrl={p.fotos_url[0] || ""}
+          showMoreButton={true}
+          onEdit={() => {
+            console.log("Editar publicación", p.id);
+          }}
+          onDelete={async () => {
+            const confirmado = await eliminarPublicacion(p.id);
+            if (confirmado) {
+              fetchPublicacionesByUsuario(user!.id);
+            } else {
+              console.log("No se pudo eliminar la publicación");
+            }
+          }}
         />
       </View>
     ));
