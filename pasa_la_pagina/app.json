@@ -7,7 +7,7 @@
     "icon": "./assets/images/logo.png",
     "scheme": "pasalapagina",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": false,
+    "newArchEnabled": true,
     "ios": {
       "bundleIdentifier": "com.proyectofinal.pasalapagina",
       "supportsTablet": true
