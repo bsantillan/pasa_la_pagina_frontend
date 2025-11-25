@@ -239,7 +239,7 @@ export default function UsuarioDetail() {
               pollingIntervalRef.current = null;
               // Redirigir a pantalla de reseña
               setShowReviewModal(true);
-            }, 15000);
+            }, 10000);
           }
         } catch (err) {
           console.error("Error en polling:", err);
@@ -364,7 +364,7 @@ export default function UsuarioDetail() {
         setShowCodeModal(false);
         // Redirigir a pantalla de reseña
         setShowReviewModal(true);
-      }, 1500);
+      }, 10000);
     } catch (err: any) {
       Alert.alert("Error", err.message);
     } finally {

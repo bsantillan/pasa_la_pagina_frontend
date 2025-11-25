@@ -4,6 +4,7 @@ import { CustomDropdown } from "@/components/ui/CustomDropdown";
 import CustomInput from "@/components/ui/CustomInput";
 import ISBNScanner from "@/components/ui/ISBNScanner";
 import { Colors } from "@/constants/Colors";
+import { fetchGeneros } from "@/constants/Generos";
 import { useEnums } from "@/contexts/EnumsContext";
 import { useLibro } from "@/contexts/LibroContext";
 import { LibroData, usePublicacion } from "@/contexts/PublicacionContext";
@@ -292,14 +293,13 @@ export default function LibroScreen() {
               Ingresá los datos principales del libro para que otros usuarios puedan identificarlo fácilmente.
             </Text>
             <Text style={styles.label}>Género</Text>
-            <CustomInput
-              placeholder="Género"
+            <AsyncAutocompleteInput
               value={libro.genero || ""}
-              onChangeText={(t) => updateLibro({ genero: t })}
               showErrors={showErrors}
-              inputRef={generoRef ?? undefined}
-              returnKeyType="next"
-              blurOnSubmit={false}
+              fetchOptions={fetchGeneros}
+              onSelect={(item) => updateLibro({ genero: item })}
+              inputRef={idiomaRef}
+              returnKeyType="done"
               onSubmitEditing={() => Keyboard.dismiss()}
             />
 
