@@ -1,6 +1,7 @@
 import { Colors } from "@/constants/Colors";
 import { Publicacion, usePublicacion } from "@/contexts/PublicacionContext";
 import { Ionicons } from "@expo/vector-icons";
+import { InteractionManager } from "react-native";
 import { router } from "expo-router";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -16,44 +17,13 @@ import {
     View,
 } from "react-native";
 import MapView, { Marker, PROVIDER_GOOGLE, Region } from "react-native-maps";
+import { CustomMarker } from "@/components/ui/CustomMarket";
 
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = width * 0.8;
 const CARD_HEIGHT = 120;
 const CARD_HEIGHT_SELECTED = 130;
 const SPACING = 16;
-
-/* ---------------------------
-   MARKER MEMOIZADO
---------------------------- */
-export const CustomMarker = React.memo(
-    function CustomMarker({ isSelected, tipo }: { isSelected: boolean; tipo: string }) {
-        return (
-            <View style={styles.markerContainer}>
-                <View
-                    style={[
-                        styles.marker,
-                        { backgroundColor: isSelected ? Colors.cta : Colors.primary },
-                    ]}
-                >
-                    <Ionicons
-                        name={tipo === "apunte" ? "document-text" : "book"}
-                        size={14}
-                        color={Colors.white}
-                    />
-                </View>
-                <View
-                    style={[
-                        styles.markerArrow,
-                        { borderTopColor: isSelected ? Colors.cta : Colors.primary },
-                    ]}
-                />
-            </View>
-        );
-    },
-    (prev, next) => prev.isSelected === next.isSelected && prev.tipo === next.tipo
-);
-
 
 /* ---------------------------
    CARD MEMOIZADA
@@ -133,6 +103,19 @@ export default function MapaPublicaciones() {
     const flatListRef = useRef<FlatList<Publicacion>>(null);
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [initialRegion, setInitialRegion] = useState<Region | null>(null);
+    const [tracks, setTracks] = useState(true);
+    const MarketApunteSeleccionado = require('../../assets/markets/Market-Apunte-Seleccionado.png');
+    const MarketApunteNoSeleccionado = require('../../assets/markets/Market-Apunte-No-Seleccionado.png');
+    const MarketLibroSeleccionado = require('../../assets/markets/Market-Libro-Seleccionado.png');
+    const MarketLibroNoSeleccionado = require('../../assets/markets/Market-Libro-No-Seleccionado.png');
+
+
+
+    useEffect(() => {
+        const timeout = setTimeout(() => setTracks(false), 500);
+        return () => clearTimeout(timeout);
+    }, []);
+
 
     /* ------------------------
         UBICACIÓN INICIAL
@@ -186,12 +169,16 @@ export default function MapaPublicaciones() {
         SELECT MARCADOR SEGURO
     ------------------------ */
     const onMarkerPress = (index: number) => {
+        if (index < 0 || index >= publicaciones.length) return;
+
         setSelectedIndex(index);
 
-        flatListRef.current?.scrollToIndex({
-            index,
-            animated: true,
-            viewPosition: 0.5,
+        InteractionManager.runAfterInteractions(() => {
+            flatListRef.current?.scrollToIndex({
+                index,
+                animated: true,
+                viewPosition: 0.5,
+            });
         });
 
         animateToMarker(index);
@@ -261,25 +248,37 @@ export default function MapaPublicaciones() {
                 showsMyLocationButton={false}
                 showsCompass={false}
             >
-                {publicaciones.map((pub, index) => (
-                    <Marker
-                        key={pub.id}
-                        coordinate={{
-                            latitude: pub.latitud!,
-                            longitude: pub.longitud!,
-                        }}
-                        onPress={(e) => {
-                            e.stopPropagation();
-                            onMarkerPress(index);
-                        }}
-                        anchor={{ x: 0.5, y: 1 }}
-                    >
-                        <CustomMarker
-                            isSelected={selectedIndex === index}
-                            tipo={pub.tipo || "apunte"}
-                        />
-                    </Marker>
-                ))}
+                {publicaciones.map((pub, index) => {
+                    if (
+                        typeof pub.latitud !== "number" ||
+                        typeof pub.longitud !== "number"
+                    )
+                        return null;
+
+                    return (
+                        <Marker
+                            key={pub.id}
+                            coordinate={{ latitude: pub.latitud, longitude: pub.longitud }}
+                            anchor={{ x: 0.5, y: 1 }}
+                            tracksViewChanges={false} // 👈 Muy importante, evita el parpadeo
+                            onPress={() => onMarkerPress(index)}
+                        >
+                            <Image
+                                source={
+                                    pub.tipo === 'libro'
+                                        ? selectedIndex === index
+                                            ? MarketLibroSeleccionado
+                                            : MarketLibroNoSeleccionado
+                                        : selectedIndex === index
+                                            ? MarketApunteSeleccionado
+                                            : MarketApunteNoSeleccionado
+                                }
+                                style={{ width: 200 , height: 52 }}
+                            />
+                        </Marker>
+
+                    );
+                })}
             </MapView>
 
             {/* BOTÓN UBICACIÓN */}
@@ -352,29 +351,6 @@ const styles = StyleSheet.create({
     loadingText: { marginTop: 12, fontSize: 16, color: Colors.text },
     errorText: { marginTop: 12, fontSize: 16, color: Colors.cta, textAlign: "center" },
     emptyText: { marginTop: 12, fontSize: 16, color: Colors.disabled_primary },
-
-    /* MARKERS */
-    markerContainer: { alignItems: "center" },
-    marker: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        justifyContent: "center",
-        alignItems: "center",
-        borderWidth: 2,
-        borderColor: Colors.white,
-        elevation: 5,
-    },
-    markerArrow: {
-        width: 0,
-        height: 0,
-        borderLeftWidth: 6,
-        borderRightWidth: 6,
-        borderTopWidth: 8,
-        borderLeftColor: "transparent",
-        borderRightColor: "transparent",
-        marginTop: -2,
-    },
 
     /* CARRUSEL */
     carouselContainer: {
