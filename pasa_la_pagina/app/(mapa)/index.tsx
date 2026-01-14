@@ -1,7 +1,6 @@
 import { Colors } from "@/constants/Colors";
 import { Publicacion, usePublicacion } from "@/contexts/PublicacionContext";
 import { Ionicons } from "@expo/vector-icons";
-import { InteractionManager } from "react-native";
 import { router } from "expo-router";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -17,7 +16,6 @@ import {
     View,
 } from "react-native";
 import MapView, { Marker, PROVIDER_GOOGLE, Region } from "react-native-maps";
-import { CustomMarker } from "@/components/ui/CustomMarket";
 
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = width * 0.8;
@@ -99,23 +97,20 @@ const PublicacionCard = React.memo(
 
 export default function MapaPublicaciones() {
     const { publicaciones, loading, error, getUserLocation } = usePublicacion();
+    const markerImages = {
+        apunte: {
+            normal: require("../../assets/images/Market-Apunte-No-Seleccionado.png"),
+            selected: require("../../assets/images/Market-Apunte-Seleccionado.png"),
+        },
+        libro: {
+            normal: require("../../assets/images/Market-Libro-No-Seleccionado.png"),
+            selected: require("../../assets/images/Market-Libro-Seleccionado.png"),
+        },
+    };
     const mapRef = useRef<MapView>(null);
     const flatListRef = useRef<FlatList<Publicacion>>(null);
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [initialRegion, setInitialRegion] = useState<Region | null>(null);
-    const [tracks, setTracks] = useState(true);
-    const MarketApunteSeleccionado = require('../../assets/markets/Market-Apunte-Seleccionado.png');
-    const MarketApunteNoSeleccionado = require('../../assets/markets/Market-Apunte-No-Seleccionado.png');
-    const MarketLibroSeleccionado = require('../../assets/markets/Market-Libro-Seleccionado.png');
-    const MarketLibroNoSeleccionado = require('../../assets/markets/Market-Libro-No-Seleccionado.png');
-
-
-
-    useEffect(() => {
-        const timeout = setTimeout(() => setTracks(false), 500);
-        return () => clearTimeout(timeout);
-    }, []);
-
 
     /* ------------------------
         UBICACIÓN INICIAL
@@ -169,19 +164,17 @@ export default function MapaPublicaciones() {
         SELECT MARCADOR SEGURO
     ------------------------ */
     const onMarkerPress = (index: number) => {
-        if (index < 0 || index >= publicaciones.length) return;
-
         setSelectedIndex(index);
 
-        InteractionManager.runAfterInteractions(() => {
-            flatListRef.current?.scrollToIndex({
-                index,
-                animated: true,
-                viewPosition: 0.5,
-            });
+        flatListRef.current?.scrollToIndex({
+            index,
+            animated: true,
+            viewPosition: 0.5,
         });
 
-        animateToMarker(index);
+        setTimeout(() => {
+            animateToMarker(index);
+        }, 0);
     };
 
     /* ------------------------
@@ -249,34 +242,24 @@ export default function MapaPublicaciones() {
                 showsCompass={false}
             >
                 {publicaciones.map((pub, index) => {
-                    if (
-                        typeof pub.latitud !== "number" ||
-                        typeof pub.longitud !== "number"
-                    )
-                        return null;
+                    const isSelected = selectedIndex === index;
+                    const tipo = pub.tipo === "apunte" ? "apunte" : "libro";
 
                     return (
                         <Marker
-                            key={pub.id}
-                            coordinate={{ latitude: pub.latitud, longitude: pub.longitud }}
-                            anchor={{ x: 0.5, y: 1 }}
-                            tracksViewChanges={false} // 👈 Muy importante, evita el parpadeo
+                            key={`${pub.id}-${isSelected}`}
+                            coordinate={{
+                                latitude: pub.latitud!,
+                                longitude: pub.longitud!,
+                            }}
+                            image={
+                                isSelected
+                                    ? markerImages[tipo].selected
+                                    : markerImages[tipo].normal
+                            }
                             onPress={() => onMarkerPress(index)}
-                        >
-                            <Image
-                                source={
-                                    pub.tipo === 'libro'
-                                        ? selectedIndex === index
-                                            ? MarketLibroSeleccionado
-                                            : MarketLibroNoSeleccionado
-                                        : selectedIndex === index
-                                            ? MarketApunteSeleccionado
-                                            : MarketApunteNoSeleccionado
-                                }
-                                style={{ width: 200 , height: 52 }}
-                            />
-                        </Marker>
-
+                            anchor={{ x: 0.5, y: 1 }}
+                        />
                     );
                 })}
             </MapView>
@@ -316,18 +299,28 @@ export default function MapaPublicaciones() {
                         />
                     )}
                     horizontal
-                    showsHorizontalScrollIndicator={false}
                     snapToInterval={CARD_WIDTH + SPACING}
                     decelerationRate="fast"
                     onMomentumScrollEnd={onScrollEnd}
+
+                    onScrollToIndexFailed={(info) => {
+                        setTimeout(() => {
+                            flatListRef.current?.scrollToIndex({
+                                index: info.index,
+                                animated: true,
+                                viewPosition: 0.5,
+                            });
+                        }, 100);
+                    }}
+
                     contentContainerStyle={{
                         paddingHorizontal: (width - CARD_WIDTH) / 2,
                         paddingVertical: 16,
                     }}
                     initialNumToRender={5}
                     maxToRenderPerBatch={5}
-                    windowSize={3}
-                    removeClippedSubviews
+                    windowSize={5}
+                    removeClippedSubviews={false}
                 />
             </View>
         </View>
@@ -341,7 +334,6 @@ export default function MapaPublicaciones() {
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: Colors.background },
     map: { ...StyleSheet.absoluteFillObject },
-
     centerContainer: {
         flex: 1,
         justifyContent: "center",
@@ -350,8 +342,7 @@ const styles = StyleSheet.create({
     },
     loadingText: { marginTop: 12, fontSize: 16, color: Colors.text },
     errorText: { marginTop: 12, fontSize: 16, color: Colors.cta, textAlign: "center" },
-    emptyText: { marginTop: 12, fontSize: 16, color: Colors.disabled_primary },
-
+    emptyText: { marginTop: 12, fontSize: 16, color: Colors.disabled_primary },    
     /* CARRUSEL */
     carouselContainer: {
         position: "absolute",
@@ -359,7 +350,6 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
     },
-
     /* CARDS */
     card: {
         width: CARD_WIDTH,
@@ -382,7 +372,6 @@ const styles = StyleSheet.create({
     cardContent: { flex: 1, paddingVertical: 12, paddingHorizontal: 8 },
     cardTitle: { fontSize: 16, fontWeight: "700", color: Colors.text },
     cardDescription: { fontSize: 13, color: "#666" },
-
     price: {
         fontSize: 16,
         fontWeight: "600",
@@ -393,7 +382,6 @@ const styles = StyleSheet.create({
         fontWeight: "600",
         color: Colors.cta,
     },
-
     viewButton: {
         backgroundColor: Colors.primary,
         paddingVertical: 8,
@@ -406,7 +394,6 @@ const styles = StyleSheet.create({
         fontSize: 13,
         fontWeight: "600",
     },
-
     locationButton: {
         position: "absolute",
         top: 20,
