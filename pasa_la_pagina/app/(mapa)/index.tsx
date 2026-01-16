@@ -24,38 +24,6 @@ const CARD_HEIGHT_SELECTED = 130;
 const SPACING = 16;
 
 /* ---------------------------
-   MARKER MEMOIZADO
---------------------------- */
-export const CustomMarker = React.memo(
-    function CustomMarker({ isSelected, tipo }: { isSelected: boolean; tipo: string }) {
-        return (
-            <View style={styles.markerContainer}>
-                <View
-                    style={[
-                        styles.marker,
-                        { backgroundColor: isSelected ? Colors.cta : Colors.primary },
-                    ]}
-                >
-                    <Ionicons
-                        name={tipo === "apunte" ? "document-text" : "book"}
-                        size={14}
-                        color={Colors.white}
-                    />
-                </View>
-                <View
-                    style={[
-                        styles.markerArrow,
-                        { borderTopColor: isSelected ? Colors.cta : Colors.primary },
-                    ]}
-                />
-            </View>
-        );
-    },
-    (prev, next) => prev.isSelected === next.isSelected && prev.tipo === next.tipo
-);
-
-
-/* ---------------------------
    CARD MEMOIZADA
 --------------------------- */
 const PublicacionCard = React.memo(
@@ -129,6 +97,16 @@ const PublicacionCard = React.memo(
 
 export default function MapaPublicaciones() {
     const { publicaciones, loading, error, getUserLocation } = usePublicacion();
+    const markerImages = {
+        apunte: {
+            normal: require("../../assets/images/Market-Apunte-No-Seleccionado.png"),
+            selected: require("../../assets/images/Market-Apunte-Seleccionado.png"),
+        },
+        libro: {
+            normal: require("../../assets/images/Market-Libro-No-Seleccionado.png"),
+            selected: require("../../assets/images/Market-Libro-Seleccionado.png"),
+        },
+    };
     const mapRef = useRef<MapView>(null);
     const flatListRef = useRef<FlatList<Publicacion>>(null);
     const [selectedIndex, setSelectedIndex] = useState(0);
@@ -194,7 +172,9 @@ export default function MapaPublicaciones() {
             viewPosition: 0.5,
         });
 
-        animateToMarker(index);
+        setTimeout(() => {
+            animateToMarker(index);
+        }, 0);
     };
 
     /* ------------------------
@@ -261,25 +241,27 @@ export default function MapaPublicaciones() {
                 showsMyLocationButton={false}
                 showsCompass={false}
             >
-                {publicaciones.map((pub, index) => (
-                    <Marker
-                        key={pub.id}
-                        coordinate={{
-                            latitude: pub.latitud!,
-                            longitude: pub.longitud!,
-                        }}
-                        onPress={(e) => {
-                            e.stopPropagation();
-                            onMarkerPress(index);
-                        }}
-                        anchor={{ x: 0.5, y: 1 }}
-                    >
-                        <CustomMarker
-                            isSelected={selectedIndex === index}
-                            tipo={pub.tipo || "apunte"}
+                {publicaciones.map((pub, index) => {
+                    const isSelected = selectedIndex === index;
+                    const tipo = pub.tipo === "apunte" ? "apunte" : "libro";
+
+                    return (
+                        <Marker
+                            key={`${pub.id}-${isSelected}`}
+                            coordinate={{
+                                latitude: pub.latitud!,
+                                longitude: pub.longitud!,
+                            }}
+                            image={
+                                isSelected
+                                    ? markerImages[tipo].selected
+                                    : markerImages[tipo].normal
+                            }
+                            onPress={() => onMarkerPress(index)}
+                            anchor={{ x: 0.5, y: 1 }}
                         />
-                    </Marker>
-                ))}
+                    );
+                })}
             </MapView>
 
             {/* BOTÓN UBICACIÓN */}
@@ -317,18 +299,28 @@ export default function MapaPublicaciones() {
                         />
                     )}
                     horizontal
-                    showsHorizontalScrollIndicator={false}
                     snapToInterval={CARD_WIDTH + SPACING}
                     decelerationRate="fast"
                     onMomentumScrollEnd={onScrollEnd}
+
+                    onScrollToIndexFailed={(info) => {
+                        setTimeout(() => {
+                            flatListRef.current?.scrollToIndex({
+                                index: info.index,
+                                animated: true,
+                                viewPosition: 0.5,
+                            });
+                        }, 100);
+                    }}
+
                     contentContainerStyle={{
                         paddingHorizontal: (width - CARD_WIDTH) / 2,
                         paddingVertical: 16,
                     }}
                     initialNumToRender={5}
                     maxToRenderPerBatch={5}
-                    windowSize={3}
-                    removeClippedSubviews
+                    windowSize={5}
+                    removeClippedSubviews={false}
                 />
             </View>
         </View>
@@ -342,7 +334,6 @@ export default function MapaPublicaciones() {
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: Colors.background },
     map: { ...StyleSheet.absoluteFillObject },
-
     centerContainer: {
         flex: 1,
         justifyContent: "center",
@@ -351,31 +342,7 @@ const styles = StyleSheet.create({
     },
     loadingText: { marginTop: 12, fontSize: 16, color: Colors.text },
     errorText: { marginTop: 12, fontSize: 16, color: Colors.cta, textAlign: "center" },
-    emptyText: { marginTop: 12, fontSize: 16, color: Colors.disabled_primary },
-
-    /* MARKERS */
-    markerContainer: { alignItems: "center" },
-    marker: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        justifyContent: "center",
-        alignItems: "center",
-        borderWidth: 2,
-        borderColor: Colors.white,
-        elevation: 5,
-    },
-    markerArrow: {
-        width: 0,
-        height: 0,
-        borderLeftWidth: 6,
-        borderRightWidth: 6,
-        borderTopWidth: 8,
-        borderLeftColor: "transparent",
-        borderRightColor: "transparent",
-        marginTop: -2,
-    },
-
+    emptyText: { marginTop: 12, fontSize: 16, color: Colors.disabled_primary },    
     /* CARRUSEL */
     carouselContainer: {
         position: "absolute",
@@ -383,7 +350,6 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
     },
-
     /* CARDS */
     card: {
         width: CARD_WIDTH,
@@ -406,7 +372,6 @@ const styles = StyleSheet.create({
     cardContent: { flex: 1, paddingVertical: 12, paddingHorizontal: 8 },
     cardTitle: { fontSize: 16, fontWeight: "700", color: Colors.text },
     cardDescription: { fontSize: 13, color: "#666" },
-
     price: {
         fontSize: 16,
         fontWeight: "600",
@@ -417,7 +382,6 @@ const styles = StyleSheet.create({
         fontWeight: "600",
         color: Colors.cta,
     },
-
     viewButton: {
         backgroundColor: Colors.primary,
         paddingVertical: 8,
@@ -430,7 +394,6 @@ const styles = StyleSheet.create({
         fontSize: 13,
         fontWeight: "600",
     },
-
     locationButton: {
         position: "absolute",
         top: 20,

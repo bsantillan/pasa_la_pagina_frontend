@@ -113,16 +113,30 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, [accessToken, refreshToken]);
 
   // ------------------------- FETCH USER -------------------------
-  const fetchUsuario = async (): Promise<"OK" | "TOKEN_EXPIRED" | null> => {
+  const fetchUsuario = async (token?: string): Promise<"OK" | "TOKEN_EXPIRED" | null> => {
     try {
-      const token = await getValidAccessToken(); // <- token ya refrescado si expiró
-      if (!token) return "TOKEN_EXPIRED";
+      // usamos el token pasado o el que esté en el estado / refrescado
+      const validToken = token ?? (await getValidAccessToken());
+      if (!validToken) return "TOKEN_EXPIRED";
 
       const res = await fetch(`${API_URL}user/me`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${validToken}` },
       });
 
-      if (res.status === 401 || res.status === 403) return "TOKEN_EXPIRED";
+      if (res.status === 401 || res.status === 403) {
+        // si token expiró, intentamos refrescar y volver a pedir
+        const refreshedToken = await refreshAccessToken();
+        if (!refreshedToken) return "TOKEN_EXPIRED";
+
+        const retryRes = await fetch(`${API_URL}user/me`, {
+          headers: { Authorization: `Bearer ${refreshedToken}` },
+        });
+        if (!retryRes.ok) return "TOKEN_EXPIRED";
+
+        const data = await retryRes.json();
+        setUser(data);
+        return "OK";
+      }
 
       if (!res.ok) throw new Error("Error al obtener usuario: " + res.status);
 
@@ -145,9 +159,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setAccessToken(storedAccess);
         setRefreshToken(storedRefresh);
 
-        if (!storedAccess && !storedRefresh) return;
-
-        await fetchUsuario(); // <- ya se encargará de refrescar si es necesario
+        if (storedAccess || storedRefresh) {
+          await fetchUsuario(storedAccess ?? undefined);
+        }
       } catch (err) {
         console.error("Error loading token:", err);
       } finally {
