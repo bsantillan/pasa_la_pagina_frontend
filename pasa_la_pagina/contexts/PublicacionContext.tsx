@@ -103,6 +103,8 @@ export type Filtros = {
   distancia_maxima?: number;
 };
 
+const FILTROS_DEFAULT: Filtros = {};
+
 type PublicacionContextType = {
   // Estado de creación
   tipo: PublicacionTipo;
@@ -116,12 +118,18 @@ type PublicacionContextType = {
   reset: () => void;
 
   // Filtros
-  filtros: Filtros;
-  setFiltros: (filtros: Filtros) => void;
-  aplicarFiltros: (page?: number) => Promise<void>;
-  cargarinicial: () => Promise<void>;
-  limpiarFiltros: () => Promise<void>;
-  buscarPorTexto: (query: string) => Promise<void>;
+  filtrosListado: Filtros;
+  setFiltrosListado: React.Dispatch<React.SetStateAction<Filtros>>;
+  filtrosMapa: Filtros;
+  setFiltrosMapa: React.Dispatch<React.SetStateAction<Filtros>>;
+  aplicarFiltros: (origen: "listado" | "mapa", page?: number) => Promise<void>;
+  cargarinicial: (origen: "listado" | "mapa") => Promise<void>;
+  limpiarFiltros: (origen: "listado" | "mapa") => Promise<void>;
+  buscarPorTexto: (
+    origen: "listado" | "mapa",
+    query: string
+  ) => Promise<void>;
+
 
   // Publicaciones del backend
   publicaciones: Publicacion[];
@@ -190,7 +198,21 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // ---- Estado de filtros ----
-  const [filtros, setFiltros] = useState<Filtros>({});
+  const [filtrosListado, setFiltrosListado] = useState<Filtros>({});
+  const [filtrosMapa, setFiltrosMapa] = useState<Filtros>({});
+  const filtrosListadoRef = useRef(filtrosListado);
+  const filtrosMapaRef = useRef(filtrosMapa);
+
+  const getFiltrosRef = (origen: "listado" | "mapa") =>
+    origen === "mapa" ? filtrosMapaRef : filtrosListadoRef;
+
+  useEffect(() => {
+    filtrosListadoRef.current = filtrosListado;
+  }, [filtrosListado]);
+
+  useEffect(() => {
+    filtrosMapaRef.current = filtrosMapa;
+  }, [filtrosMapa]);
 
   // ---- Estado publicaciones del backend ----
   const [publicaciones, setPublicaciones] = useState<Publicacion[]>([]);
@@ -212,11 +234,6 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
   const [hasMore, setHasMore] = useState(true);
 
   const abortControllerRef = useRef<AbortController | null>(null);
-
-  const filtrosRef = useRef<Filtros>(filtros);
-  useEffect(() => {
-    filtrosRef.current = filtros;
-  }, [filtros]);
 
   useEffect(() => {
     return () => {
@@ -269,10 +286,12 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const fetchPublicacionesConFiltros = useCallback(
-    async (page: number = 0) => {
+    async (origen: "listado" | "mapa", page: number = 0) => {
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
+
+      const filtrosActuales = getFiltrosRef(origen).current;
 
       const controller = new AbortController();
       abortControllerRef.current = controller;
@@ -286,32 +305,32 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
 
         // Usar filtrosRef.current para evitar dependencias cíclicas
         const body: any = {
-          query: filtrosRef.current.query || undefined,
-          nuevo: filtrosRef.current.nuevo,
-          digital: filtrosRef.current.digital,
-          idiomas: filtrosRef.current.idiomas?.length
-            ? filtrosRef.current.idiomas
+          query: filtrosActuales.query || undefined,
+          nuevo: filtrosActuales.nuevo,
+          digital: filtrosActuales.digital,
+          idiomas: filtrosActuales.idiomas?.length
+            ? filtrosActuales.idiomas
             : undefined,
-          tipos_oferta: filtrosRef.current.tipos_oferta?.length
-            ? filtrosRef.current.tipos_oferta
+          tipos_oferta: filtrosActuales.tipos_oferta?.length
+            ? filtrosActuales.tipos_oferta
             : undefined,
-          precio_minimo: filtrosRef.current.precio_minimo,
-          precio_maximo: filtrosRef.current.precio_maximo,
-          tipos_material: filtrosRef.current.tipos_material?.length
-            ? filtrosRef.current.tipos_material
+          precio_minimo: filtrosActuales.precio_minimo,
+          precio_maximo: filtrosActuales.precio_maximo,
+          tipos_material: filtrosActuales.tipos_material?.length
+            ? filtrosActuales.tipos_material
             : undefined,
-          niveles_educativos: filtrosRef.current.niveles_educativos?.length
-            ? filtrosRef.current.niveles_educativos
+          niveles_educativos: filtrosActuales.niveles_educativos?.length
+            ? filtrosActuales.niveles_educativos
             : undefined,
         };
 
         // Si hay filtro de distancia, obtener ubicación
-        if (filtrosRef.current.distancia_maxima !== undefined) {
+        if (filtrosActuales.distancia_maxima !== undefined) {
           const loc = await getUserLocation();
           if (loc) {
             body.usuario_latitud = loc.latitude;
             body.usuario_longitud = loc.longitude;
-            body.distancia_maxima = filtrosRef.current.distancia_maxima;
+            body.distancia_maxima = filtrosActuales.distancia_maxima;
           }
         }
 
@@ -363,49 +382,58 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
     [API_URL, getValidAccessToken, getUserLocation]
   );
 
-  const aplicarFiltros = useCallback(
-    async (page: number = 0) => {
-      await fetchPublicacionesConFiltros(page);
-    },
+  const aplicarFiltros = useCallback(async (origen: "listado" | "mapa", page = 0) => {
+    await fetchPublicacionesConFiltros(origen, page);
+  },
     [fetchPublicacionesConFiltros]
   );
 
-  const cargarinicial = useCallback(async () => {
-    await fetchPublicacionesConFiltros(0);
-  }, [fetchPublicacionesConFiltros]);
 
-  const limpiarFiltros = useCallback(async () => {
-    const filtrosLimpios: Filtros = {
-      query: filtros.query, // conservamos el valor actual de query
-    };
-    setFiltros(filtrosLimpios);
-    filtrosRef.current = filtrosLimpios;
-    await fetchPublicacionesConFiltros(0);
-  }, [fetchPublicacionesConFiltros, filtros.query]);
+  const cargarinicial = useCallback(async (origen: "listado" | "mapa") => {
+    await fetchPublicacionesConFiltros(origen, 0);
+  },
+    [fetchPublicacionesConFiltros]
+  );
+
+  const limpiarFiltros = useCallback(async (origen: "listado" | "mapa") => {
+    const filtrosVacios = FILTROS_DEFAULT;
+
+    if (origen === "listado") {
+      setFiltrosListado(filtrosVacios);
+      filtrosListadoRef.current = filtrosVacios;
+    } else {
+      setFiltrosMapa(filtrosVacios);
+      filtrosMapaRef.current = filtrosVacios;
+    }
+
+    await fetchPublicacionesConFiltros(origen, 0);
+  },
+    [fetchPublicacionesConFiltros]
+  );
 
   const buscarPorTexto = useCallback(
-    async (query: string) => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-
-      const controller = new AbortController();
-      abortControllerRef.current = controller;
-
+    async (origen: "listado" | "mapa", query: string) => {
       const trimmedQuery = query.trim();
 
+      if (origen === "listado") {
+        const nuevosFiltros = {
+          ...filtrosListadoRef.current,
+          query: trimmedQuery,
+        };
+        setFiltrosListado(nuevosFiltros);
+        filtrosListadoRef.current = nuevosFiltros;
+      } else {
+        const nuevosFiltros = {
+          ...filtrosMapaRef.current,
+          query: trimmedQuery,
+        };
+        setFiltrosMapa(nuevosFiltros);
+        filtrosMapaRef.current = nuevosFiltros;
+      }
 
-      // Solo actualizar la query dentro de filtros, sin borrar otros filtros
-      const nuevosFiltros: Filtros = {
-        ...filtrosRef.current,
-        query: trimmedQuery,
-      };
-      setFiltros(nuevosFiltros);
-      filtrosRef.current = nuevosFiltros;
-
-      await fetchPublicacionesConFiltros(0);
+      await fetchPublicacionesConFiltros(origen, 0);
     },
-    [cargarinicial, fetchPublicacionesConFiltros]
+    [fetchPublicacionesConFiltros]
   );
 
   const resetPagination = useCallback(() => {
@@ -413,11 +441,14 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
     setHasMore(true);
   }, []);
 
-  const loadMore = useCallback(async () => {
-    if (hasMore && !loading) {
-      await fetchPublicacionesConFiltros(currentPage + 1);
-    }
-  }, [hasMore, loading, currentPage, fetchPublicacionesConFiltros]);
+  const loadMore = useCallback(
+    async () => {
+      if (hasMore && !loading) {
+        await fetchPublicacionesConFiltros("listado", currentPage + 1);
+      }
+    },
+    [hasMore, loading, currentPage, fetchPublicacionesConFiltros]
+  );
 
   const getDistanceFromLatLonInKm = (
     lat1: number,
@@ -785,8 +816,10 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
         resultadosBusqueda,
         fetchPublicacionesGeneric,
         getUserLocation,
-        filtros,
-        setFiltros,
+        filtrosListado,
+        setFiltrosListado,
+        filtrosMapa,
+        setFiltrosMapa,
         aplicarFiltros,
         cargarinicial,
         limpiarFiltros,

@@ -16,11 +16,15 @@ import Slider from "@react-native-community/slider";
 interface FilterModalProps {
   visible: boolean;
   onClose: () => void;
+  origen: "listado" | "mapa";
 }
 
-export default function FilterModal({ visible, onClose }: FilterModalProps) {
-  const { filtros, setFiltros, aplicarFiltros, limpiarFiltros } =
-    usePublicacion();
+export default function FilterModal({ visible, onClose, origen }: FilterModalProps) {
+  const { filtrosListado, setFiltrosListado, filtrosMapa, setFiltrosMapa, aplicarFiltros, limpiarFiltros } = usePublicacion();
+  const filtros = origen === "mapa" ? filtrosMapa : filtrosListado;
+  const setFiltros =
+    origen === "mapa" ? setFiltrosMapa : setFiltrosListado;
+
   const [activeTab, setActiveTab] = useState<
     "general" | "material" | "cercania"
   >("general");
@@ -28,12 +32,12 @@ export default function FilterModal({ visible, onClose }: FilterModalProps) {
   if (!visible) return null;
 
   const handleApply = () => {
-    aplicarFiltros(0); // Reiniciar a página 0
+    aplicarFiltros(origen, 0);
     onClose();
   };
 
   const handleClear = () => {
-    limpiarFiltros();
+    limpiarFiltros(origen);
     onClose();
   };
 

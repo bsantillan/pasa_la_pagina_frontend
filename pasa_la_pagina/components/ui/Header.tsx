@@ -4,7 +4,7 @@ import { useNotifications } from "@/contexts/NotificacionContext";
 import { usePublicacion } from "@/contexts/PublicacionContext";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter, useSegments } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import FilterModal from "./FilterModal";
 
@@ -13,7 +13,6 @@ export default function Header() {
     const segments = useSegments() as string[];
     const isPerfilIndex = segments.length === 1 && segments[0] === "(perfil)";
 
-    // ⚠️ IMPORTANTE: aseguramos que los params existan siempre correctamente
     const params = useLocalSearchParams<{
         usuarioId?: string;
         fromPublicacion?: string;
@@ -24,30 +23,34 @@ export default function Header() {
     const [openFilter, setOpenFilter] = useState(false);
 
     const { logout } = useAuth();
-    const { filtros, cargarinicial, setFiltros } = usePublicacion();
+    const { filtrosListado, setFiltrosListado, filtrosMapa, setFiltrosMapa, cargarinicial } = usePublicacion();
+    const origen: "listado" | "mapa" = segments.includes("(mapa)") ? "mapa" : "listado";
+    const filtros = origen === "mapa" ? filtrosMapa : filtrosListado;
+    const setFiltros = origen === "mapa" ? setFiltrosMapa : setFiltrosListado;
+    const isInListado = segments.includes("listado");
+    const isInMapa = segments.includes("(mapa)");
+    const canUseSearch = isInListado || isInMapa;
+
     const { notificaciones } = useNotifications();
     const unreadCount = notificaciones.length;
 
     const isInTabsRoot = segments[0] === "(tabs)" && segments.length === 1;
     const isInNotificaciones = segments.includes("(notificaciones)");
 
-    // ✔ Detecta correctamente "/(perfil)/usuario" aunque haya _layout
     const isInUsuarioPerfil =
         segments.includes("(perfil)") &&
         (segments.at(-1) === "usuario" || segments.includes("usuario"));
 
     const handleSubmitEditing = async () => {
         if (segments.includes("listado")) {
-            await cargarinicial();
+            await cargarinicial(origen);
         } else {
             router.push("/listado");
         }
     };
 
-    // ✔ FIX COMPLETO DEL BOTÓN ATRÁS
     const handleBack = () => {
 
-        // Si venimos desde visualizar, debemos volver exactamente ahí
         if (isInUsuarioPerfil && params.fromPublicacion) {
             router.push({
                 pathname: "/(tabs)/visualizar/[id]",
@@ -56,9 +59,19 @@ export default function Header() {
             return;
         }
 
-        // Por defecto solo volvemos a la pantalla previa
         router.back();
     };
+
+    useEffect(() => {
+        if (!canUseSearch) {
+            setFiltros({ query: "" });
+        }
+
+        if (isInMapa) {
+            setFiltros({ query: "" });
+        }
+    }, [canUseSearch, isInMapa]);
+
 
     return (
         <View style={styles.container}>
@@ -83,14 +96,18 @@ export default function Header() {
                                 placeholder="Buscar publicaciones..."
                                 placeholderTextColor="#888"
                                 value={filtros.query}
-                                onChangeText={(text) => setFiltros({ query: text })}
-                                onSubmitEditing={handleSubmitEditing}
+                                onChangeText={(text) =>
+                                    setFiltros({
+                                        ...filtros,
+                                        query: text,
+                                    })
+                                } onSubmitEditing={handleSubmitEditing}
                                 returnKeyType="search"
                             />
                         </View>
 
                         <View style={styles.rightIcons}>
-                            {segments.includes("listado") && (
+                            {(isInListado || isInMapa) && (
                                 <TouchableOpacity onPress={() => setOpenFilter(true)} style={styles.filterBtn}>
                                     <Ionicons name="funnel" size={20} color={Colors.primary} />
                                 </TouchableOpacity>
@@ -119,7 +136,7 @@ export default function Header() {
             </View>
 
             {!isInNotificaciones && (
-                <FilterModal visible={openFilter} onClose={() => setOpenFilter(false)} />
+                <FilterModal visible={openFilter} onClose={() => setOpenFilter(false)} origen={origen} />
             )}
         </View>
     );

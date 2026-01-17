@@ -96,7 +96,7 @@ const PublicacionCard = React.memo(
 /* --------------------------- */
 
 export default function MapaPublicaciones() {
-    const { publicaciones, loading, error, getUserLocation } = usePublicacion();
+    const { publicaciones, loading, error, getUserLocation, cargarinicial } = usePublicacion();
     const markerImages = {
         apunte: {
             normal: require("../../assets/images/Market-Apunte-No-Seleccionado.png"),
@@ -107,10 +107,27 @@ export default function MapaPublicaciones() {
             selected: require("../../assets/images/Market-Libro-Seleccionado.png"),
         },
     };
+    
     const mapRef = useRef<MapView>(null);
     const flatListRef = useRef<FlatList<Publicacion>>(null);
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [initialRegion, setInitialRegion] = useState<Region | null>(null);
+
+    const [localLoading, setLocalLoading] = useState(false);
+
+    useEffect(() => {
+        const cargarInicial = async () => {
+            setLocalLoading(true);
+            try {
+                await cargarinicial("mapa");
+            } catch (err) {
+                console.error(err);
+            } finally {
+                setLocalLoading(false);
+            }
+        };
+        cargarInicial();
+    }, [cargarinicial]);
 
     /* ------------------------
         UBICACIÓN INICIAL
@@ -342,7 +359,7 @@ const styles = StyleSheet.create({
     },
     loadingText: { marginTop: 12, fontSize: 16, color: Colors.text },
     errorText: { marginTop: 12, fontSize: 16, color: Colors.cta, textAlign: "center" },
-    emptyText: { marginTop: 12, fontSize: 16, color: Colors.disabled_primary },    
+    emptyText: { marginTop: 12, fontSize: 16, color: Colors.disabled_primary },
     /* CARRUSEL */
     carouselContainer: {
         position: "absolute",

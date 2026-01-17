@@ -31,7 +31,7 @@ export default function ListadoScreen() {
     const cargarInicial = async () => {
       setLocalLoading(true);
       try {
-        await cargarinicial();
+        await cargarinicial("listado");
       } catch (err) {
         console.error(err);
       } finally {
