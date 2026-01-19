@@ -96,7 +96,7 @@ const PublicacionCard = React.memo(
 /* --------------------------- */
 
 export default function MapaPublicaciones() {
-    const { publicaciones, loading, error, getUserLocation } = usePublicacion();
+    const { publicaciones, loading, error, getUserLocation, limpiarFiltros } = usePublicacion();
     const markerImages = {
         apunte: {
             normal: require("../../assets/images/Market-Apunte-No-Seleccionado.png"),
@@ -107,10 +107,18 @@ export default function MapaPublicaciones() {
             selected: require("../../assets/images/Market-Libro-Seleccionado.png"),
         },
     };
+
     const mapRef = useRef<MapView>(null);
     const flatListRef = useRef<FlatList<Publicacion>>(null);
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [initialRegion, setInitialRegion] = useState<Region | null>(null);
+
+    useEffect(() => {
+        return () => {
+            limpiarFiltros("mapa");
+        };
+    }, []);
+
 
     /* ------------------------
         UBICACIÓN INICIAL
@@ -302,7 +310,6 @@ export default function MapaPublicaciones() {
                     snapToInterval={CARD_WIDTH + SPACING}
                     decelerationRate="fast"
                     onMomentumScrollEnd={onScrollEnd}
-
                     onScrollToIndexFailed={(info) => {
                         setTimeout(() => {
                             flatListRef.current?.scrollToIndex({
@@ -312,7 +319,7 @@ export default function MapaPublicaciones() {
                             });
                         }, 100);
                     }}
-
+                    showsHorizontalScrollIndicator={false}
                     contentContainerStyle={{
                         paddingHorizontal: (width - CARD_WIDTH) / 2,
                         paddingVertical: 16,
@@ -342,7 +349,7 @@ const styles = StyleSheet.create({
     },
     loadingText: { marginTop: 12, fontSize: 16, color: Colors.text },
     errorText: { marginTop: 12, fontSize: 16, color: Colors.cta, textAlign: "center" },
-    emptyText: { marginTop: 12, fontSize: 16, color: Colors.disabled_primary },    
+    emptyText: { marginTop: 12, fontSize: 16, color: Colors.disabled_primary },
     /* CARRUSEL */
     carouselContainer: {
         position: "absolute",
