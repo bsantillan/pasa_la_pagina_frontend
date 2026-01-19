@@ -23,13 +23,11 @@ export default function Header() {
     const [openFilter, setOpenFilter] = useState(false);
 
     const { logout } = useAuth();
-    const { filtrosListado, setFiltrosListado, filtrosMapa, setFiltrosMapa, cargarinicial } = usePublicacion();
+    const { filtrosListado, buscarPorTexto, limpiarFiltros } = usePublicacion();
+    const [searchText, setSearchText] = useState(filtrosListado.query ?? "");
     const origen: "listado" | "mapa" = segments.includes("(mapa)") ? "mapa" : "listado";
-    const filtros = origen === "mapa" ? filtrosMapa : filtrosListado;
-    const setFiltros = origen === "mapa" ? setFiltrosMapa : setFiltrosListado;
     const isInListado = segments.includes("listado");
     const isInMapa = segments.includes("(mapa)");
-    const canUseSearch = isInListado || isInMapa;
 
     const { notificaciones } = useNotifications();
     const unreadCount = notificaciones.length;
@@ -41,12 +39,13 @@ export default function Header() {
         segments.includes("(perfil)") &&
         (segments.at(-1) === "usuario" || segments.includes("usuario"));
 
-    const handleSubmitEditing = async () => {
-        if (segments.includes("listado")) {
-            await cargarinicial(origen);
-        } else {
+    const handleBuscar = () => {
+        if (!isInListado) {
+            limpiarFiltros("listado")
             router.push("/listado");
         }
+
+        buscarPorTexto("listado", searchText);
     };
 
     const handleBack = () => {
@@ -63,15 +62,10 @@ export default function Header() {
     };
 
     useEffect(() => {
-        if (!canUseSearch) {
-            setFiltros({ query: "" });
+        if (!isInListado) {
+            setSearchText("");
         }
-
-        if (isInMapa) {
-            setFiltros({ query: "" });
-        }
-    }, [canUseSearch, isInMapa]);
-
+    }, [isInListado]);
 
     return (
         <View style={styles.container}>
@@ -95,13 +89,9 @@ export default function Header() {
                                 style={styles.input}
                                 placeholder="Buscar publicaciones..."
                                 placeholderTextColor="#888"
-                                value={filtros.query}
-                                onChangeText={(text) =>
-                                    setFiltros({
-                                        ...filtros,
-                                        query: text,
-                                    })
-                                } onSubmitEditing={handleSubmitEditing}
+                                value={searchText}
+                                onChangeText={setSearchText}
+                                onSubmitEditing={handleBuscar}
                                 returnKeyType="search"
                             />
                         </View>

@@ -1,5 +1,4 @@
 import * as Location from "expo-location";
-import { useRouter } from "expo-router";
 import React, {
   createContext,
   ReactNode,
@@ -123,13 +122,11 @@ type PublicacionContextType = {
   filtrosMapa: Filtros;
   setFiltrosMapa: React.Dispatch<React.SetStateAction<Filtros>>;
   aplicarFiltros: (origen: "listado" | "mapa", page?: number) => Promise<void>;
-  cargarinicial: (origen: "listado" | "mapa") => Promise<void>;
   limpiarFiltros: (origen: "listado" | "mapa") => Promise<void>;
   buscarPorTexto: (
     origen: "listado" | "mapa",
     query: string
   ) => Promise<void>;
-
 
   // Publicaciones del backend
   publicaciones: Publicacion[];
@@ -140,7 +137,6 @@ type PublicacionContextType = {
   currentPage: number;
   totalPages: number;
   hasMore: boolean;
-  resetPagination: () => void;
   loadMore: () => Promise<void>;
   fetchCercaTuyo: () => Promise<void>;
   buscarPublicaciones: (
@@ -175,7 +171,6 @@ export const PublicacionContext = createContext<
 export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
   const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "";
   const { getValidAccessToken } = useAuth();
-  const router = useRouter();
 
   // ---- Estado de creación ----
   const [tipo, setTipo] = useState<PublicacionTipo>(null);
@@ -200,6 +195,7 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
   // ---- Estado de filtros ----
   const [filtrosListado, setFiltrosListado] = useState<Filtros>({});
   const [filtrosMapa, setFiltrosMapa] = useState<Filtros>({});
+  const [filterLoading, setFilterLoading] = useState(false);
   const filtrosListadoRef = useRef(filtrosListado);
   const filtrosMapaRef = useRef(filtrosMapa);
 
@@ -228,7 +224,6 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
   const [pubsUser, setPubsUser] = useState<Publicacion[]>([]);
   const [pubFavoritas, setPubFavoritas] = useState<Publicacion[]>([]);
 
-  // 👇 Paginación
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [hasMore, setHasMore] = useState(true);
@@ -287,8 +282,17 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchPublicacionesConFiltros = useCallback(
     async (origen: "listado" | "mapa", page: number = 0) => {
+
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
+      }
+
+      const isInitialLoad = page === 0 && publicaciones.length === 0;
+
+      if (isInitialLoad) {
+        setLoading(true);
+      } else {
+        setFilterLoading(true);
       }
 
       const filtrosActuales = getFiltrosRef(origen).current;
@@ -377,6 +381,7 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
         setError(err.message);
       } finally {
         setLoading(false);
+        setFilterLoading(false);
       }
     },
     [API_URL, getValidAccessToken, getUserLocation]
@@ -388,26 +393,22 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
     [fetchPublicacionesConFiltros]
   );
 
+  const limpiarFiltros = useCallback(
+    async (origen: "listado" | "mapa") => {
+      if (origen === "listado") {
+        setFiltrosListado({});
+        filtrosListadoRef.current = {};
+      } else {
+        setFiltrosMapa({});
+        filtrosMapaRef.current = {};
+      }
 
-  const cargarinicial = useCallback(async (origen: "listado" | "mapa") => {
-    await fetchPublicacionesConFiltros(origen, 0);
-  },
-    [fetchPublicacionesConFiltros]
-  );
+      setPublicaciones([]);
+      setCurrentPage(0);
+      setHasMore(true);
 
-  const limpiarFiltros = useCallback(async (origen: "listado" | "mapa") => {
-    const filtrosVacios = FILTROS_DEFAULT;
-
-    if (origen === "listado") {
-      setFiltrosListado(filtrosVacios);
-      filtrosListadoRef.current = filtrosVacios;
-    } else {
-      setFiltrosMapa(filtrosVacios);
-      filtrosMapaRef.current = filtrosVacios;
-    }
-
-    await fetchPublicacionesConFiltros(origen, 0);
-  },
+      await fetchPublicacionesConFiltros(origen, 0);
+    },
     [fetchPublicacionesConFiltros]
   );
 
@@ -435,11 +436,6 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
     },
     [fetchPublicacionesConFiltros]
   );
-
-  const resetPagination = useCallback(() => {
-    setCurrentPage(0);
-    setHasMore(true);
-  }, []);
 
   const loadMore = useCallback(
     async () => {
@@ -821,13 +817,11 @@ export const PublicacionProvider = ({ children }: { children: ReactNode }) => {
         filtrosMapa,
         setFiltrosMapa,
         aplicarFiltros,
-        cargarinicial,
         limpiarFiltros,
         buscarPorTexto,
         currentPage,
         totalPages,
         hasMore,
-        resetPagination,
         loadMore,
         fetchPublicacionesByUsuario,
         pubsUser,

@@ -96,7 +96,7 @@ const PublicacionCard = React.memo(
 /* --------------------------- */
 
 export default function MapaPublicaciones() {
-    const { publicaciones, loading, error, getUserLocation, cargarinicial } = usePublicacion();
+    const { publicaciones, loading, error, getUserLocation, limpiarFiltros } = usePublicacion();
     const markerImages = {
         apunte: {
             normal: require("../../assets/images/Market-Apunte-No-Seleccionado.png"),
@@ -107,27 +107,18 @@ export default function MapaPublicaciones() {
             selected: require("../../assets/images/Market-Libro-Seleccionado.png"),
         },
     };
-    
+
     const mapRef = useRef<MapView>(null);
     const flatListRef = useRef<FlatList<Publicacion>>(null);
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [initialRegion, setInitialRegion] = useState<Region | null>(null);
 
-    const [localLoading, setLocalLoading] = useState(false);
-
     useEffect(() => {
-        const cargarInicial = async () => {
-            setLocalLoading(true);
-            try {
-                await cargarinicial("mapa");
-            } catch (err) {
-                console.error(err);
-            } finally {
-                setLocalLoading(false);
-            }
+        return () => {
+            limpiarFiltros("mapa");
         };
-        cargarInicial();
-    }, [cargarinicial]);
+    }, []);
+
 
     /* ------------------------
         UBICACIÓN INICIAL
@@ -319,7 +310,6 @@ export default function MapaPublicaciones() {
                     snapToInterval={CARD_WIDTH + SPACING}
                     decelerationRate="fast"
                     onMomentumScrollEnd={onScrollEnd}
-
                     onScrollToIndexFailed={(info) => {
                         setTimeout(() => {
                             flatListRef.current?.scrollToIndex({
@@ -329,7 +319,7 @@ export default function MapaPublicaciones() {
                             });
                         }, 100);
                     }}
-
+                    showsHorizontalScrollIndicator={false}
                     contentContainerStyle={{
                         paddingHorizontal: (width - CARD_WIDTH) / 2,
                         paddingVertical: 16,

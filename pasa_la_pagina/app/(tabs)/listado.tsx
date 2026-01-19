@@ -2,7 +2,7 @@
 import { ProductCard } from "@/components/ui/ProductCard";
 import { usePublicacion } from "@/contexts/PublicacionContext";
 import { router } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React from "react";
 import {
   ActivityIndicator,
   Dimensions,
@@ -15,38 +15,14 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function ListadoScreen() {
-  const {
-    publicaciones,
-    loading,
-    error,
-    cargarinicial,
-    hasMore,
-    loadMore,
-  } = usePublicacion();
-
-  const [localLoading, setLocalLoading] = useState(false);
-
-  // 👇 Inicializar pantalla y abrir modal si viene query
-  useEffect(() => {
-    const cargarInicial = async () => {
-      setLocalLoading(true);
-      try {
-        await cargarinicial("listado");
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLocalLoading(false);
-      }
-    };
-    cargarInicial();
-  }, [cargarinicial]);
+  const { publicaciones, loading, error, hasMore, loadMore } = usePublicacion();
 
   const screenWidth = Dimensions.get("window").width;
   const cardMargin = 8;
   const columns = 2;
   const cardWidth = (screenWidth - cardMargin * (columns * 2 + 1)) / columns;
 
-  if (loading || localLoading) {
+  if (loading && publicaciones.length === 0) {
     return (
       <SafeAreaView style={styles.center}>
         <ActivityIndicator size="large" color="#000" />
@@ -64,12 +40,13 @@ export default function ListadoScreen() {
   }
 
   return (
-    <View style={{ flex: 1}}>
+    <View style={{ flex: 1 }}>
       {publicaciones.length === 0 ? (
         <Text style={{ textAlign: "center", marginTop: 20 }}>
           No se encontraron publicaciones.
         </Text>
       ) : (
+        
         <FlatList
           data={publicaciones}
           keyExtractor={(item) => item.id.toString()}

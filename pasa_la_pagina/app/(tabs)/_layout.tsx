@@ -1,5 +1,6 @@
 import { Colors } from '@/constants/Colors';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePublicacion } from '@/contexts/PublicacionContext';
 import { UserProvider } from '@/contexts/UserContext';
 import { Slot, useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
@@ -8,6 +9,7 @@ import { StyleSheet, View } from 'react-native';
 
 export default function TabLayout() {
   const { accessToken } = useAuth();
+  const { limpiarFiltros } = usePublicacion();
   const router = useRouter();
 
   useEffect(() => {
@@ -15,6 +17,13 @@ export default function TabLayout() {
       router.replace("/login");
     }
   }, [accessToken, router]);
+
+  useEffect(() => {
+    return () => {
+      limpiarFiltros("listado");
+    };
+  }, []);
+
 
   if (!accessToken) return null;
 
