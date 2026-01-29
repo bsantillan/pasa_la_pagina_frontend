@@ -1,3 +1,4 @@
+import { AlertCard } from "@/components/ui/AlertaCard";
 import PrimaryButton from "@/components/ui/Boton/Primary";
 import CustomInput from "@/components/ui/CustomInput";
 import { Colors } from "@/constants/Colors";
@@ -5,6 +6,7 @@ import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
   ImageBackground,
+  Modal,
   StyleSheet,
   Text,
   View
@@ -23,7 +25,20 @@ export default function RegisterScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [repeatPassword, setRepeatPassword] = useState("");
-  const [error, setError] = useState("");
+  const [errors, setErrors] = useState<{
+    nombre?: string;
+    apellido?: string;
+    email?: string;
+    password?: string;
+    repeatPassword?: string;
+  }>({});
+  const [generalError, setGeneralError] = useState("");
+  const [modalVisible, setModalVisible] = useState(false);
+
+  const clearErrors = () => {
+    setErrors({});
+    setGeneralError("");
+  };
 
   const isValidEmail = (email: string) => {
     const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -31,38 +46,73 @@ export default function RegisterScreen() {
   };
 
   const handleNext = () => {
-    if (!nombre || !apellido) {
-      setError("Completa todos los campos");
+    const newErrors: any = {};
+
+    if (!nombre) {
+      newErrors.nombre = "El nombre es obligatorio";
+    } else if (nombre.length < 2) {
+      newErrors.nombre = "Mínimo 2 caracteres";
+    }
+
+    if (!apellido) {
+      newErrors.apellido = "El apellido es obligatorio";
+    } else if (apellido.length < 2) {
+      newErrors.apellido = "Mínimo 2 caracteres";
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       return;
     }
-    if (nombre.length < 2 || apellido.length < 2) {
-      setError("El nombre o apellido deben tener al menos dos caracteres");
-      return;
-    }
-    setError("");
+
+    clearErrors();
     setStep(2);
   };
 
   const handleRegister = async () => {
-    if (!email || !password || !repeatPassword) {
-      setError("Completa todos los campos");
+    const newErrors: any = {};
+
+    if (!email) {
+      newErrors.email = "El email es obligatorio";
+    } else if (!isValidEmail(email)) {
+      newErrors.email = "Email inválido";
+    }
+
+    if (!password) {
+      newErrors.password = "La contraseña es obligatoria";
+    } else if (password.length < 8) {
+      newErrors.password = "Mínimo 8 caracteres";
+    }
+
+    if (password !== repeatPassword)
+      newErrors.repeatPassword = "Las contraseñas no coinciden";
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       return;
     }
 
-    if (!isValidEmail(email)) {
-      setError("Introduce un email válido");
-      return;
-    }
+    clearErrors();
 
-    if (password !== repeatPassword) {
-      setError("Las contraseñas no coinciden");
-      return;
-    }
     try {
       await register(nombre, apellido, email, password);
-      router.replace("/(tabs)");
+      setModalVisible(true);
+
     } catch (err: any) {
-      setError(err.message || "Error al registrarse");
+      console.log(err);
+      const data = err?.data;
+
+      if (data?.errors) {
+        setErrors(data.errors);
+        return;
+      }
+
+      if (data?.error) {
+        setGeneralError(data.error);
+        return;
+      }
+
+      setGeneralError("Error inesperado. Intenta nuevamente.");
     }
   };
 
@@ -81,17 +131,25 @@ export default function RegisterScreen() {
             <CustomInput
               placeholder="Nombre"
               value={nombre}
-              onChangeText={setNombre}
+              onChangeText={(text) => {
+                setNombre(text);
+                setErrors({ nombre: "" });
+              }}
               keyboardType="default"
             />
+            {errors.nombre ? <Text style={styles.error}>{errors.nombre}</Text> : null}
+
             <CustomInput
               placeholder="Apellido"
               value={apellido}
-              onChangeText={setApellido}
+              onChangeText={(text) => {
+                setApellido(text);
+                setErrors({ apellido: "" });
+              }}
               keyboardType="default"
             />
 
-            {error ? <Text style={styles.error}>{error}</Text> : null}
+            {errors.apellido ? <Text style={styles.error}>{errors.apellido}</Text> : null}
 
             <PrimaryButton
               title="Siguiente"
@@ -114,24 +172,39 @@ export default function RegisterScreen() {
               <CustomInput
                 placeholder="Email"
                 value={email}
-                onChangeText={setEmail}
+                onChangeText={(text) => {
+                  setEmail(text);
+                  setErrors({ email: "" })
+                }}
                 keyboardType="email-address"
               />
+              {errors.email ? <Text style={styles.error}>{errors.email}</Text> : null}
+
               <CustomInput
                 placeholder="Contraseña"
                 value={password}
-                onChangeText={setPassword}
+                onChangeText={(text) => {
+                  setPassword(text);
+                  setErrors({ password: "" })
+                }}
                 secureTextEntry
               />
+              {errors.password ? <Text style={styles.error}>{errors.password}</Text> : null}
+
               <CustomInput
                 placeholder="Repetir contraseña"
                 value={repeatPassword}
-                onChangeText={setRepeatPassword}
+                onChangeText={(text) => {
+                  setRepeatPassword(text);
+                  setErrors({ repeatPassword: "" })
+                }}
                 secureTextEntry
               />
+              {errors.repeatPassword ? <Text style={styles.error}>{errors.repeatPassword}</Text> : null}
 
-              {error ? <Text style={styles.error}>{error}</Text> : null}
             </View>
+
+            {generalError ? <Text style={styles.error}>{generalError}</Text> : null}
 
             <PrimaryButton
               title="Crear cuenta"
@@ -148,6 +221,28 @@ export default function RegisterScreen() {
           </>
         )}
       </View>
+      <Modal
+        visible={modalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => { setModalVisible(false); router.replace("/login"); }}
+      >
+        <View style={styles.modalBackground}>
+          <AlertCard
+            title={`Verificación del correo electronico`}
+            description={
+              <Text>
+                Te enviamos un código de verificación al correo{" "}
+                <Text style={{ fontWeight: "600" }}>{email}</Text>.
+                Vas a poder ingresarlo cuando intentes iniciar sesión.
+              </Text>
+            } onAccept={() => {
+              setModalVisible(false); router.replace("/login")
+            }}
+            acceptLabel="Cerrar"
+          />
+        </View>
+      </Modal>
     </ImageBackground>
   );
 
@@ -206,5 +301,11 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     textAlign: "center",
     width: "100%",
+  },
+  modalBackground: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
   },
 });

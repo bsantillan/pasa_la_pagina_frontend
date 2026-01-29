@@ -229,15 +229,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       body: JSON.stringify({ nombre, apellido, email, password }),
     });
 
-    if (!res.ok) throw new Error("Error en el registro");
+    const data = await res.json().catch(() => null);
 
-    const data = await res.json();
+    if (!res.ok) {
+      // reenviamos el error del backend
+      throw {
+        status: res.status,
+        data,
+      };
+    }
 
-    await AsyncStorage.setItem("accessToken", data.accessToken);
-    await AsyncStorage.setItem("refreshToken", data.refreshToken);
-
-    setAccessToken(data.accessToken);
-    setRefreshToken(data.refreshToken);
   };
 
   // ------------------------- LOGOUT -------------------------
