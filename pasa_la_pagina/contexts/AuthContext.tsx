@@ -29,6 +29,8 @@ type AuthContextType = {
   ) => Promise<void>;
   logout: () => Promise<void>;
   getValidAccessToken: () => Promise<string | null>;
+  verificarEmail: (email: string, codigo: string) => Promise<void>;
+  reenviarVerificacion: (email: string) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -180,9 +182,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       body: JSON.stringify({ email, password }),
     });
 
-    if (!response.ok) throw new Error("Credenciales invalidas");
-
     const data = await response.json();
+
+    if (!response.ok) {
+      throw {
+        status: response.status,
+        data,
+      };
+    }
 
     await AsyncStorage.setItem("accessToken", data.accessToken);
     await AsyncStorage.setItem("refreshToken", data.refreshToken);
@@ -223,18 +230,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     email: string,
     password: string
   ) => {
-    const res = await fetch(`${API_URL}auth/register`, {
+    const response = await fetch(`${API_URL}auth/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ nombre, apellido, email, password }),
     });
 
-    const data = await res.json().catch(() => null);
+    const data = await response.json().catch(() => null);
 
-    if (!res.ok) {
+    if (!response.ok) {
       // reenviamos el error del backend
       throw {
-        status: res.status,
+        status: response.status,
         data,
       };
     }
@@ -261,6 +268,40 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  // ------------------------- VERIFY EMAIL -------------------------
+  const verificarEmail = async (email: string, codigo: string) => {
+    const response = await fetch(`${API_URL}auth/verificar`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, codigo }),
+    });
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => null);
+      throw {
+        status: response.status,
+        data,
+      };
+    }
+  };
+
+  // ------------------------- RESEND VERIFICATION -------------------------
+  const reenviarVerificacion = async (email: string) => {
+    const response = await fetch(`${API_URL}auth/resend-verification`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => null);
+      throw {
+        status: response.status,
+        data,
+      };
+    }
+  };
+
   // ------------------------- PROVIDER -------------------------
   return (
     <AuthContext.Provider
@@ -274,6 +315,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         register,
         logout,
         getValidAccessToken,
+        verificarEmail,
+        reenviarVerificacion,
       }}
     >
       {children}

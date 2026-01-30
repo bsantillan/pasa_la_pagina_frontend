@@ -1,4 +1,5 @@
 import PrimaryButton from "@/components/ui/Boton/Primary";
+import SecondaryButton from "@/components/ui/Boton/Secondary";
 import CustomInput from "@/components/ui/CustomInput";
 import { Colors } from "@/constants/Colors";
 import * as Google from "expo-auth-session/providers/google";
@@ -7,11 +8,12 @@ import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Dimensions,
   ImageBackground,
+  Modal,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View
 } from "react-native";
@@ -21,11 +23,23 @@ const { height } = Dimensions.get("window");
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { login, loginWithGoogle } = useAuth();
+  const { login, loginWithGoogle, verificarEmail, reenviarVerificacion } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [codigo, setCodigo] = useState("");
+  const [errors, setErrors] = useState<{
+    email?: string;
+    password?: string;
+    email_verificado?: string;
+    codigo?: string;
+    cuenta_verificada?: string
+  }>({});
+  const [generalError, setGeneralError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [resendMessage, setResendMessage] = useState<string | null>(null);
+  const [verificationSuccess, setVerificationSuccess] = useState(false);
+  const [alreadyVerified, setAlreadyVerified] = useState(false);
 
   const [request, response, promptAsync] = Google.useAuthRequest({
     androidClientId: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID,
@@ -38,31 +52,182 @@ export default function LoginScreen() {
     }
   }, [response]);
 
+  const clearErrors = () => {
+    setErrors({});
+    setGeneralError("");
+  };
+
+  const closeModal = () => {
+    clearErrors();
+    setCodigo("");
+    setResendMessage(null);
+    setAlreadyVerified(false);
+    setVerificationSuccess(false);
+    setModalVisible(false);
+  }
+
+  const openModal = () => {
+    clearErrors();
+    setCodigo("");
+    setResendMessage(null);
+    setModalVisible(true);
+  }
+
+  const isValidEmail = (email: string) => {
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regex.test(email);
+  };
+
   const handleGoogleLogin = async (idToken: string) => {
     setLoading(true); // activar loading
     try {
       await loginWithGoogle(idToken);
       router.replace("/(tabs)");
     } catch (error: any) {
-      setError(error.message);
-      Alert.alert(
-        "Error",
-        error.message || "Ocurrió un error al iniciar sesión con Google"
-      );
+      console.log(error);
+
+      const data = error?.data;
+
+      if (data?.error) {
+        setGeneralError(data.error);
+        return;
+      }
+      setGeneralError("Error inesperado. Intenta nuevamente.");
     } finally {
       setLoading(false); // desactivar loading
     }
   };
-  
+
   const handleLogin = async () => {
-    setLoading(true); // activar loading
+    const newErrors: any = {};
+
+    clearErrors();
+
+    if (!email) {
+      newErrors.email = "El email es obligatorio";
+    } else if (!isValidEmail(email)) {
+      newErrors.email = "Email inválido";
+    }
+
+    if (!password) newErrors.password = "La contraseña es obligatoria";
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    setLoading(true);
     try {
       await login(email, password);
       router.replace("/(tabs)");
-    } catch (error: any) {
-      setError("Contraseña o email invalidos");
+    } catch (err: any) {
+      console.log(err);
+      const data = err?.data;
+
+      if (data?.errors) {
+        setErrors(data.errors);
+        data.errors.email_verificado && !data.errors.cuenta_verificada ? openModal : setModalVisible(false);
+        return;
+      }
+
+      if (data?.error) {
+        setGeneralError(data.error);
+        return;
+      }
+
+      setGeneralError("Error inesperado. Intenta nuevamente.");
+
     } finally {
       setLoading(false); // desactivar loading
+    }
+  };
+
+  const handleVerifyCode = async () => {
+    const newErrors: any = {};
+
+    clearErrors();
+
+    if (!codigo) {
+      newErrors.codigo = "El codigo es obligatorio";
+    } else if (codigo.length != 6) {
+      newErrors.codigo = "El codigo debe tener 6 digitos";
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await verificarEmail(email, codigo);
+
+      setVerificationSuccess(true);
+
+      setTimeout(async () => {
+        await login(email, password);
+        setVerificationSuccess(false);
+        setModalVisible(false);
+        setCodigo("");
+      }, 2000);
+
+    } catch (error: any) {
+      console.log(error);
+
+      const data = error?.data;
+
+      if (data?.errors) {
+        setErrors(data.errors);
+
+        if (data.errors.cuenta_verificada) {
+          setAlreadyVerified(true);
+          setModalVisible(true);
+
+          setTimeout(() => {
+            setModalVisible(false);
+            setAlreadyVerified(false);
+          }, 2500);
+        }
+        return;
+      }
+
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendEmail = async () => {
+    setLoading(true);
+
+    try {
+      await reenviarVerificacion(email);
+
+      setResendMessage(
+        "Te reenviamos el código. Revisá tu bandeja de entrada y la carpeta de spam."
+      );
+    } catch (error: any) {
+      console.log(error);
+
+      const data = error?.data;
+
+      if (data?.errors) {
+        setErrors(data.errors);
+
+        if (data.errors.cuenta_verificada) {
+          setAlreadyVerified(true);
+          setModalVisible(true);
+
+          setTimeout(() => {
+            setModalVisible(false);
+            setAlreadyVerified(false);
+          }, 2500);
+        }
+        return;
+      }
+
+      setResendMessage(null);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -98,18 +263,28 @@ export default function LoginScreen() {
         <CustomInput
           placeholder="Email"
           value={email}
-          onChangeText={setEmail}
+          onChangeText={(text) => {
+            setEmail(text);
+            setErrors({ email: "" });
+          }}
           keyboardType="email-address"
+          error={!!errors.email}
+          errorMessage={errors.email}
         />
 
         <CustomInput
           placeholder="Contraseña"
           value={password}
-          onChangeText={setPassword}
+          onChangeText={(text) => {
+            setPassword(text);
+            setErrors({ password: "" });
+          }}
           secureTextEntry
+          error={!!errors.password}
+          errorMessage={errors.password}
         />
 
-        {error ? <Text style={styles.error}>{error}</Text> : null}
+        {generalError ? <Text style={styles.error}>{generalError}</Text> : null}
 
         <PrimaryButton
           title="Iniciar sesión"
@@ -121,13 +296,14 @@ export default function LoginScreen() {
         {loading ? <ActivityIndicator color="#fff" size="small" /> : null}
 
         <Text style={styles.footerText}>
-          ¿No tienes cuenta?{" "}
-          <Text style={styles.link} onPress={() => router.push("/register")}>
-            Regístrate
+          ¿Olvidaste tu contraseña?{" "}
+          <Text
+            style={styles.link}
+            onPress={() => router.push("/")}
+          >
+            Restablécela
           </Text>
         </Text>
-
-        <Text style={styles.orText}>o</Text>
 
         <TouchableOpacity
           style={styles.googleButton}
@@ -136,8 +312,120 @@ export default function LoginScreen() {
         >
           <Text style={styles.googleButtonText}>Login con Google</Text>
         </TouchableOpacity>
+
+        <Text style={styles.footerText}>
+          ¿No tienes cuenta?{" "}
+          <Text style={styles.link} onPress={() => router.push("/register")}>
+            Regístrate
+          </Text>
+        </Text>
+
       </View>
-    </KeyboardAwareScrollView>
+      <Modal
+        animationType="fade"
+        transparent
+        visible={modalVisible}
+        onRequestClose={closeModal}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <TouchableOpacity onPress={closeModal} style={styles.closeButton}>
+              <Text style={styles.closeText}>✕</Text>
+            </TouchableOpacity>
+            {alreadyVerified ? (
+              <>
+                <Text style={styles.titleModal}>
+                  Tu cuenta ya está verificada
+                </Text>
+
+                <Text style={styles.description}>
+                  Este correo ya fue verificado correctamente.
+                  {"\n\n"}
+                  Iniciá sesión para continuar.
+                </Text>
+
+                <ActivityIndicator
+                  style={{ marginTop: 20 }}
+                  size="small"
+                  color={Colors.primary}
+                />
+              </>
+            ) : verificationSuccess ? (
+              <>
+                <Text style={styles.titleModal}>
+                  ¡Email verificado con éxito! 🎉
+                </Text>
+
+                <Text style={styles.description}>
+                  Tu correo fue verificado correctamente.
+                  {"\n\n"}
+                  En unos segundos vas a ingresar automáticamente.
+                </Text>
+
+                <ActivityIndicator
+                  style={{ marginTop: 20 }}
+                  size="small"
+                  color={Colors.primary}
+                />
+              </>
+            ) : (
+              <>
+                <Text style={styles.titleModal}>Tu email aún no está verificado</Text>
+
+                <Text style={styles.description}>
+                  Para poder continuar, necesitás verificar tu correo{" "}
+                  <Text style={{ fontWeight: "900" }}>{email}</Text>.
+                  {"\n\n"}
+                  Ingresá el código de verificación.
+                  {"\n"}
+                  Revisá tu bandeja de entrada y spam.
+                </Text>
+
+                <TextInput
+                  style={[
+                    styles.codeInput,
+                    errors.codigo && styles.codeInputError,
+                  ]}
+                  placeholder="Código de 6 dígitos"
+                  keyboardType="numeric"
+                  maxLength={6}
+                  value={codigo}
+                  placeholderTextColor={errors.codigo ? "#ff6b6b" : "#999"}
+                  onChangeText={(text) => {
+                    setCodigo(text);
+                    setErrors({});
+                    setResendMessage(null);
+                  }}
+                />
+
+                {errors.codigo && (
+                  <Text style={styles.errorText}>{errors.codigo}</Text>
+                )}
+
+                {resendMessage && (
+                  <Text style={styles.resendMessage}>{resendMessage}</Text>
+                )}
+
+                <View style={styles.buttons}>
+                  <SecondaryButton
+                    title="Reenviar código"
+                    onPress={handleResendEmail}
+                    disabled={loading}
+                  />
+
+                  <PrimaryButton
+                    title="Verificar"
+                    onPress={handleVerifyCode}
+                    disabled={loading}
+                  />
+                </View>
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
+
+    </KeyboardAwareScrollView >
   );
 }
 
@@ -147,7 +435,7 @@ const styles = StyleSheet.create({
     height: "100%",
   },
   headerContainer: {
-    height: height * 0.45,
+    height: height * 0.40,
     width: "100%",
   },
   gradient: {
@@ -186,7 +474,7 @@ const styles = StyleSheet.create({
     textAlign: "left",
   },
   footerText: {
-    marginTop: 20,
+    marginVertical: 15,
     fontSize: 14,
     color: "#555",
     textAlign: "center",
@@ -199,12 +487,8 @@ const styles = StyleSheet.create({
   error: {
     color: "red",
     marginBottom: 10,
-  },
-  orText: {
-    marginVertical: 15,
-    color: "#999",
-    fontSize: 14,
     textAlign: "center",
+    width: "100%",
   },
   googleButton: {
     flexDirection: "row",
@@ -223,4 +507,83 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     color: "#000",
   },
+  modalBackground: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContent: {
+    backgroundColor: Colors.white,
+    borderRadius: 12,
+    padding: 20,
+    width: "90%",
+    maxWidth: 400,
+  },
+  closeButton: {
+    position: "absolute",
+    right: 0,
+    top: 0,
+    padding: 4,
+    marginRight: 10
+  },
+  closeText: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#999",
+  },
+  titleModal: {
+    fontSize: 18,
+    fontWeight: "bold",
+    textAlign: "center",
+    marginBottom: 16,
+    color: Colors.text,
+  },
+  description: {
+    fontSize: 14,
+    color: "#666",
+    textAlign: "center",
+    marginBottom: 20,
+    lineHeight: 20,
+  },
+  codeInput: {
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 18,
+    textAlign: "center",
+    letterSpacing: 4,
+    marginBottom: 16,
+  },
+  codeInputError: {
+    borderColor: "#ff4444",
+    borderWidth: 2,
+  },
+  errorText: {
+    color: "#ff4444",
+    fontSize: 12,
+    marginTop: -10,
+    marginBottom: 12,
+    marginLeft: 4,
+  },
+  buttons: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 8,
+    justifyContent: "center",
+  },
+  resendMessage: {
+    marginTop: 6,
+    fontSize: 13,
+    color: Colors.primary,
+    textAlign: "center",
+  },
+
 });

@@ -5,6 +5,7 @@ import { Colors } from "@/constants/Colors";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
+  ActivityIndicator,
   ImageBackground,
   Modal,
   StyleSheet,
@@ -19,6 +20,7 @@ export default function RegisterScreen() {
   const { register } = useAuth();
 
   const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(false);
 
   const [nombre, setNombre] = useState("");
   const [apellido, setApellido] = useState("");
@@ -72,6 +74,8 @@ export default function RegisterScreen() {
   const handleRegister = async () => {
     const newErrors: any = {};
 
+    clearErrors();
+
     if (!email) {
       newErrors.email = "El email es obligatorio";
     } else if (!isValidEmail(email)) {
@@ -92,7 +96,7 @@ export default function RegisterScreen() {
       return;
     }
 
-    clearErrors();
+    setLoading(true);
 
     try {
       await register(nombre, apellido, email, password);
@@ -113,6 +117,8 @@ export default function RegisterScreen() {
       }
 
       setGeneralError("Error inesperado. Intenta nuevamente.");
+    } finally {
+      setLoading(false); 
     }
   };
 
@@ -136,8 +142,9 @@ export default function RegisterScreen() {
                 setErrors({ nombre: "" });
               }}
               keyboardType="default"
+              errorMessage={errors.nombre}
+              error={!!errors.nombre}
             />
-            {errors.nombre ? <Text style={styles.error}>{errors.nombre}</Text> : null}
 
             <CustomInput
               placeholder="Apellido"
@@ -147,9 +154,9 @@ export default function RegisterScreen() {
                 setErrors({ apellido: "" });
               }}
               keyboardType="default"
+              errorMessage={errors.apellido}
+              error={!!errors.apellido}
             />
-
-            {errors.apellido ? <Text style={styles.error}>{errors.apellido}</Text> : null}
 
             <PrimaryButton
               title="Siguiente"
@@ -177,8 +184,9 @@ export default function RegisterScreen() {
                   setErrors({ email: "" })
                 }}
                 keyboardType="email-address"
+                errorMessage={errors.email}
+                error={!!errors.email}
               />
-              {errors.email ? <Text style={styles.error}>{errors.email}</Text> : null}
 
               <CustomInput
                 placeholder="Contraseña"
@@ -188,8 +196,9 @@ export default function RegisterScreen() {
                   setErrors({ password: "" })
                 }}
                 secureTextEntry
+                errorMessage={errors.password}
+                error={!!errors.password}
               />
-              {errors.password ? <Text style={styles.error}>{errors.password}</Text> : null}
 
               <CustomInput
                 placeholder="Repetir contraseña"
@@ -199,8 +208,9 @@ export default function RegisterScreen() {
                   setErrors({ repeatPassword: "" })
                 }}
                 secureTextEntry
+                errorMessage={errors.repeatPassword}
+                error={!!errors.repeatPassword}
               />
-              {errors.repeatPassword ? <Text style={styles.error}>{errors.repeatPassword}</Text> : null}
 
             </View>
 
@@ -211,6 +221,8 @@ export default function RegisterScreen() {
               onPress={handleRegister}
               styleBtn={{ height: 42, marginTop: 38, width: "100%" }}
             />
+
+            {loading ? <ActivityIndicator color="#fff" size="small" /> : null}
 
             <Text style={styles.footerText}>
               ¿Ya tienes cuenta?{" "}
@@ -234,6 +246,7 @@ export default function RegisterScreen() {
               <Text>
                 Te enviamos un código de verificación al correo{" "}
                 <Text style={{ fontWeight: "600" }}>{email}</Text>.
+                {"\n\n"}
                 Vas a poder ingresarlo cuando intentes iniciar sesión.
               </Text>
             } onAccept={() => {
