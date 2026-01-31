@@ -126,7 +126,7 @@ export default function LoginScreen() {
 
       if (data?.errors) {
         setErrors(data.errors);
-        data.errors.email_verificado && !data.errors.cuenta_verificada ? openModal : setModalVisible(false);
+        data.errors.email_verificado ? openModal() : setModalVisible(false);
         return;
       }
 
@@ -353,7 +353,7 @@ export default function LoginScreen() {
             ) : verificationSuccess ? (
               <>
                 <Text style={styles.titleModal}>
-                  ¡Email verificado con éxito! 🎉
+                  ¡Email verificado con éxito!
                 </Text>
 
                 <Text style={styles.description}>
@@ -362,11 +362,6 @@ export default function LoginScreen() {
                   En unos segundos vas a ingresar automáticamente.
                 </Text>
 
-                <ActivityIndicator
-                  style={{ marginTop: 20 }}
-                  size="small"
-                  color={Colors.primary}
-                />
               </>
             ) : (
               <>
