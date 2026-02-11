@@ -1,7 +1,8 @@
-import { AlertCard } from "@/components/ui/AlertaCard";
+import BaseModal from "@/components/ui/BaseModal";
 import PrimaryButton from "@/components/ui/Boton/Primary";
 import SecondaryButton from "@/components/ui/Boton/Secondary";
 import CustomInput from "@/components/ui/CustomInput";
+import InfoModal from "@/components/ui/InfoModal";
 import { Colors } from "@/constants/Colors";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
@@ -9,11 +10,9 @@ import React, { useEffect, useState } from "react";
 import {
     ActivityIndicator,
     ImageBackground,
-    Modal,
     StyleSheet,
     Text,
     TextInput,
-    TouchableOpacity,
     View
 } from "react-native";
 import { useAuth } from "../contexts/AuthContext";
@@ -177,7 +176,7 @@ export default function ResetPasswordScreen() {
         setLoading(true);
 
         try {
-            await reenviarVerificacion(email, "RESET_PASSWORD" );
+            await reenviarVerificacion(email, "RESET_PASSWORD");
 
             setResendMessage(
                 "Te reenviamos el código. Revisá tu bandeja de entrada y la carpeta de spam."
@@ -295,6 +294,7 @@ export default function ResetPasswordScreen() {
                 ) : (
                     <>
                         <Text style={styles.title}>Casi terminamos</Text>
+                        <Text style={styles.subtitle}>Escribi tu nueva contraseña</Text>
 
                         <View style={styles.secInput}>
 
@@ -327,7 +327,7 @@ export default function ResetPasswordScreen() {
                         {generalError ? <Text style={styles.error}>{generalError}</Text> : null}
 
                         <PrimaryButton
-                            title="Restablecer Contraseña"
+                            title="Cambiar Contraseña"
                             onPress={handleUpdatePassword}
                             styleBtn={{ height: 42, marginTop: 38, width: "100%" }}
                         />
@@ -343,110 +343,88 @@ export default function ResetPasswordScreen() {
                     </>
                 )}
             </View>
-            <Modal
-                animationType="fade"
-                transparent
-                visible={modalVisible}
-                onRequestClose={closeModal}
-            >
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalContent}>
-                        <TouchableOpacity onPress={closeModal} style={styles.closeButton}>
-                            <Text style={styles.closeText}>✕</Text>
-                        </TouchableOpacity>
+            <BaseModal visible={modalVisible} onClose={closeModal} showCloseButton>
+                {verificationSuccess ? (
+                    <>
+                        <Text style={styles.titleModal}>
+                            ¡Codigo verificado con éxito!
+                        </Text>
 
-                        {verificationSuccess ? (
-                            <>
-                                <Text style={styles.titleModal}>
-                                    ¡Codigo verificado!
-                                </Text>
+                        <Text style={styles.description}>
+                            A continuacion podras cambiar tu contraseña.
+                        </Text>
+                    </>
+                ) : (
+                    <>
+                        <Text style={styles.titleModal}>
+                            Restablecer contraseña
+                        </Text>
 
-                                <Text style={styles.description}>
-                                    Podras cambiar tu contraseña.
-                                    {"\n\n"}
-                                </Text>
-                            </>
-                        ) : (
-                            <>
-                                <Text style={styles.titleModal}>
-                                    Restablecer contraseña
-                                </Text>
+                        <Text style={styles.description}>
+                            Te enviamos un código de verificación al correo{" "}
+                            <Text style={{ fontWeight: "900" }}>{email}</Text>.
+                            {"\n\n"}
+                            Ingresá el código para restablecer la contraseña.
+                        </Text>
 
-                                <Text style={styles.description}>
-                                    Te enviamos un código de verificación al correo{" "}
-                                    <Text style={{ fontWeight: "900" }}>{email}</Text>.
-                                    {"\n\n"}
-                                    Ingresá el código para restablecer la contraseña.
-                                </Text>
+                        <TextInput
+                            style={[
+                                styles.codeInput,
+                                errors.codigo && styles.codeInputError,
+                            ]}
+                            placeholder="Código de 6 dígitos"
+                            keyboardType="numeric"
+                            maxLength={6}
+                            value={codigo}
+                            placeholderTextColor={errors.codigo ? "#ff6b6b" : "#999"}
+                            onChangeText={(text) => {
+                                setCodigo(text);
+                                setErrors({});
+                                setResendMessage(null);
+                            }}
+                        />
 
-                                <TextInput
-                                    style={[
-                                        styles.codeInput,
-                                        errors.codigo && styles.codeInputError,
-                                    ]}
-                                    placeholder="Código de 6 dígitos"
-                                    keyboardType="numeric"
-                                    maxLength={6}
-                                    value={codigo}
-                                    placeholderTextColor={errors.codigo ? "#ff6b6b" : "#999"}
-                                    onChangeText={(text) => {
-                                        setCodigo(text);
-                                        setErrors({});
-                                        setResendMessage(null);
-                                    }}
-                                />
-
-                                {errors.codigo && (
-                                    <Text style={styles.errorText}>{errors.codigo}</Text>
-                                )}
-
-                                {resendMessage && (
-                                    <Text style={styles.resendMessage}>{resendMessage}</Text>
-                                )}
-
-                                <View style={styles.buttons}>
-                                    <SecondaryButton
-                                        title="Reenviar código"
-                                        onPress={handleResendEmail}
-                                        disabled={loading}
-                                    />
-
-                                    <PrimaryButton
-                                        title="Verificar código"
-                                        onPress={handleVerifyCode}
-                                        disabled={loading}
-                                    />
-                                </View>
-                            </>
+                        {errors.codigo && (
+                            <Text style={styles.errorText}>{errors.codigo}</Text>
                         )}
-                    </View>
-                </View>
-            </Modal>
 
-            <Modal
+                        {resendMessage && (
+                            <Text style={styles.resendMessage}>{resendMessage}</Text>
+                        )}
+
+                        <View style={styles.buttons}>
+                            <SecondaryButton
+                                title="Reenviar código"
+                                onPress={handleResendEmail}
+                                disabled={loading}
+                            />
+
+                            <PrimaryButton
+                                title="Verificar"
+                                onPress={handleVerifyCode}
+                                disabled={loading}
+                            />
+                        </View>
+                    </>
+                )}
+            </BaseModal>
+            <InfoModal
                 visible={modalResetPasswordVisible}
-                transparent
-                animationType="fade"
-                onRequestClose={() => { setModalResetPasswordVisible(false); router.replace("/login"); }}
-            >
-                <View style={styles.modalBackground}>
-                    <AlertCard
-                        title={`Restablecimiento de la contraseña`}
-                        description={
-                            <Text>
-                                Se restablecio correctamente la contraseña de:
-                                {"\n\n"}
-                                <Text style={{ fontWeight: "600" }}>{email}</Text>.
-                                {"\n\n"}
-                                Inicia sesión nuevamente.
-                            </Text>
-                        } onAccept={() => {
-                            setModalResetPasswordVisible(false); router.replace("/login")
-                        }}
-                        acceptLabel="Cerrar"
-                    />
-                </View>
-            </Modal>
+                onClose={() => {
+                    setModalResetPasswordVisible(false);
+                    router.replace("/login")
+                }}
+                title="Restablecimiento de la contraseña"
+                description={
+                    <Text>
+                        Se restablecio correctamente la contraseña de:
+                        {"\n\n"}
+                        <Text style={{ fontWeight: "600" }}>{email}</Text>.
+                        {"\n\n"}
+                        Inicia sesión nuevamente.
+                    </Text>
+                }
+            />
         </ImageBackground>
     );
 

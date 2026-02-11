@@ -1,13 +1,12 @@
-import { AlertCard } from "@/components/ui/AlertaCard";
 import PrimaryButton from "@/components/ui/Boton/Primary";
 import CustomInput from "@/components/ui/CustomInput";
+import InfoModal from "@/components/ui/InfoModal";
 import { Colors } from "@/constants/Colors";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
   ImageBackground,
-  Modal,
   StyleSheet,
   Text,
   View
@@ -233,30 +232,23 @@ export default function RegisterScreen() {
           </>
         )}
       </View>
-      <Modal
+      <InfoModal
         visible={modalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => { setModalVisible(false); router.replace("/login"); }}
-      >
-        <View style={styles.modalBackground}>
-          <AlertCard
-            title={`Verificación del correo electronico`}
-            description={
-              <Text>
-                Te enviamos un código de verificación al correo:
-                {"\n\n"}
-                <Text style={{ fontWeight: "600" }}>{email}</Text>.
-                {"\n\n"}
-                Vas a poder ingresarlo cuando intentes iniciar sesión.
-              </Text>
-            } onAccept={() => {
-              setModalVisible(false); router.replace("/login")
-            }}
-            acceptLabel="Cerrar"
-          />
-        </View>
-      </Modal>
+        onClose={() => {
+          setModalVisible(false);
+          router.replace("/login");
+        }}
+        title="Verificación del correo electrónico"
+        description={
+          <Text>
+            Te enviamos un código de verificación al correo:
+            {"\n\n"}
+            <Text style={{ fontWeight: "600" }}>{email}</Text>.
+            {"\n\n"}
+            Vas a poder ingresarlo cuando intentes iniciar sesión.
+          </Text>
+        }
+      />
     </ImageBackground>
   );
 

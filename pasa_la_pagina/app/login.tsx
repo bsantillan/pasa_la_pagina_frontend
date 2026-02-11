@@ -1,3 +1,4 @@
+import BaseModal from "@/components/ui/BaseModal";
 import PrimaryButton from "@/components/ui/Boton/Primary";
 import SecondaryButton from "@/components/ui/Boton/Secondary";
 import CustomInput from "@/components/ui/CustomInput";
@@ -10,7 +11,6 @@ import {
   ActivityIndicator,
   Dimensions,
   ImageBackground,
-  Modal,
   StyleSheet,
   Text,
   TextInput,
@@ -321,104 +321,92 @@ export default function LoginScreen() {
         </Text>
 
       </View>
-      <Modal
-        animationType="fade"
-        transparent
-        visible={modalVisible}
-        onRequestClose={closeModal}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <TouchableOpacity onPress={closeModal} style={styles.closeButton}>
-              <Text style={styles.closeText}>✕</Text>
-            </TouchableOpacity>
-            {alreadyVerified ? (
-              <>
-                <Text style={styles.titleModal}>
-                  Tu cuenta ya está verificada
-                </Text>
+      <BaseModal visible={modalVisible} onClose={closeModal} showCloseButton>
+        {alreadyVerified ? (
+          <>
+            <Text style={styles.titleModal}>
+              Tu cuenta ya está verificada
+            </Text>
 
-                <Text style={styles.description}>
-                  Este correo ya fue verificado correctamente.
-                  {"\n\n"}
-                  Iniciá sesión para continuar.
-                </Text>
+            <Text style={styles.description}>
+              Este correo ya fue verificado correctamente.
+              {"\n\n"}
+              Iniciá sesión para continuar.
+            </Text>
 
-                <ActivityIndicator
-                  style={{ marginTop: 20 }}
-                  size="small"
-                  color={Colors.primary}
-                />
-              </>
-            ) : verificationSuccess ? (
-              <>
-                <Text style={styles.titleModal}>
-                  ¡Email verificado con éxito!
-                </Text>
+            <ActivityIndicator
+              style={{ marginTop: 20 }}
+              size="small"
+              color={Colors.primary}
+            />
+          </>
+        ) : verificationSuccess ? (
+          <>
+            <Text style={styles.titleModal}>
+              ¡Email verificado con éxito!
+            </Text>
 
-                <Text style={styles.description}>
-                  Tu correo fue verificado correctamente.
-                  {"\n\n"}
-                  En unos segundos vas a ingresar automáticamente.
-                </Text>
+            <Text style={styles.description}>
+              Tu correo fue verificado correctamente.
+              {"\n\n"}
+              En unos segundos vas a ingresar automáticamente.
+            </Text>
 
-              </>
-            ) : (
-              <>
-                <Text style={styles.titleModal}>Tu email aún no está verificado</Text>
+          </>
+        ) : (
+          <>
+            <Text style={styles.titleModal}>Tu email aún no está verificado</Text>
 
-                <Text style={styles.description}>
-                  Para poder continuar, necesitás verificar tu correo{" "}
-                  <Text style={{ fontWeight: "900" }}>{email}</Text>.
-                  {"\n\n"}
-                  Ingresá el código de verificación.
-                  {"\n"}
-                  Revisá tu bandeja de entrada y spam.
-                </Text>
+            <Text style={styles.description}>
+              Para poder continuar, necesitás verificar tu correo{" "}
+              <Text style={{ fontWeight: "900" }}>{email}</Text>.
+              {"\n\n"}
+              Ingresá el código de verificación.
+              {"\n"}
+              Revisá tu bandeja de entrada y spam.
+            </Text>
 
-                <TextInput
-                  style={[
-                    styles.codeInput,
-                    errors.codigo && styles.codeInputError,
-                  ]}
-                  placeholder="Código de 6 dígitos"
-                  keyboardType="numeric"
-                  maxLength={6}
-                  value={codigo}
-                  placeholderTextColor={errors.codigo ? "#ff6b6b" : "#999"}
-                  onChangeText={(text) => {
-                    setCodigo(text);
-                    setErrors({});
-                    setResendMessage(null);
-                  }}
-                />
+            <TextInput
+              style={[
+                styles.codeInput,
+                errors.codigo && styles.codeInputError,
+              ]}
+              placeholder="Código de 6 dígitos"
+              keyboardType="numeric"
+              maxLength={6}
+              value={codigo}
+              placeholderTextColor={errors.codigo ? "#ff6b6b" : "#999"}
+              onChangeText={(text) => {
+                setCodigo(text);
+                setErrors({});
+                setResendMessage(null);
+              }}
+            />
 
-                {errors.codigo && (
-                  <Text style={styles.errorText}>{errors.codigo}</Text>
-                )}
-
-                {resendMessage && (
-                  <Text style={styles.resendMessage}>{resendMessage}</Text>
-                )}
-
-                <View style={styles.buttons}>
-                  <SecondaryButton
-                    title="Reenviar código"
-                    onPress={handleResendEmail}
-                    disabled={loading}
-                  />
-
-                  <PrimaryButton
-                    title="Verificar"
-                    onPress={handleVerifyCode}
-                    disabled={loading}
-                  />
-                </View>
-              </>
+            {errors.codigo && (
+              <Text style={styles.errorText}>{errors.codigo}</Text>
             )}
-          </View>
-        </View>
-      </Modal>
+
+            {resendMessage && (
+              <Text style={styles.resendMessage}>{resendMessage}</Text>
+            )}
+
+            <View style={styles.buttons}>
+              <SecondaryButton
+                title="Reenviar código"
+                onPress={handleResendEmail}
+                disabled={loading}
+              />
+
+              <PrimaryButton
+                title="Verificar"
+                onPress={handleVerifyCode}
+                disabled={loading}
+              />
+            </View>
+          </>
+        )}
+      </BaseModal>
 
     </KeyboardAwareScrollView >
   );
