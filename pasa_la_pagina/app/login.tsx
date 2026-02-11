@@ -160,7 +160,7 @@ export default function LoginScreen() {
 
     setLoading(true);
     try {
-      await verificarEmail(email, codigo);
+      await verificarEmail(email, codigo, "VERIFY_EMAIL");
 
       setVerificationSuccess(true);
 
@@ -200,7 +200,7 @@ export default function LoginScreen() {
     setLoading(true);
 
     try {
-      await reenviarVerificacion(email);
+      await reenviarVerificacion(email, "VERIFY_EMAIL");
 
       setResendMessage(
         "Te reenviamos el código. Revisá tu bandeja de entrada y la carpeta de spam."
@@ -299,7 +299,7 @@ export default function LoginScreen() {
           ¿Olvidaste tu contraseña?{" "}
           <Text
             style={styles.link}
-            onPress={() => router.push("/")}
+            onPress={() => router.push("/reset-password")}
           >
             Restablécela
           </Text>

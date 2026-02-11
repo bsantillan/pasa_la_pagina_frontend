@@ -118,7 +118,7 @@ export default function RegisterScreen() {
 
       setGeneralError("Error inesperado. Intenta nuevamente.");
     } finally {
-      setLoading(false); 
+      setLoading(false);
     }
   };
 
@@ -244,7 +244,8 @@ export default function RegisterScreen() {
             title={`Verificación del correo electronico`}
             description={
               <Text>
-                Te enviamos un código de verificación al correo{" "}
+                Te enviamos un código de verificación al correo:
+                {"\n\n"}
                 <Text style={{ fontWeight: "600" }}>{email}</Text>.
                 {"\n\n"}
                 Vas a poder ingresarlo cuando intentes iniciar sesión.
