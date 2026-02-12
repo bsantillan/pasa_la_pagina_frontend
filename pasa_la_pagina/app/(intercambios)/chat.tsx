@@ -147,6 +147,7 @@ export default function Chat() {
               placeholder="Escribe un mensaje..."
               placeholderTextColor="#8E8E93"
               returnKeyType="send"
+              autoCapitalize="sentences"
               onSubmitEditing={handleSend}
             />
             <Pressable onPress={handleSend} style={styles.sendButton}>

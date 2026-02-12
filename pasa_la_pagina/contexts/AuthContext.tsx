@@ -25,12 +25,13 @@ type AuthContextType = {
     nombre: string,
     apellido: string,
     email: string,
-    password: string
+    password: string,
+    termsAccepted: boolean
   ) => Promise<void>;
   logout: () => Promise<void>;
   getValidAccessToken: () => Promise<string | null>;
-  verificarEmail: (email: string, codigo: string, tipo_codigo:"VERIFY_EMAIL" | "RESET_PASSWORD") => Promise<void>;
-  reenviarVerificacion: (email: string, tipo_codigo:"VERIFY_EMAIL" | "RESET_PASSWORD") => Promise<void>;
+  verificarEmail: (email: string, codigo: string, tipo_codigo: "VERIFY_EMAIL" | "RESET_PASSWORD") => Promise<void>;
+  reenviarVerificacion: (email: string, tipo_codigo: "VERIFY_EMAIL" | "RESET_PASSWORD") => Promise<void>;
   requestPasswordReset: (email: string) => Promise<void>;
   passwordReset: (
     email: string,
@@ -233,12 +234,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     nombre: string,
     apellido: string,
     email: string,
-    password: string
+    password: string,
+    termsAccepted: boolean
   ) => {
     const response = await fetch(`${API_URL}auth/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nombre, apellido, email, password }),
+      body: JSON.stringify({ nombre, apellido, email, password, termsAccepted }),
     });
 
     const data = await response.json().catch(() => null);
@@ -274,7 +276,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   // ------------------------- VERIFY EMAIL -------------------------
-  const verificarEmail = async (email: string, codigo: string, tipo_codigo:"VERIFY_EMAIL" | "RESET_PASSWORD") => {
+  const verificarEmail = async (email: string, codigo: string, tipo_codigo: "VERIFY_EMAIL" | "RESET_PASSWORD") => {
     const response = await fetch(`${API_URL}auth/verificar`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -291,7 +293,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   // ------------------------- RESEND VERIFICATION -------------------------
-  const reenviarVerificacion = async (email: string, tipo_codigo:"VERIFY_EMAIL" | "RESET_PASSWORD") => {
+  const reenviarVerificacion = async (email: string, tipo_codigo: "VERIFY_EMAIL" | "RESET_PASSWORD") => {
     const response = await fetch(`${API_URL}auth/resend-verification`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

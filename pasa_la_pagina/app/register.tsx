@@ -9,6 +9,7 @@ import {
   ImageBackground,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View
 } from "react-native";
 import { useAuth } from "../contexts/AuthContext";
@@ -26,15 +27,30 @@ export default function RegisterScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [repeatPassword, setRepeatPassword] = useState("");
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [errors, setErrors] = useState<{
     nombre?: string;
     apellido?: string;
     email?: string;
     password?: string;
     repeatPassword?: string;
+    terminos?: string;
   }>({});
   const [generalError, setGeneralError] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
+  const [termsModalVisible, setTermsModalVisible] = useState(false);
+
+  const capitalizeFirstLetter = (text: string) => {
+    if (!text) return text;
+
+    const firstChar = text.charAt(0);
+
+    if (/[a-zA-Z]/.test(firstChar)) {
+      return firstChar.toUpperCase() + text.slice(1);
+    }
+
+    return text;
+  };
 
   const clearErrors = () => {
     setErrors({});
@@ -90,6 +106,10 @@ export default function RegisterScreen() {
     if (password !== repeatPassword)
       newErrors.repeatPassword = "Las contraseñas no coinciden";
 
+    if (!termsAccepted) {
+      newErrors.terminos = "Debes aceptar los términos y condiciones";
+    }
+
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
@@ -98,7 +118,7 @@ export default function RegisterScreen() {
     setLoading(true);
 
     try {
-      await register(nombre, apellido, email, password);
+      await register(nombre, apellido, email, password, termsAccepted);
       setModalVisible(true);
 
     } catch (err: any) {
@@ -136,8 +156,9 @@ export default function RegisterScreen() {
             <CustomInput
               placeholder="Nombre"
               value={nombre}
+              autoCapitalize="sentences"
               onChangeText={(text) => {
-                setNombre(text);
+                setNombre(capitalizeFirstLetter(text));
                 setErrors({ nombre: "" });
               }}
               keyboardType="default"
@@ -148,8 +169,9 @@ export default function RegisterScreen() {
             <CustomInput
               placeholder="Apellido"
               value={apellido}
+              autoCapitalize="sentences"
               onChangeText={(text) => {
-                setApellido(text);
+                setApellido(capitalizeFirstLetter(text));
                 setErrors({ apellido: "" });
               }}
               keyboardType="default"
@@ -213,6 +235,31 @@ export default function RegisterScreen() {
 
             </View>
 
+            <View style={styles.termsContainer}>
+              <TouchableOpacity
+                style={styles.checkboxContainer}
+                onPress={() => {
+                  setTermsAccepted(!termsAccepted);
+                  setErrors({ terminos: "" });
+                }}
+              >
+                <View style={[styles.checkbox, termsAccepted && styles.checkboxChecked]} />
+                <Text style={styles.termsText}>
+                  Acepto los{" "}
+                  <Text
+                    style={styles.link}
+                    onPress={() => setTermsModalVisible(true)}
+                  >
+                    términos y condiciones
+                  </Text>
+                </Text>
+              </TouchableOpacity>
+
+              {errors.terminos && (
+                <Text style={styles.error}>{errors.terminos}</Text>
+              )}
+            </View>
+
             {generalError ? <Text style={styles.error}>{generalError}</Text> : null}
 
             <PrimaryButton
@@ -249,6 +296,26 @@ export default function RegisterScreen() {
           </Text>
         }
       />
+
+      <InfoModal
+        visible={termsModalVisible}
+        onClose={() => setTermsModalVisible(false)}
+        title="Términos y Condiciones"
+        description={
+          <Text>
+            Aquí van tus términos y condiciones.
+            {"\n\n"}
+            1. No usar la app para actividades ilegales.
+            {"\n"}
+            2. Respetar a otros usuarios.
+            {"\n"}
+            3. Nos reservamos el derecho de suspender cuentas.
+            {"\n\n"}
+            (Acá después podés poner los reales o traerlos del backend)
+          </Text>
+        }
+      />
+
     </ImageBackground>
   );
 
@@ -313,5 +380,30 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.5)",
     justifyContent: "center",
     alignItems: "center",
+  },
+  termsContainer: {
+    marginTop: 15,
+    width: "100%",
+  },
+  checkboxContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginBottom: 10
+  },
+  checkbox: {
+    width: 18,
+    height: 18,
+    borderWidth: 1,
+    borderColor: "#999",
+    marginRight: 8,
+    borderRadius: 3,
+  },
+  checkboxChecked: {
+    backgroundColor: Colors.primary,
+  },
+  termsText: {
+    fontSize: 13,
+    color: "#666",
+    flexShrink: 1,
   },
 });
