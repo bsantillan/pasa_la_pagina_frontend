@@ -1,12 +1,15 @@
 import PrimaryButton from "@/components/ui/Boton/Primary";
 import CustomInput from "@/components/ui/CustomInput";
+import InfoModal from "@/components/ui/InfoModal";
 import { Colors } from "@/constants/Colors";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
+  ActivityIndicator,
   ImageBackground,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View
 } from "react-native";
 import { useAuth } from "../contexts/AuthContext";
@@ -17,13 +20,42 @@ export default function RegisterScreen() {
   const { register } = useAuth();
 
   const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(false);
 
   const [nombre, setNombre] = useState("");
   const [apellido, setApellido] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [repeatPassword, setRepeatPassword] = useState("");
-  const [error, setError] = useState("");
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [errors, setErrors] = useState<{
+    nombre?: string;
+    apellido?: string;
+    email?: string;
+    password?: string;
+    repeatPassword?: string;
+    terminos?: string;
+  }>({});
+  const [generalError, setGeneralError] = useState("");
+  const [modalVisible, setModalVisible] = useState(false);
+  const [termsModalVisible, setTermsModalVisible] = useState(false);
+
+  const capitalizeFirstLetter = (text: string) => {
+    if (!text) return text;
+
+    const firstChar = text.charAt(0);
+
+    if (/[a-zA-Z]/.test(firstChar)) {
+      return firstChar.toUpperCase() + text.slice(1);
+    }
+
+    return text;
+  };
+
+  const clearErrors = () => {
+    setErrors({});
+    setGeneralError("");
+  };
 
   const isValidEmail = (email: string) => {
     const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -31,38 +63,81 @@ export default function RegisterScreen() {
   };
 
   const handleNext = () => {
-    if (!nombre || !apellido) {
-      setError("Completa todos los campos");
+    const newErrors: any = {};
+
+    if (!nombre) {
+      newErrors.nombre = "El nombre es obligatorio";
+    } else if (nombre.length < 2) {
+      newErrors.nombre = "Mínimo 2 caracteres";
+    }
+
+    if (!apellido) {
+      newErrors.apellido = "El apellido es obligatorio";
+    } else if (apellido.length < 2) {
+      newErrors.apellido = "Mínimo 2 caracteres";
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       return;
     }
-    if (nombre.length < 2 || apellido.length < 2) {
-      setError("El nombre o apellido deben tener al menos dos caracteres");
-      return;
-    }
-    setError("");
+
+    clearErrors();
     setStep(2);
   };
 
   const handleRegister = async () => {
-    if (!email || !password || !repeatPassword) {
-      setError("Completa todos los campos");
+    const newErrors: any = {};
+
+    clearErrors();
+
+    if (!email) {
+      newErrors.email = "El email es obligatorio";
+    } else if (!isValidEmail(email)) {
+      newErrors.email = "Email inválido";
+    }
+
+    if (!password) {
+      newErrors.password = "La contraseña es obligatoria";
+    } else if (password.length < 8) {
+      newErrors.password = "Mínimo 8 caracteres";
+    }
+
+    if (password !== repeatPassword)
+      newErrors.repeatPassword = "Las contraseñas no coinciden";
+
+    if (!termsAccepted) {
+      newErrors.terminos = "Debes aceptar los términos y condiciones";
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       return;
     }
 
-    if (!isValidEmail(email)) {
-      setError("Introduce un email válido");
-      return;
-    }
+    setLoading(true);
 
-    if (password !== repeatPassword) {
-      setError("Las contraseñas no coinciden");
-      return;
-    }
     try {
-      await register(nombre, apellido, email, password);
-      router.replace("/(tabs)");
+      await register(nombre, apellido, email, password, termsAccepted);
+      setModalVisible(true);
+
     } catch (err: any) {
-      setError(err.message || "Error al registrarse");
+      console.log(err);
+      const data = err?.data;
+
+      if (data?.errors) {
+        setErrors(data.errors);
+        return;
+      }
+
+      if (data?.error) {
+        setGeneralError(data.error);
+        return;
+      }
+
+      setGeneralError("Error inesperado. Intenta nuevamente.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -81,17 +156,28 @@ export default function RegisterScreen() {
             <CustomInput
               placeholder="Nombre"
               value={nombre}
-              onChangeText={setNombre}
+              autoCapitalize="sentences"
+              onChangeText={(text) => {
+                setNombre(capitalizeFirstLetter(text));
+                setErrors({ nombre: "" });
+              }}
               keyboardType="default"
+              errorMessage={errors.nombre}
+              error={!!errors.nombre}
             />
+
             <CustomInput
               placeholder="Apellido"
               value={apellido}
-              onChangeText={setApellido}
+              autoCapitalize="sentences"
+              onChangeText={(text) => {
+                setApellido(capitalizeFirstLetter(text));
+                setErrors({ apellido: "" });
+              }}
               keyboardType="default"
+              errorMessage={errors.apellido}
+              error={!!errors.apellido}
             />
-
-            {error ? <Text style={styles.error}>{error}</Text> : null}
 
             <PrimaryButton
               title="Siguiente"
@@ -114,30 +200,75 @@ export default function RegisterScreen() {
               <CustomInput
                 placeholder="Email"
                 value={email}
-                onChangeText={setEmail}
+                onChangeText={(text) => {
+                  setEmail(text);
+                  setErrors({ email: "" })
+                }}
                 keyboardType="email-address"
+                errorMessage={errors.email}
+                error={!!errors.email}
               />
+
               <CustomInput
                 placeholder="Contraseña"
                 value={password}
-                onChangeText={setPassword}
+                onChangeText={(text) => {
+                  setPassword(text);
+                  setErrors({ password: "" })
+                }}
                 secureTextEntry
+                errorMessage={errors.password}
+                error={!!errors.password}
               />
+
               <CustomInput
                 placeholder="Repetir contraseña"
                 value={repeatPassword}
-                onChangeText={setRepeatPassword}
+                onChangeText={(text) => {
+                  setRepeatPassword(text);
+                  setErrors({ repeatPassword: "" })
+                }}
                 secureTextEntry
+                errorMessage={errors.repeatPassword}
+                error={!!errors.repeatPassword}
               />
 
-              {error ? <Text style={styles.error}>{error}</Text> : null}
             </View>
+
+            <View style={styles.termsContainer}>
+              <TouchableOpacity
+                style={styles.checkboxContainer}
+                onPress={() => {
+                  setTermsAccepted(!termsAccepted);
+                  setErrors({ terminos: "" });
+                }}
+              >
+                <View style={[styles.checkbox, termsAccepted && styles.checkboxChecked]} />
+                <Text style={styles.termsText}>
+                  Acepto los{" "}
+                  <Text
+                    style={styles.link}
+                    onPress={() => setTermsModalVisible(true)}
+                  >
+                    términos y condiciones
+                  </Text>
+                </Text>
+              </TouchableOpacity>
+
+              {errors.terminos && (
+                <Text style={styles.error}>{errors.terminos}</Text>
+              )}
+            </View>
+
+            {generalError ? <Text style={styles.error}>{generalError}</Text> : null}
 
             <PrimaryButton
               title="Crear cuenta"
               onPress={handleRegister}
               styleBtn={{ height: 42, marginTop: 38, width: "100%" }}
             />
+
+            {loading ? <ActivityIndicator color="#fff" size="small" /> : null}
 
             <Text style={styles.footerText}>
               ¿Ya tienes cuenta?{" "}
@@ -148,6 +279,43 @@ export default function RegisterScreen() {
           </>
         )}
       </View>
+      <InfoModal
+        visible={modalVisible}
+        onClose={() => {
+          setModalVisible(false);
+          router.replace("/login");
+        }}
+        title="Verificación del correo electrónico"
+        description={
+          <Text>
+            Te enviamos un código de verificación al correo:
+            {"\n\n"}
+            <Text style={{ fontWeight: "600" }}>{email}</Text>.
+            {"\n\n"}
+            Vas a poder ingresarlo cuando intentes iniciar sesión.
+          </Text>
+        }
+      />
+
+      <InfoModal
+        visible={termsModalVisible}
+        onClose={() => setTermsModalVisible(false)}
+        title="Términos y Condiciones"
+        description={
+          <Text>
+            Aquí van tus términos y condiciones.
+            {"\n\n"}
+            1. No usar la app para actividades ilegales.
+            {"\n"}
+            2. Respetar a otros usuarios.
+            {"\n"}
+            3. Nos reservamos el derecho de suspender cuentas.
+            {"\n\n"}
+            (Acá después podés poner los reales o traerlos del backend)
+          </Text>
+        }
+      />
+
     </ImageBackground>
   );
 
@@ -206,5 +374,36 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     textAlign: "center",
     width: "100%",
+  },
+  modalBackground: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  termsContainer: {
+    marginTop: 15,
+    width: "100%",
+  },
+  checkboxContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginBottom: 10
+  },
+  checkbox: {
+    width: 18,
+    height: 18,
+    borderWidth: 1,
+    borderColor: "#999",
+    marginRight: 8,
+    borderRadius: 3,
+  },
+  checkboxChecked: {
+    backgroundColor: Colors.primary,
+  },
+  termsText: {
+    fontSize: 13,
+    color: "#666",
+    flexShrink: 1,
   },
 });

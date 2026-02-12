@@ -6,7 +6,7 @@ import SecondaryButton from "./Boton/Secondary";
 
 type AlertCardProps = {
     title: string;
-    description: string;
+    description: string | React.ReactNode;
     onAccept: () => void;
     onCancel?: () => void;
     acceptLabel?: string;

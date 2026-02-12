@@ -58,8 +58,8 @@ function AuthGateLayout() {
 
   const isRootIndex = currentPath === "";
 
-  const hideHeaderPaths = ["login", "register", "(publicacion)", "chat", "index"];
-  const hideNavbarPaths = ["login", "register", "chat"];
+  const hideHeaderPaths = ["login", "register","reset-password", "(publicacion)", "chat", "index"];
+  const hideNavbarPaths = ["login", "register", "chat","reset-password"];
   const showHeader = !isRootIndex && !hideHeaderPaths.some((path) => currentPath.includes(path));
   const showNavBar = !isRootIndex && !hideNavbarPaths.some((path) => currentPath.includes(path));
 

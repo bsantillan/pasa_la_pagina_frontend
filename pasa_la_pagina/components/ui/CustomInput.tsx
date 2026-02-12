@@ -12,7 +12,7 @@ interface InputFieldProps {
     autoCapitalize?: "none" | "sentences" | "words" | "characters";
     style?: object;
 
-    showErrors?: boolean;
+    error?: boolean;
     errorMessage?: string;
 
     multiline?: boolean;
@@ -33,7 +33,7 @@ const CustomInput: React.FC<InputFieldProps> = ({
     keyboardType = "default",
     autoCapitalize = "none",
     style,
-    showErrors = false,
+    error = false,
     errorMessage = "Este campo es obligatorio",
     multiline = false,
     minHeight = 50,
@@ -48,14 +48,13 @@ const CustomInput: React.FC<InputFieldProps> = ({
     const [inputHeight, setInputHeight] = useState(minHeight);
 
     const isPassword = secureTextEntry;
-    const hasError = showErrors && !value?.trim();
 
     return (
         <View style={style}>
             <View
                 style={[
                     styles.container,
-                    hasError && styles.inputError,
+                    error && styles.inputError,
                     multiline && {
                         height: inputHeight,
                         paddingVertical: 10,
@@ -76,7 +75,7 @@ const CustomInput: React.FC<InputFieldProps> = ({
                     secureTextEntry={isPassword && !showPassword}
                     keyboardType={keyboardType}
                     autoCapitalize={autoCapitalize}
-                    placeholderTextColor={hasError ? "#ff6b6b" : "#999"}
+                    placeholderTextColor={error ? "#ff6b6b" : "#999"}
                     multiline={multiline}
                     onContentSizeChange={(e) => {
                         if (multiline) {
@@ -103,7 +102,7 @@ const CustomInput: React.FC<InputFieldProps> = ({
                 )}
             </View>
 
-            {hasError && errorMessage && (
+            {error && errorMessage && (
                 <Text style={styles.errorText}>{errorMessage}</Text>
             )}
         </View>

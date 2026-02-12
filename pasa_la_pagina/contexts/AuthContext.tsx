@@ -25,10 +25,18 @@ type AuthContextType = {
     nombre: string,
     apellido: string,
     email: string,
-    password: string
+    password: string,
+    termsAccepted: boolean
   ) => Promise<void>;
   logout: () => Promise<void>;
   getValidAccessToken: () => Promise<string | null>;
+  verificarEmail: (email: string, codigo: string, tipo_codigo: "VERIFY_EMAIL" | "RESET_PASSWORD") => Promise<void>;
+  reenviarVerificacion: (email: string, tipo_codigo: "VERIFY_EMAIL" | "RESET_PASSWORD") => Promise<void>;
+  requestPasswordReset: (email: string) => Promise<void>;
+  passwordReset: (
+    email: string,
+    nuevaPassword: string
+  ) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -180,9 +188,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       body: JSON.stringify({ email, password }),
     });
 
-    if (!response.ok) throw new Error("Credenciales invalidas");
-
     const data = await response.json();
+
+    if (!response.ok) {
+      throw {
+        status: response.status,
+        data,
+      };
+    }
 
     await AsyncStorage.setItem("accessToken", data.accessToken);
     await AsyncStorage.setItem("refreshToken", data.refreshToken);
@@ -221,23 +234,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     nombre: string,
     apellido: string,
     email: string,
-    password: string
+    password: string,
+    termsAccepted: boolean
   ) => {
-    const res = await fetch(`${API_URL}auth/register`, {
+    const response = await fetch(`${API_URL}auth/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nombre, apellido, email, password }),
+      body: JSON.stringify({ nombre, apellido, email, password, termsAccepted }),
     });
 
-    if (!res.ok) throw new Error("Error en el registro");
+    const data = await response.json().catch(() => null);
 
-    const data = await res.json();
+    if (!response.ok) {
+      // reenviamos el error del backend
+      throw {
+        status: response.status,
+        data,
+      };
+    }
 
-    await AsyncStorage.setItem("accessToken", data.accessToken);
-    await AsyncStorage.setItem("refreshToken", data.refreshToken);
-
-    setAccessToken(data.accessToken);
-    setRefreshToken(data.refreshToken);
   };
 
   // ------------------------- LOGOUT -------------------------
@@ -260,6 +275,78 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  // ------------------------- VERIFY EMAIL -------------------------
+  const verificarEmail = async (email: string, codigo: string, tipo_codigo: "VERIFY_EMAIL" | "RESET_PASSWORD") => {
+    const response = await fetch(`${API_URL}auth/verificar`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, codigo, tipo_codigo }),
+    });
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => null);
+      throw {
+        status: response.status,
+        data,
+      };
+    }
+  };
+
+  // ------------------------- RESEND VERIFICATION -------------------------
+  const reenviarVerificacion = async (email: string, tipo_codigo: "VERIFY_EMAIL" | "RESET_PASSWORD") => {
+    const response = await fetch(`${API_URL}auth/resend-verification`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, tipo_codigo }),
+    });
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => null);
+      throw {
+        status: response.status,
+        data,
+      };
+    }
+  };
+
+  const requestPasswordReset = async (email: string) => {
+    const response = await fetch(`${API_URL}auth/password-reset/request`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => null);
+      throw {
+        status: response.status,
+        data,
+      };
+    }
+  };
+
+  const passwordReset = async (
+    email: string,
+    nuevaPassword: string
+  ) => {
+    const response = await fetch(`${API_URL}auth/password-reset/confirm`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email,
+        nuevaPassword,
+      }),
+    });
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => null);
+      throw {
+        status: response.status,
+        data,
+      };
+    }
+  };
+
   // ------------------------- PROVIDER -------------------------
   return (
     <AuthContext.Provider
@@ -273,6 +360,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         register,
         logout,
         getValidAccessToken,
+        verificarEmail,
+        reenviarVerificacion,
+        requestPasswordReset,
+        passwordReset,
       }}
     >
       {children}
